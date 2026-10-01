@@ -1,4 +1,4 @@
-#include "image.h"
+ï»¿#include "image.h"
 
 HDC mario_DC;
 
@@ -30,10 +30,10 @@ Image* fire_switch_tile;
 
 Image* firetrap;
 
-Image* pipe_1 = nullptr;	// ¿ìÇÏ
-Image* pipe_2 = nullptr;	// ÁÂÇÏ
-Image* pipe_3 = nullptr;	// ¿ì»ó
-Image* pipe_4 = nullptr;	// ÁÂ»ó
+Image* pipe_1 = nullptr;	// ìš°í•˜
+Image* pipe_2 = nullptr;	// ì¢Œí•˜
+Image* pipe_3 = nullptr;	// ìš°ìƒ
+Image* pipe_4 = nullptr;	// ì¢Œìƒ
 
 Image* item_block_1 = nullptr;
 Image* item_block_2 = nullptr;
@@ -197,7 +197,7 @@ Image* flag = nullptr;
 int mario_stop_Width;
 int mario_stop_Height;
 
-// ÀÌ¹ÌÁö ·Îµå
+// ì´ë¯¸ì§€ ë¡œë“œ
 void image_load()
 {
     peach = new Image(L"resource\\peach\\peach.png");
@@ -205,20 +205,20 @@ void image_load()
     stage_1_dirt = new Image(L"resource\\tile\\stage_1_dirt.png");
     if (stage_1_dirt->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"stage_1_dirt ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"stage_1_dirt ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     stage_1_brick = new Image(L"resource\\tile\\stage_1_brick.png");
     if (stage_1_brick->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"stage_1_brick ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"stage_1_brick ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     stage_1_background = new Image(L"resource\\background\\stage_1_background.png");
     stage_2_background = new Image(L"resource\\background\\stage_2_background.png");
     if (stage_1_background->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"stage_1_background ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"stage_1_background ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     // stage_2
@@ -235,19 +235,19 @@ void image_load()
     stone_tile = new Image(L"resource\\tile\\stone_tile.png");
     if (stone_tile->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"stone_tile ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"stone_tile ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     fire_switch_tile = new Image(L"resource\\tile\\fire_switch_tile.png");
     if (fire_switch_tile->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"fire_switch_tile ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"fire_switch_tile ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     firetrap = new Image(L"resource\\tile\\fire.png");
     if (firetrap->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"firetrap ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"firetrap ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
@@ -255,13 +255,13 @@ void image_load()
     fire_head = new Image(L"resource\\tile\\fire_head.png");
     if (fire_head->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"fire_head ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"fire_head ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     fire_body = new Image(L"resource\\tile\\fire_body.png");
     if (fire_body->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"fire_body ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"fire_body ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
@@ -269,25 +269,25 @@ void image_load()
     pipe_1 = new Image(L"resource\\pipe\\pipe_1.png");
     if (pipe_1->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"pipe_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"pipe_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     pipe_2 = new Image(L"resource\\pipe\\pipe_2.png");
     if (pipe_2->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"pipe_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"pipe_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     pipe_3 = new Image(L"resource\\pipe\\pipe_3.png");
     if (pipe_3->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"pipe_3 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"pipe_3 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     pipe_4 = new Image(L"resource\\pipe\\pipe_4.png");
     if (pipe_4->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"pipe_4 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"pipe_4 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
@@ -295,31 +295,31 @@ void image_load()
     item_block_1 = new Image(L"resource\\tile\\item_block_1.png");
     if (item_block_1->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"item_block_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"item_block_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     item_block_2 = new Image(L"resource\\tile\\item_block_2.png");
     if (item_block_2->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"item_block_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"item_block_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     item_block_3 = new Image(L"resource\\tile\\item_block_3.png");
     if (item_block_3->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"item_block_3 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"item_block_3 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     item_block_used = new Image(L"resource\\tile\\item_block_used.png");
     if (item_block_used->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"item_block_used ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"item_block_used ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     unbreakable_block = new Image(L"resource\\tile\\unbreakable_block.png");
     if (unbreakable_block->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"unbreakable_block ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"unbreakable_block ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
@@ -331,19 +331,19 @@ void image_load()
     coin_1 = new Image(L"resource\\tile\\coin_1.png");
     if (coin_1->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"coin_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"coin_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     coin_2 = new Image(L"resource\\tile\\coin_2.png");
     if (coin_2->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"coin_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"coin_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     coin_3 = new Image(L"resource\\tile\\coin_3.png");
     if (coin_3->GetLastStatus() != Ok)
     {
-        MessageBox(NULL, L"coin_3 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"coin_3 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
@@ -352,63 +352,63 @@ void image_load()
     // mario
     mario_stop = new Image(L"resource\\mario\\mario_stop.png");
     if (mario_stop->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"mario_stop ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"mario_stop ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     mario_walk_motion_1 = new Image(L"resource\\mario\\mario_walk_motion_1.png");
     if (mario_walk_motion_1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"mario_walk_motion_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"mario_walk_motion_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     mario_walk_motion_2 = new Image(L"resource\\mario\\mario_walk_motion_2.png");
     if (mario_walk_motion_2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"mario_walk_motion_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"mario_walk_motion_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     mario_walk_motion_3 = new Image(L"resource\\mario\\mario_walk_motion_3.png");
     if (mario_walk_motion_3->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"mario_walk_motion_3 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"mario_walk_motion_3 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     mario_jump = new Image(L"resource\\mario\\mario_jump.png");
     if (mario_jump->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"mario_jump ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"mario_jump ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     mario_dead = new Image(L"resource\\mario\\mario_dead.png");
     if (mario_dead->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"mario_dead ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"mario_dead ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     // bigmario
     big_mario_stop = new Image(L"resource\\mario\\big_mario_stop.png");
     if (big_mario_stop->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"big_mario_stop ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"big_mario_stop ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     big_mario_walk_motion_1 = new Image(L"resource\\mario\\big_mario_stop.png");
     if (big_mario_walk_motion_1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"big_mario_walk_motion_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"big_mario_walk_motion_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     big_mario_walk_motion_2 = new Image(L"resource\\mario\\big_mario_walk_motion_2.png");
     if (big_mario_walk_motion_2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"big_mario_walk_motion_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"big_mario_walk_motion_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     big_mario_walk_motion_3 = new Image(L"resource\\mario\\big_mario_walk_motion_3.png");
     if (big_mario_walk_motion_3->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"big_mario_walk_motion_3 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"big_mario_walk_motion_3 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     big_mario_jump = new Image(L"resource\\mario\\big_mario_jump.png");
     if (big_mario_jump->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"big_mario_jump ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"big_mario_jump ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     big_mario_change = new Image(L"resource\\mario\\big_mario_change.png");
     if (big_mario_change->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"big_mario_change ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"big_mario_change ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
@@ -478,27 +478,27 @@ void image_load()
     item_mushroom = new Image(L"resource\\items\\mushroom.png");
     item_up_mushroom = new Image(L"resource\\items\\up_mushroom.png");
     if (item_mushroom->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"item_mushroom ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"item_mushroom ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     item_star_1 = new Image(L"resource\\items\\star_1.png");
     if (item_star_1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"item_star_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"item_star_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     item_star_2 = new Image(L"resource\\items\\star_2.png");
     if (item_star_2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"item_star_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"item_star_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     item_star_3 = new Image(L"resource\\items\\star_3.png");
     if (item_star_3->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"item_star_3 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"item_star_3 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     item_star_4 = new Image(L"resource\\items\\star_4.png");
     if (item_star_4->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"item_star_4 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"item_star_4 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     item_flower_1 = new Image(L"resource\\items\\flower_1.png");
@@ -518,49 +518,49 @@ void image_load()
     //monster 1
     monster1_motion1 = new Image(L"resource\\monster\\monster1_motion1.png");
     if (monster1_motion1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"monster1_motion1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"monster1_motion1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     monster1_motion2 = new Image(L"resource\\monster\\monster1_motion2.png");
     if (monster1_motion2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"monster1_motion2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"monster1_motion2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     monster1_dead = new Image(L"resource\\monster\\monster1_dead.png");
     if (monster1_dead->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"monster1_dead ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"monster1_dead ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     //monster 2
     monster2_motion1 = new Image(L"resource\\monster\\monster2_motion1.png");
     if (monster2_motion1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"monster1_motion1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"monster1_motion1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     monster2_motion2 = new Image(L"resource\\monster\\monster2_motion2.png");
     if (monster2_motion2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"monster2_motion2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"monster2_motion2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     monster2_dead = new Image(L"resource\\monster\\monster2_dead.png");
     if (monster2_dead->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"monster2_dead ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"monster2_dead ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     //monster 3
     monster3_motion1 = new Image(L"resource\\monster\\monster3_motion1.png");
     if (monster3_motion1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"monster3_motion1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"monster3_motion1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     monster3_motion2 = new Image(L"resource\\monster\\monster3_motion2.png");
     if (monster3_motion2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"monster3_motion2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"monster3_motion2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     monster3_dead = new Image(L"resource\\monster\\monster3_dead.png");
     if (monster3_dead->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"monster3_dead ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"monster3_dead ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
@@ -580,34 +580,34 @@ void image_load()
     //angel turtle
     angel_turtle_1 = new Image(L"resource\\monster\\angel_turtle_1.png");
     if (angel_turtle_1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"angel_turtle_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"angel_turtle_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     angel_turtle_2 = new Image(L"resource\\monster\\angel_turtle_2.png");
     if (angel_turtle_2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"angel_turtle_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"angel_turtle_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
     //bowser
     bowser_walk_1 = new Image(L"resource\\monster\\bowser_walk_1.png");
     if (bowser_walk_1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"bowser_walk_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"bowser_walk_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     bowser_walk_2 = new Image(L"resource\\monster\\bowser_walk_2.png");
     if (bowser_walk_2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"bowser_walk_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"bowser_walk_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     bowser_fire_walk_1 = new Image(L"resource\\monster\\bowser_fire_walk_1.png");
     if (bowser_fire_walk_1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"bowser_fire_walk_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"bowser_fire_walk_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     bowser_fire_walk_2 = new Image(L"resource\\monster\\bowser_fire_walk_2.png");
     if (bowser_fire_walk_2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"bowser_fire_walk_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"bowser_fire_walk_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
@@ -618,56 +618,56 @@ void image_load()
     // screen
     screen_coin_1 = new Image(L"resource\\screen\\screen_coin_1.png");
     if (screen_coin_1->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"screen_coin_1 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"screen_coin_1 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     screen_coin_2 = new Image(L"resource\\screen\\screen_coin_2.png");
     if (screen_coin_2->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"screen_coin_2 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"screen_coin_2 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     screen_coin_3 = new Image(L"resource\\screen\\screen_coin_3.png");
     if (screen_coin_3->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"screen_coin_3 ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"screen_coin_3 ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     screen_coin_x = new Image(L"resource\\screen\\screen_coin_x.png");
     if (screen_coin_x->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"screen_coin_x ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"screen_coin_x ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
     // title
     title_screen = new Image(L"resource\\title\\title_screen.png");
     if (title_screen->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"title_screen ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"title_screen ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     title_cursor = new Image(L"resource\\title\\title_cursor.png");
     if (title_cursor->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"title_cursor ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"title_cursor ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     title_dead = new Image(L"resource\\title\\title_dead.png");
     if (title_dead->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"title_dead ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"title_dead ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 
     // flag
     flag_stick = new Image(L"resource\\tile\\flag_stick.png");
     if (flag_stick->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"flag_stick ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"flag_stick ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     flag_marble = new Image(L"resource\\tile\\flag_marble.png");
     if (flag_marble->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"flag_marble ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"flag_marble ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
     flag = new Image(L"resource\\tile\\flag.png");
     if (flag->GetLastStatus() != Ok) {
-        MessageBox(NULL, L"flag ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ!", L"Error", MB_OK);
+        MessageBox(NULL, L"flag ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨!", L"Error", MB_OK);
         exit(1);
     }
 }

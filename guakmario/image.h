@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <windows.h>
 #include <gdiplus.h>
 #pragma comment(lib, "Gdiplus.lib")
@@ -35,10 +35,10 @@ extern Image* fire_switch_tile;
 
 extern Image* firetrap;
 
-extern Image* pipe_1;	// ¿ìÇÏ
-extern Image* pipe_2;	// ÁÂÇÏ
-extern Image* pipe_3;	// ¿ì»ó
-extern Image* pipe_4;	// ÁÂ»ó
+extern Image* pipe_1;	// ìš°í•˜
+extern Image* pipe_2;	// ì¢Œí•˜
+extern Image* pipe_3;	// ìš°ìƒ
+extern Image* pipe_4;	// ì¢Œìƒ
 
 extern Image* item_block_1;
 extern Image* item_block_2;

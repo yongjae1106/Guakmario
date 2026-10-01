@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #define _CRT_SECURE_NO_WARNINGS
 #include <windows.h>
 #include <mmsystem.h>
@@ -39,7 +39,7 @@ extern Sound world_clear_Sound;
 
 extern bool InitDirectSound(HWND hwnd);
 extern LPDIRECTSOUND8 g_pDS;
-extern HWND g_hWnd; // ¸ŞÀÎ À©µµ¿ì ÇÚµé (WinMain¿¡¼­ ³Ñ°ÜÁà¾ß ÇÔ)
+extern HWND g_hWnd; // ë©”ì¸ ìœˆë„ìš° í•¸ë“¤ (WinMainì—ì„œ ë„˜ê²¨ì¤˜ì•¼ í•¨)
 extern IDirectSoundBuffer* g_pBGMBuffer;
 
 void PlaySoundBuffer(Sound& sound);

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "item.h"
 #define MAX_MONSTERS 100
 #define MAX_TURTLES 100
@@ -78,20 +78,20 @@ struct Bowser
     bool isJumping;
     bool isFalling;
     bool isFiring;
-    int fireTimer;// Ãß°¡: ºÒ °ø°İ ÁßÀÎÁö ¿©ºÎ
+    int fireTimer;// ì¶”ê°€: ë¶ˆ ê³µê²© ì¤‘ì¸ì§€ ì—¬ë¶€
     int frame;
 
-    int jumpTimer;  //·£´ıÇÏ°Ô Á¡ÇÁÇÏ±â
+    int jumpTimer;  //ëœë¤í•˜ê²Œ ì í”„í•˜ê¸°
     int jumpInterval;
 
-    int startX;            // ½ÃÀÛ À§Ä¡ x ÁÂÇ¥
-    int direction;         // ÀÌµ¿ ¹æÇâ (-1: ¿ŞÂÊ, 1: ¿À¸¥ÂÊ)
-    int moveDistance;      // ÀÌµ¿ÇÑ °Å¸® ´©Àû
+    int startX;            // ì‹œì‘ ìœ„ì¹˜ x ì¢Œí‘œ
+    int direction;         // ì´ë™ ë°©í–¥ (-1: ì™¼ìª½, 1: ì˜¤ë¥¸ìª½)
+    int moveDistance;      // ì´ë™í•œ ê±°ë¦¬ ëˆ„ì 
     int maxDistance;
 
     int fireInterval;
 
-    int fireDuration; // ºÒ ¾Ö´Ï¸ŞÀÌ¼Ç À¯Áö ½Ã°£¿ë
+    int fireDuration; // ë¶ˆ ì• ë‹ˆë©”ì´ì…˜ ìœ ì§€ ì‹œê°„ìš©
 };
 //fireball
 struct Fireball 
