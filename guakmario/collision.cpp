@@ -77,12 +77,8 @@ bool isSolidTile(int tile)
 }
 
 // 충돌 확인 함수
-bool IsColliding(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh) 
+bool IsColliding(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)
 {
-    if (mario.god)
-    {
-        return false;
-    }
     return (ax < bx + bw &&
         ax + aw > bx &&
         ay < by + bh &&

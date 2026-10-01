@@ -874,6 +874,8 @@ void CheckMarioFireballCollision()
 
 void damage_mario()
 {
+    if (mario.god || mario.star) return;
+
     if (mario.isBig)
     {
         // �׳� �۾����� ����
