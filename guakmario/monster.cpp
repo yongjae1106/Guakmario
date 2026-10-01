@@ -11,25 +11,25 @@ int monsterCount = 18;
 Turtle turtles[MAX_TURTLES];
 int turtleCount = 5;
 
-AngelTurtle angelTurtles[MAX_TURTLES]; //���� �޸� �ź���
+AngelTurtle angelTurtles[MAX_TURTLES]; // 날개 거북이 배열
 int angelTurtleCount = 10;
 
-Bowser bowser; //���� ĳ����
+Bowser bowser; // 보스 캐릭터
 
-Fireball fireballs[MAX_FIREBALLS];  //���� �Ҳ�
+Fireball fireballs[MAX_FIREBALLS];  // 보스 파이어볼
 
 void InitMonsters()
 {
-    monsterCount = 18;  // ���� ����
+    monsterCount = 18;  // 몬스터 수
 
-    int tileX[18] = { 15, 28, 35,42,48,54,65,73,76,91,94,98,99,100,101,102,103,104 }; //x��ǥ
-    int tileY[18] = { 12, 12, 12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12 };  //y��ǥ
+    int tileX[18] = { 15, 28, 35,42,48,54,65,73,76,91,94,98,99,100,101,102,103,104 }; //x좌표
+    int tileY[18] = { 12, 12, 12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12 };  //y좌표
 
     for (int i = 0; i < monsterCount; i++)
     {
         monsters[i].x = tileX[i] * TILE_SIZE;
         monsters[i].y = tileY[i] * TILE_SIZE;
-        monsters[i].vx = -1;  // ������ ���� ����
+        monsters[i].vx = -1;  // 왼쪽으로 이동
         monsters[i].vy = 0;
         monsters[i].width = 20;
         monsters[i].height = 10;
@@ -42,16 +42,16 @@ void InitMonsters()
 }
 void InitMonsters2()
 {
-    monsterCount = 10;  // ���� ����
+    monsterCount = 10;  // 몬스터 수
 
-    int tileX[10] = { 30,31,32,35,99,100,101,50,51,52 }; //x��ǥ
-    int tileY[10] = { 7,7,7,5,4,4,4,6,6,6 };  //y��ǥ
+    int tileX[10] = { 30,31,32,35,99,100,101,50,51,52 }; //x좌표
+    int tileY[10] = { 7,7,7,5,4,4,4,6,6,6 };  //y좌표
 
     for (int i = 0; i < monsterCount; i++)
     {
         monsters[i].x = tileX[i] * TILE_SIZE;
         monsters[i].y = tileY[i] * TILE_SIZE;
-        monsters[i].vx = -1;  // ������ ���� ����
+        monsters[i].vx = -1;  // 왼쪽으로 이동
         monsters[i].vy = 0;
         monsters[i].width = 20;
         monsters[i].height = 20;
@@ -64,16 +64,16 @@ void InitMonsters2()
 }
 void InitMonsters3()
 {
-    monsterCount = 11;  // ���� ����
+    monsterCount = 11;  // 몬스터 수
 
-    int tileX[18] = { 34,35,30,31,32,95,96,97,73,75,76 }; //x��ǥ
-    int tileY[18] = { 9,9,9,9,9,9,9,9,9,9,9 };  //y��ǥ
+    int tileX[18] = { 34,35,30,31,32,95,96,97,73,75,76 }; //x좌표
+    int tileY[18] = { 9,9,9,9,9,9,9,9,9,9,9 };  //y좌표
 
     for (int i = 0; i < monsterCount; i++)
     {
         monsters[i].x = tileX[i] * TILE_SIZE;
         monsters[i].y = tileY[i] * TILE_SIZE;
-        monsters[i].vx = -1;  // ������ ���� ����
+        monsters[i].vx = -1;  // 왼쪽으로 이동
         monsters[i].vy = 0;
         monsters[i].width = 20;
         monsters[i].height = 20;
@@ -171,8 +171,8 @@ void InitAngelTurtles()
         angelTurtles[i].width = 40;
         angelTurtles[i].height = 50;
         angelTurtles[i].vy = 1;
-        angelTurtles[i].topY = angelTurtles[i].y - 30;  //���� ����
-        angelTurtles[i].bottomY = angelTurtles[i].y + 30;  //���� ����
+        angelTurtles[i].topY = angelTurtles[i].y - 30;  // 위쪽 이동 한계
+        angelTurtles[i].bottomY = angelTurtles[i].y + 30;  // 아래쪽 이동 한계
         angelTurtles[i].goingUp = false;
         angelTurtles[i].isAlive = true;
         angelTurtles[i].isDead = false;
@@ -183,8 +183,8 @@ void InitAngelTurtles()
 void InitBowser() 
 {
     bowser.hp = 100;
-    bowser.x = 125 * TILE_SIZE;  // ������ ��ġ�� ���� ����
-    bowser.y = 9 * TILE_SIZE;   // �� ���� �����ǵ���
+    bowser.x = 125 * TILE_SIZE;  // 보서의 시작 위치 (오른쪽 끝)
+    bowser.y = 9 * TILE_SIZE;   // 맵 바닥에 위치하도록
     bowser.vx = 0;
     bowser.vy = 0;
     bowser.width = 120;
@@ -197,22 +197,22 @@ void InitBowser()
     bowser.startX = bowser.x;
     bowser.direction = 1;
     bowser.moveDistance = 0;
-    bowser.maxDistance = 10 * TILE_SIZE;  // 6ĭ
+    bowser.maxDistance = 10 * TILE_SIZE;  // 6칸
     bowser.jumpTimer = 0;
-    bowser.jumpInterval = 60 + rand() % 121;  // 60~180������
+    bowser.jumpInterval = 60 + rand() % 121;  // 60~180프레임마다
 
     bowser.jumpTimer = 0;
     bowser.jumpInterval = 60 + rand() % 121;
 
     bowser.fireTimer = 0;
-    bowser.fireInterval = 60 + rand() % 60; // 1~2�� ����
+    bowser.fireInterval = 60 + rand() % 60; // 1~2초 간격
 
     bowser.isFiring = false;
     bowser.fireDuration = 0;
 }
 
 //monster
-//�浹ó��
+// 충돌처리
 void UpdateMonsters()
 {
     for (int i = 0; i < monsterCount; i++)
@@ -228,14 +228,14 @@ void UpdateMonsters()
             continue;
         }
         
-        // ȭ�� �ȿ� ���� ���� ó��
+        // 화면 안에 있는 몬스터만 처리
         int screenX = monsters[i].x - cameraX;
         if (screenX + TILE_SIZE < 0 || screenX > SCREEN_WIDTH) continue;
 
 
 
 
-        // ȭ�� ���� ó��
+        // 화면 밖 처리 (낙하 체크)
         if (stage > 1)
         {
             int nextX = monsters[i].x + monsters[i].vx;
@@ -259,28 +259,28 @@ void UpdateMonsters()
         monsters[i].x += monsters[i].vx;
 
 
-        // Ÿ�� ��ǥ ���
+        // 타일 좌표 계산
         int left = monsters[i].x / TILE_SIZE;
         int right = (monsters[i].x + TILE_SIZE - 1) / TILE_SIZE;
         int top = monsters[i].y / TILE_SIZE;
         int bottom = (monsters[i].y + TILE_SIZE - 1) / TILE_SIZE;
         int middle = (monsters[i].y + monsters[i].height / 2 - 1) / TILE_SIZE;
 
-        // �� ���̰ų� ���� �ε����� ���� ����
+        // 벽 또는 낭떠러지 감지 시 방향 전환
         if (monsters[i].vx < 0 &&
             (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
         {
-            monsters[i].x = (left + 1) * TILE_SIZE; // ��� ����
-            monsters[i].vx = -monsters[i].vx;      // ���� ����
+            monsters[i].x = (left + 1) * TILE_SIZE; // 위치 조정
+            monsters[i].vx = -monsters[i].vx;      // 방향 반전
         }
         else if (monsters[i].vx > 0 &&
             (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right]) || isSolidTile(currentMap[middle][right])))
         {
-            monsters[i].x = right * TILE_SIZE - monsters[i].width; // ��� ����
-            monsters[i].vx = -monsters[i].vx;                       // ���� ����
+            monsters[i].x = right * TILE_SIZE - monsters[i].width; // 위치 조정
+            monsters[i].vx = -monsters[i].vx;                       // 방향 반전
         }
 
-        //��ĭ�̸� ��������
+        // 낭떠러지면 낙하처리
         int underX = (monsters[i].x + TILE_SIZE / 2) / TILE_SIZE;
         int underY = (monsters[i].y + TILE_SIZE) / TILE_SIZE;
 
@@ -297,7 +297,7 @@ void UpdateMonsters()
             monsters[i].isFalling = false;
         }
 
-        // ������ ���
+        // 마리오 밟기 판정
         int marioLeft = mario.x + cameraX;
         int marioRight = marioLeft + mario.width;
         int marioBottom = mario.y + mario.height;
@@ -315,7 +315,7 @@ void UpdateMonsters()
 
             PlaySoundBuffer(stomp_Sound);
             monsters[i].isAlive = false;
-            mario.vy = -10;  // ������ Ƣ���
+            mario.vy = -10;  // 마리오 튀어오르기
         }
     }
 }
@@ -334,9 +334,9 @@ void CheckMarioMonsterCollision()
         int monsterRight = monsterLeft + monsters[i].width;
         int monsterTop = monsters[i].y;
         int monsterBottom = monsterTop + monsters[i].height;
-        int monsterXWorld = monsters[i].x - cameraX; // ȭ�� ����� �� cameraX�� ������, ���� ���� ��ǥ�� ������� ��
+        int monsterXWorld = monsters[i].x - cameraX; // 화면 기준의 좌표 (cameraX 보정)
 
-        // ���� ���
+        // 밟기 판정
         if (marioBottom >= monsterTop && marioTop < monsterTop &&
             marioRight > monsterLeft && marioLeft < monsterRight &&
             mario.vy > 0)
@@ -345,13 +345,13 @@ void CheckMarioMonsterCollision()
             monsters[i].isAlive = false;
             mario.vy = -10;
         }
-        // �ε������
+        // 측면 충돌
         else if (IsColliding(mario.x, mario.y, mario.width, mario.height,
             monsters[i].x - cameraX, monsters[i].y + 20, monsters[i].width, monsters[i].height) &&
             !monsters[i].isDead &&
             monsters[i].active)
         {
-            // �� ������ ���� ƨ��Ը� ó��
+            // 스타 파워면 튕겨내기 처리
             if (mario.star)
             {
                 PlaySoundBuffer(kick_Sound);
@@ -376,7 +376,7 @@ void UpdateTurtles()
         if (turtles[i].isFalling && turtles[i].turtleState == SPINNING)
         {
             turtles[i].x += turtles[i].vx;
-            // �߷� ����
+            // 중력 적용
             int underX = (turtles[i].x + TILE_SIZE / 2) / TILE_SIZE;
             int underY = (turtles[i].y + TILE_SIZE) / TILE_SIZE;
 
@@ -408,7 +408,7 @@ void UpdateTurtles()
         }
         turtles[i].direction = turtles[i].vx > 0 ? 1 : 0;
 
-        // �������� �ȶ�����
+        // 낭떠러지 앞에서 방향전환
         if(stage > 1 && turtles[i].turtleState == NORMAL)
         {
             int nextX = turtles[i].x + turtles[i].vx;
@@ -429,10 +429,10 @@ void UpdateTurtles()
                 turtles[i].vx = -turtles[i].vx;
             }
         }
-        // �̵�
+        // 이동
         turtles[i].x += turtles[i].vx;
 
-        // �߷� ����
+        // 중력 적용
         int underX = (turtles[i].x + TILE_SIZE / 2) / TILE_SIZE;
         int underY = (turtles[i].y + TILE_SIZE) / TILE_SIZE;
 
@@ -452,7 +452,7 @@ void UpdateTurtles()
         }
 
 
-        // �� �浹
+        // 벽 충돌
         int left = turtles[i].x / TILE_SIZE;
         int right = (turtles[i].x + TILE_SIZE - 1) / TILE_SIZE;
         int top = turtles[i].y / TILE_SIZE;
@@ -472,24 +472,24 @@ void UpdateTurtles()
             turtles[i].vx = -turtles[i].vx;
         }
 
-        // �� ���� ���� �ð�
+        // 쉘 상태 유지 시간 초과
         if (turtles[i].turtleState == SHELL &&
             GetTickCount() - turtles[i].shellTimer > 5000)
         {
             turtles[i].turtleState = NORMAL;
             turtles[i].vx = -1;
         }
-        // spinning �����϶� ������ ��� ����� ������
+        // spinning 상태일 때 잠시 후 데미지 활성화
         if (turtles[i].turtleState == SPINNING && !turtles[i].damage &&
             GetTickCount() - turtles[i].damageTimer > 100)
         {
             turtles[i].damage = true;
         }
 
-        // ȸ�� ��� ���� ó��
+        // 회전 껍데기 충돌 처리
         if (turtles[i].turtleState == SPINNING)
         {
-            // (1) ���� ���� ó��
+            // (1) 몬스터 타격 처리
             for (int j = 0; j < monsterCount; j++)
             {
                 if (!monsters[j].isAlive || monsters[j].isFalling) continue;
@@ -504,7 +504,7 @@ void UpdateTurtles()
                 }
             }
 
-            // (2) �ȴ� �ź��� ���� ó��
+            // (2) 다른 거북이와 충돌 처리
             for (int j = 0; j < turtleCount; j++)
             {
                 if (i == j) continue;
@@ -521,7 +521,7 @@ void UpdateTurtles()
                 }
             }
 
-            // (3) ���� �ε����� ���� ����
+            // (3) 벽과 충돌 시 방향 전환
             if (turtles[i].vx < 0 &&
                 (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
             {
@@ -557,14 +557,14 @@ void CheckMarioTurtleCollision()
             marioRight > turtleLeft && marioLeft < turtleRight &&
             mario.vy > 0)
         {
-            if (turtles[i].turtleState == NORMAL) // ����� ��
+            if (turtles[i].turtleState == NORMAL) // 걷는 상태일 때
             {
                 PlaySoundBuffer(stomp_Sound);
                 turtles[i].turtleState = SHELL;
                 turtles[i].vx = 0;
                 turtles[i].shellTimer = GetTickCount();
             }
-            else if (turtles[i].turtleState == SHELL) // ����λ��¸� �������
+            else if (turtles[i].turtleState == SHELL) // 껍데기 상태를 걷어차기
             {
                 PlaySoundBuffer(kick_Sound);
                 int marioCenter = mario.x + mario.width / 2;
@@ -573,14 +573,14 @@ void CheckMarioTurtleCollision()
                 turtles[i].turtleState = SPINNING;
                 turtles[i].vx = (marioCenter < turtleCenter) ? 8 : -8;
             }
-            else if (turtles[i].turtleState == SPINNING) // spinning ������ ���¸� ����� ��
+            else if (turtles[i].turtleState == SPINNING) // spinning 중인 상태를 밟으면
             {
                 PlaySoundBuffer(stomp_Sound);
                 turtles[i].turtleState = SHELL;
                 turtles[i].vx = 0;
             }
 
-            mario.vy = -10;  // �ݵ� ����
+            mario.vy = -10;  // 반동 점프
         }
 
         else if (IsColliding(mario.x, mario.y, mario.width, mario.height,
@@ -588,13 +588,13 @@ void CheckMarioTurtleCollision()
             !turtles[i].isDead &&
             turtles[i].active)
         {
-            if (turtles[i].turtleState == SPINNING) // �¿��浹
+            if (turtles[i].turtleState == SPINNING) // 측면 충돌
             {
                 if(turtles[i].damage) damage_mario();
             }
             else if (turtles[i].turtleState == NORMAL) 
             {
-                // �� ������ ���� ƨ��Ը� ó��
+                // 스타 파워면 튕겨내기 처리
                 if (mario.star)
                 {
                     PlaySoundBuffer(kick_Sound);
@@ -632,7 +632,7 @@ void CheckMarioTurtleCollision()
     }
 }
 
-//�����޸� �ź���
+// 날개 거북이
 
 void UpdateAngelTurtles()
 {
@@ -654,12 +654,12 @@ void UpdateAngelTurtles()
         }
         else if (angelTurtles[i].state == HIDE)
         {
-            // �߷� ����
+            // 중력 적용
             angelTurtles[i].vy += 1;
             if (angelTurtles[i].vy > 10) angelTurtles[i].vy = 10;
             angelTurtles[i].y += angelTurtles[i].vy;
 
-            // ȭ�� �Ʒ��� �������� ����
+            // 화면 아래로 내려가면 비활성화
             if (angelTurtles[i].y > SCREEN_HEIGHT)
                 angelTurtles[i].isAlive = false;
         }
@@ -699,7 +699,7 @@ void CheckMarioAngelTurtleCollision()
                 angelTurtles[i].isAlive)
         {
             if (!mario.god && !mario.star) 
-            {  // ���� ���� �ƴ� ���� ����
+            {  // 무적 상태가 아닐 때 데미지
                 damage_mario();
             }
         }
@@ -711,19 +711,19 @@ void UpdateBowser()
 {
     if (!bowser.isAlive) return;
 
-    // === �̵� ===
+    // === 이동 ===
     int moveSpeed = 2;
     bowser.x += moveSpeed * bowser.direction;
     bowser.moveDistance += moveSpeed;
 
     if (bowser.moveDistance >= bowser.maxDistance)
     {
-        // ���� ��ȯ
+        // 방향 전환
         bowser.direction *= -1;
         bowser.moveDistance = 0;
     }
 
-    // === �ұ�Ģ ���� ===
+    // === 불규칙 점프 ===
     bowser.jumpTimer++;
     if (bowser.jumpTimer > bowser.jumpInterval)
     {
@@ -733,12 +733,12 @@ void UpdateBowser()
         bowser.jumpInterval = 60 + rand() % 121;
     }
 
-    // === �߷� ���� ===
+    // === 중력 적용 ===
     bowser.vy += 1;
     if (bowser.vy > 10) bowser.vy = 10;
     bowser.y += bowser.vy;
 
-    // === �ٴ� �浹 ===
+    // === 바닥 충돌 ===
     int tileX = (bowser.x + bowser.width / 2) / TILE_SIZE;
     int tileY = (bowser.y + bowser.height) / TILE_SIZE;
     if (currentMap[tileY][tileX] != 0 && !bowser.isFalling) 
@@ -755,7 +755,7 @@ void UpdateBowser()
         {
             if (!fireballs[i].active)
             {
-                // ������ ��ġ �������� ���� ����
+                // 마리오 위치 기반으로 방향 결정
                 int dir = (mario.x + mario.width / 2 < bowser.x + bowser.width / 2) ? -1 : 1;
 
                 fireballs[i].x = bowser.x + bowser.width / 2;
@@ -777,7 +777,7 @@ void UpdateBowser()
     }
 
 
-    // �һձ� ���� ���� �ð� ����
+    // 발사 중 불꽃 애니메이션 시간 감소
     if (bowser.isFiring)
     {
         bowser.fireDuration--;
@@ -789,7 +789,7 @@ void UpdateBowser()
         PlaySoundBuffer(bowserfalls_Sound);
         bowser.isFalling = true;
     }
-    // �������
+    // 화면 밖으로 나가면 비활성화
     if (bowser.y > SCREEN_HEIGHT)
     {
         PlaySoundBuffer(bowserdead_Sound);
@@ -819,13 +819,13 @@ void UpdateFireballs()
         }
         fireballs[i].x += fireballs[i].vx;
 
-        // ���� ���ؿ��� ī�޶� ������ ������ ��Ȱ��ȭ
+        // 화면 범위를 벗어나면 파이어볼 비활성화
         if (fireballs[i].x < cameraX || fireballs[i].x > cameraX + SCREEN_WIDTH)
             fireballs[i].active = false;
     }
 }
 
-//�������� ���� �浹ó��
+// 마리오 보서 충돌처리
 
 void CheckMarioBowserCollision()
 {
@@ -837,7 +837,7 @@ void CheckMarioBowserCollision()
         bowserX, bowser.y, bowser.width, bowser.height) &&
         !bowser.isDead) 
     {
-        // �� ������ ���� ƨ��Ը� ó��
+        // 스타 파워면 튕겨내기 처리
         if (mario.star)
         {
             PlaySoundBuffer(kick_Sound);
@@ -859,13 +859,13 @@ void CheckMarioFireballCollision()
     {
         if (!fireballs[i].active) continue;
 
-        // fireball�� ���� ��ǥ, mario�� ���� ��ǥ �������� ���
+        // 파이어볼 화면 좌표, 마리오 화면 좌표 기준으로 계산
         int fireballX = fireballs[i].x - cameraX;
         
         if (IsColliding(mario.x, mario.y, mario.width, mario.height,
             fireballX, fireballs[i].y, fireballs[i].width, fireballs[i].height))
         {
-            damage_mario();  // ������ ����
+            damage_mario();  // 데미지 적용
             return;
         }
     }
@@ -878,30 +878,30 @@ void damage_mario()
 
     if (mario.isBig)
     {
-        // �׳� �۾����� ����
+        // 작은 마리오로 변신
         PlaySoundBuffer(powerdown_Sound);
-        mario.y += TILE_SIZE + 1;       // ��ġ ���߱�
+        mario.y += TILE_SIZE + 1;       // 위치 낮추기
         gameState = GAME_TRANSFORMING;
         transformStartTime = GetTickCount();
-        // �ݵ� ���� �ϱ� ���� vy�� �״�� �����ϰų� 0����
+        // 반동 점프 방지를 위해 vy 유지 또는 0으로
     }
     else if (mario.flower)
     {
         PlaySoundBuffer(powerdown_Sound);
         gameState = GAME_FLOWER_TRANS;
         transformStartTime = GetTickCount();
-        // �ݵ� ���� �ϱ� ���� vy�� �״�� �����ϰų� 0����
+        // 반동 점프 방지를 위해 vy 유지 또는 0으로
     }
     else if (mario.tino)
     {
         PlaySoundBuffer(powerdown_Sound);
         gameState = GAME_TINO_TRANS;
         transformStartTime = GetTickCount();
-        // �ݵ� ���� �ϱ� ���� vy�� �״�� �����ϰų� 0����
+        // 반동 점프 방지를 위해 vy 유지 또는 0으로
     }
     else
     {
-        // ���� ��� ����
+        // 작은 마리오 사망
         dead();
     }
 }

@@ -9,14 +9,14 @@ int map2[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 int map3[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 int (*currentMap)[MAP_WIDTH] = map1;
 
-//3�������� �Ҳ� ����ġ �ҵ��� ����
+//3스테이지 파이어트랩 위치 데이터 정의
 FireTrapPos fireTrapPositions[] = 
 {
     {10, 6, 4},
-    {15, 5, 4}, //x�� y�� �ҵ��̰���
+    {15, 5, 4}, // x, y는 타일 좌표, 세 번째는 타일 수
     {20, 6, 4},
-    {28, 6, 4}, //������ ����
-    {24, 5, 4}, //�Ʒ����� ����
+    {28, 6, 4}, // 위에서 아래 방향
+    {24, 5, 4}, // 아래에서 위 방향
     {50, 3, 6},
     {52, 4, 6},
     {55, 3, 6},
@@ -31,9 +31,9 @@ FireTrapPos fireTrapPositions[] =
 };
 Hazard fireTraps[MAX_HAZARDS];
 int fireTrapCount = 3;
-int fireTrapPositionsCount = sizeof(fireTrapPositions) / sizeof(FireTrapPos);  // �� ����
+int fireTrapPositionsCount = sizeof(fireTrapPositions) / sizeof(FireTrapPos);  // 총 개수
 
-//�� ����ġ
+// 불 타이머 상태 변수
 int fireIntervals[MAP_WIDTH] = { 0 };
 int fireTimers[MAP_WIDTH] = { 0 };
 int fireIntervalsOn[MAP_WIDTH] = { 0 };
@@ -44,7 +44,7 @@ void InitFireTraps()
 {
 
     fireTrapCount = 0;
-    int n = fireTrapPositionsCount;  // �迭 ũ�� Ȱ��
+    int n = fireTrapPositionsCount;  // 배열 크기 활용
 
     for (int i = 0; i < n && fireTrapCount < MAX_HAZARDS; i++) {
         fireTraps[fireTrapCount++] = {
@@ -61,7 +61,7 @@ void InitFireTraps()
 
 void UpdateFireTraps() 
 {
-    if (stage != 3) return; // 3���������� �ƴ� �� �۵� �� �ϰ�
+    if (stage != 3) return; // 3스테이지가 아닐 때 동작 안 하게
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -115,8 +115,8 @@ void CheckMarioHazardCollision()
         RECT intersect;
         if (IntersectRect(&intersect, &rMario, &rTrap))
         {
-            // ����׿� ���
-            printf("�������� �ҵ��̿� �浹! [%d] at (%d, %d)\n", i, fireTraps[i].x, fireTraps[i].y);
+            // 파이어트랩 충돌 감지
+            printf("파이어트랩 충돌! [%d] at (%d, %d)\n", i, fireTraps[i].x, fireTraps[i].y);
 
             dead();
             return;
