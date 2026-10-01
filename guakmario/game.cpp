@@ -81,11 +81,8 @@ void UpdateGame()
     else if (gameState == GAME_VICTORY)
     {
         DWORD now = GetTickCount();
-        if (now - victoryStart >= 0)
-        {
-            mario.vx = 1;
-            mario.x += mario.vx;
-        }
+        mario.vx = 1;
+        mario.x += mario.vx;
         if (now - victoryStart >= 5000)
         {
             stage++;
