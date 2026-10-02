@@ -18,71 +18,43 @@ Bowser bowser; // 보스 캐릭터
 
 Fireball fireballs[MAX_FIREBALLS];  // 보스 파이어볼
 
+static void InitMonstersFromData(const int* tileX, const int* tileY, int count, int w, int h)
+{
+    monsterCount = count;
+    for (int i = 0; i < monsterCount; i++)
+    {
+        monsters[i].x = tileX[i] * TILE_SIZE;
+        monsters[i].y = tileY[i] * TILE_SIZE;
+        monsters[i].vx = -1;  // 왼쪽으로 이동
+        monsters[i].vy = 0;
+        monsters[i].width = w;
+        monsters[i].height = h;
+        monsters[i].isFalling = false;
+        monsters[i].isAlive = true;
+        monsters[i].isDead = false;
+        monsters[i].active = true;
+    }
+}
+
 void InitMonsters()
 {
-    monsterCount = 18;  // 몬스터 수
-
-    int tileX[18] = { 15, 28, 35,42,48,54,65,73,76,91,94,98,99,100,101,102,103,104 }; //x좌표
-    int tileY[18] = { 12, 12, 12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12 };  //y좌표
-
-    for (int i = 0; i < monsterCount; i++)
-    {
-        monsters[i].x = tileX[i] * TILE_SIZE;
-        monsters[i].y = tileY[i] * TILE_SIZE;
-        monsters[i].vx = -1;  // 왼쪽으로 이동
-        monsters[i].vy = 0;
-        monsters[i].width = 20;
-        monsters[i].height = 10;
-        monsters[i].isFalling = false;
-        monsters[i].isAlive = true;
-        monsters[i].isDead = false;
-        monsters[i].active = true;
-    }
-
+    static const int tileX[] = { 15, 28, 35,42,48,54,65,73,76,91,94,98,99,100,101,102,103,104 }; //x좌표
+    static const int tileY[] = { 12, 12, 12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12 };  //y좌표
+    InitMonstersFromData(tileX, tileY, 18, 20, 10);
 }
+
 void InitMonsters2()
 {
-    monsterCount = 10;  // 몬스터 수
-
-    int tileX[10] = { 30,31,32,35,99,100,101,50,51,52 }; //x좌표
-    int tileY[10] = { 7,7,7,5,4,4,4,6,6,6 };  //y좌표
-
-    for (int i = 0; i < monsterCount; i++)
-    {
-        monsters[i].x = tileX[i] * TILE_SIZE;
-        monsters[i].y = tileY[i] * TILE_SIZE;
-        monsters[i].vx = -1;  // 왼쪽으로 이동
-        monsters[i].vy = 0;
-        monsters[i].width = 20;
-        monsters[i].height = 20;
-        monsters[i].isFalling = false;
-        monsters[i].isAlive = true;
-        monsters[i].isDead = false;
-        monsters[i].active = true;
-    }
-
+    static const int tileX[] = { 30,31,32,35,99,100,101,50,51,52 }; //x좌표
+    static const int tileY[] = { 7,7,7,5,4,4,4,6,6,6 };  //y좌표
+    InitMonstersFromData(tileX, tileY, 10, 20, 20);
 }
+
 void InitMonsters3()
 {
-    monsterCount = 11;  // 몬스터 수
-
-    int tileX[18] = { 34,35,30,31,32,95,96,97,73,75,76 }; //x좌표
-    int tileY[18] = { 9,9,9,9,9,9,9,9,9,9,9 };  //y좌표
-
-    for (int i = 0; i < monsterCount; i++)
-    {
-        monsters[i].x = tileX[i] * TILE_SIZE;
-        monsters[i].y = tileY[i] * TILE_SIZE;
-        monsters[i].vx = -1;  // 왼쪽으로 이동
-        monsters[i].vy = 0;
-        monsters[i].width = 20;
-        monsters[i].height = 20;
-        monsters[i].isFalling = false;
-        monsters[i].isAlive = true;
-        monsters[i].isDead = false;
-        monsters[i].active = true;
-    }
-
+    static const int tileX[] = { 34,35,30,31,32,95,96,97,73,75,76 }; //x좌표
+    static const int tileY[] = { 9,9,9,9,9,9,9,9,9,9,9 };  //y좌표
+    InitMonstersFromData(tileX, tileY, 11, 20, 20);
 }
 
 void InitTurtles()
