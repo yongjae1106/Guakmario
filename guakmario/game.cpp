@@ -12,70 +12,40 @@
 
 using namespace Gdiplus;
 
+static void handle_transform(bool& flag, void (*primary_fn)(), void (*fallback_fn)())
+{
+    mario.god = true;
+    DWORD now = GetTickCount();
+    if (now - transformStartTime >= 700)
+    {
+        if (!flag)
+            primary_fn();
+        else if (mario.god)
+        {
+            fallback_fn();
+            godstart = GetTickCount();
+        }
+        gameState = GAME_RUNNING;  // 다시 정상 진행
+    }
+}
+
 void UpdateGame()
 {
-    // mushroom 변신 모션
-    if (gameState == GAME_TRANSFORMING) 
+    // 변신 모션 (mushroom / flower / tino)
+    if (gameState == GAME_TRANSFORMING)
     {
-        mario.god = true;
-        DWORD now = GetTickCount();
-        if (now - transformStartTime >= 700) 
-        {
-            if (!mario.isBig)
-            {
-                transform_bigmario();
-            }
-            else if (mario.god)
-            {
-                transform_smallmario();
-                godstart = GetTickCount();
-            }
-            gameState = GAME_RUNNING;  // 다시 정상 진행
-        }
-
+        handle_transform(mario.isBig,   transform_bigmario,  transform_smallmario);
         return; // 게임 상태 업데이트 생략해서 "멈춘 듯한" 연출
     }
-    // flower 변신 모션
     else if (gameState == GAME_FLOWER_TRANS)
     {
-        mario.god = true;
-        DWORD now = GetTickCount();
-        if (now - transformStartTime >= 700)
-        {
-            if (!mario.flower)
-            {
-                transform_to_flower();
-            }
-            else if (mario.god)
-            {
-                transform_bigmario();
-                godstart = GetTickCount();
-            }
-            gameState = GAME_RUNNING;  // 다시 정상 진행
-        }
-
-        return; // 게임 상태 업데이트 생략해서 "멈춘 듯한" 연출
+        handle_transform(mario.flower,  transform_to_flower, transform_bigmario);
+        return;
     }
-    // tino 변신 모션
     else if (gameState == GAME_TINO_TRANS)
     {
-        mario.god = true;
-        DWORD now = GetTickCount();
-        if (now - transformStartTime >= 700)
-        {
-            if (!mario.tino)
-            {
-                transform_to_tino();
-            }
-            else if (mario.god)
-            {
-                transform_bigmario();
-                godstart = GetTickCount();
-            }
-            gameState = GAME_RUNNING;  // 다시 정상 진행
-        }
-
-        return; // 게임 상태 업데이트 생략해서 "멈춘 듯한" 연출
+        handle_transform(mario.tino,    transform_to_tino,   transform_bigmario);
+        return;
     }
     // 승리 모션
     else if (gameState == GAME_VICTORY)
