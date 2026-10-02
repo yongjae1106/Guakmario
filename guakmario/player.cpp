@@ -169,41 +169,20 @@ void movePlayer()
 
 // 물리엔진
 
+static void tick_motion(bool& flag, int& timer)
+{
+    if (flag)
+    {
+        if (timer > 0) timer--;
+        else flag = false;
+    }
+}
+
 void UpdateMario_motion()
 {
-    if (mario.fire_motion)
-    {
-        if (mario.motion_timer > 0)
-        {
-            mario.motion_timer--;
-        }
-        else
-        {
-            mario.fire_motion = false;
-        }
-    }
-    if (mario.tino_motion)
-    {
-        if (mario.motion_timer > 0)
-        {
-            mario.motion_timer--;
-        }
-        else
-        {
-            mario.tino_motion = false;
-        }
-    }
-    if (mario.tino_fire_motion)
-    {
-        if (mario.motion_timer > 0)
-        {
-            mario.motion_timer--;
-        }
-        else
-        {
-            mario.tino_fire_motion = false;
-        }
-    }
+    tick_motion(mario.fire_motion,      mario.motion_timer);
+    tick_motion(mario.tino_motion,      mario.motion_timer);
+    tick_motion(mario.tino_fire_motion, mario.motion_timer);
 }
 
 void UpdatePlayer()
