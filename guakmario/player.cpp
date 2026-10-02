@@ -449,8 +449,6 @@ void resurrection()
     gameState = GAME_RUNNING;
     mario.god = false;
     mario.star = false;
-    mario.x = 100;
-    mario.y = 300;
     mario = { 100, 300, 0, 0, mario.life, mario.coin, 40, 40, 1, 0, 0, 0, 0, false, false, false, false, false, false, false, false, false, false, false, false, false, false };    // x, y, vx, xy, life, coin, width, height, direction, walk_motion, motion_timer, cooldown_z, cooldown_space, isJumping, isflying, isWalking, isDead, gameover, isBig, god, star, flower, flower_motion tino, tino_motion, tino_fire_motion
     // x, y, vx, xy, life, coin, width, height, direction, walk_motion, motion_timer, cooldown_z, cooldown_space, isJumping, isflying, isWalking, isDead, gameover, 
     // isBig, god, star, flower, flower_motion, tino, tino_motion, tino_fire_motion, supergod
