@@ -106,8 +106,6 @@ extern Fireball fireballs[MAX_FIREBALLS];
 extern Bowser bowser;
 extern Fireball bowserFire;
 
-extern Bowser bowser;
-
 void InitMonsters();
 void InitMonsters2();
 void InitMonsters3();
