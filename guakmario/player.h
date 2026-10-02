@@ -37,3 +37,4 @@ void UpdateMario_motion();
 void UpdateDeadMotion();
 void dead();
 void resurrection();
+void ResetMario(int life, int coin);

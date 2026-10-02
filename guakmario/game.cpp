@@ -109,7 +109,7 @@ void UpdateGame()
             stage = 1;
             gameclear_text = false;
             gamestart = false;
-            mario = { 100, 300, 0, 0, 5, 0, 40, 40, 1, 0, 0, 0, 0, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
+            ResetMario(5, 0);
             gameState = GAME_RUNNING;
         }
     }
@@ -133,7 +133,7 @@ void UpdateGame()
                     stage = 1;
                     gameclear_text = false;
                     gamestart = false;
-                    mario = { 100, 300, 0, 0, 5, 0, 40, 40, 1, 0, 0, 0, 0, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
+                    ResetMario(5, 0);
                     gameState = GAME_RUNNING;
                     return;
                 }
