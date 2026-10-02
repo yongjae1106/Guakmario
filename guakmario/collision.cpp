@@ -2,6 +2,8 @@
 #include "item.h"
 #include "sound.h"
 
+constexpr int STAGE3_CLEAR_COLUMN = 139;
+
 void checkcollision_flag()
 {
     int left = (mario.x + cameraX) / TILE_SIZE;
@@ -35,7 +37,7 @@ void checkcollision_clear()
         {
             int screenX = j * TILE_SIZE - cameraX;
             int screenY = i * TILE_SIZE;
-            if (j == 139 && IsColliding_item(mario.x, mario.y, mario.width, mario.height, screenX, screenY, 40, 40))
+            if (j == STAGE3_CLEAR_COLUMN && IsColliding_item(mario.x, mario.y, mario.width, mario.height, screenX, screenY, 40, 40))
             {
                 g_pBGMBuffer->Stop();
                 PlaySoundBuffer(world_clear_Sound);
