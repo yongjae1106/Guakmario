@@ -9,6 +9,21 @@
 
 using namespace Gdiplus;
 
+static void DrawSprite(Graphics& g, Image* img, int x, int y, int w, int h, bool flipX)
+{
+    if (flipX)
+    {
+        Matrix m(-1.0f, 0.0f, 0.0f, 1.0f, (REAL)(x + w), 0.0f);
+        g.SetTransform(&m);
+        g.DrawImage(img, 0, y, w, h);
+        g.ResetTransform();
+    }
+    else
+    {
+        g.DrawImage(img, x, y, w, h);
+    }
+}
+
 void Draw()
 {
     RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -29,16 +44,18 @@ void Draw()
     Draw_fireball();
     DrawFireTraps();
 
+    const bool flipX = (mario.direction == 0);
+
     // mario
     if (gameState == GAME_TRANSFORMING && !mario.isBig && !mario.flower && !mario.tino)
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(big_mario_change, mario.x, mario.y, mario.width, TILE_SIZE * 2);
+            DrawSprite(graphics, big_mario_change, mario.x, mario.y, mario.width, TILE_SIZE * 2, flipX);
         }
         else
         {
-            graphics.DrawImage(mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height);
+            DrawSprite(graphics, mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
         }
     }
     // flower
@@ -46,55 +63,55 @@ void Draw()
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(big_mario_change, mario.x, mario.y - TILE_SIZE, mario.width, mario.height);
+            DrawSprite(graphics, big_mario_change, mario.x, mario.y - TILE_SIZE, mario.width, mario.height, flipX);
         }
         else
         {
-            graphics.DrawImage(mario_stop, mario.x, mario.y, mario.width, TILE_SIZE);
+            DrawSprite(graphics, mario_stop, mario.x, mario.y, mario.width, TILE_SIZE, flipX);
         }
     }
     else if (gameState == GAME_FLOWER_TRANS && !mario.isBig && !mario.flower && !mario.tino)    // small mario >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(flower_mario_change, mario.x, mario.y, mario.width, TILE_SIZE * 2);
+            DrawSprite(graphics, flower_mario_change, mario.x, mario.y, mario.width, TILE_SIZE * 2, flipX);
         }
         else
         {
-            graphics.DrawImage(mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height);
+            DrawSprite(graphics, mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
         }
     }
     else if (gameState == GAME_FLOWER_TRANS && mario.isBig && !mario.flower && !mario.tino)     // big mario >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(flower_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else
         {
-            graphics.DrawImage(big_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
     else if (gameState == GAME_FLOWER_TRANS && !mario.isBig && !mario.flower && mario.tino)     // tino >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(tino_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, tino_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else
         {
-            graphics.DrawImage(flower_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
     else if (gameState == GAME_FLOWER_TRANS && mario.flower)     // flower >> big mario
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(flower_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else
         {
-            graphics.DrawImage(big_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
     // tino
@@ -102,44 +119,44 @@ void Draw()
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(tino_mario_stop, mario.x, mario.y, mario.width, TILE_SIZE * 2);
+            DrawSprite(graphics, tino_mario_stop, mario.x, mario.y, mario.width, TILE_SIZE * 2, flipX);
         }
         else
         {
-            graphics.DrawImage(mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height);
+            DrawSprite(graphics, mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
         }
     }
     else if (gameState == GAME_TINO_TRANS && mario.isBig && !mario.flower && !mario.tino)     // big mario >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(tino_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, tino_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else
         {
-            graphics.DrawImage(big_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
     else if (gameState == GAME_TINO_TRANS && !mario.isBig && mario.flower && !mario.tino)     // flower >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(tino_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, tino_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else
         {
-            graphics.DrawImage(flower_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
     else if (gameState == GAME_TINO_TRANS && mario.tino)     // tino >> big mario
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
-            graphics.DrawImage(tino_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, tino_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else
         {
-            graphics.DrawImage(big_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
     // gameover
@@ -162,7 +179,7 @@ void Draw()
 
     if (mario.isDead)
     {
-        graphics.DrawImage(mario_dead, mario.x, mario.y, mario.width, TILE_SIZE);
+        DrawSprite(graphics, mario_dead, mario.x, mario.y, mario.width, TILE_SIZE, flipX);
     }
 
     Draw_castle_blank();
@@ -418,251 +435,250 @@ void Draw_mario()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    const bool flipX = (mario.direction == 0);
 
     if (!mario.isBig && !mario.flower && !mario.tino && !mario.star) // small mario
     {
         if (mario.isJumping)
         {
-            graphics.DrawImage(mario_jump, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, mario_jump, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else if (mario.isWalking)
         {
             if (mario.walk_motion == 0)
             {
-                graphics.DrawImage(mario_walk_motion_1, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, mario_walk_motion_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.walk_motion == 1)
             {
-                graphics.DrawImage(mario_walk_motion_2, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, mario_walk_motion_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.walk_motion == 2)
             {
-                graphics.DrawImage(mario_walk_motion_3, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, mario_walk_motion_3, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
         else
         {
-            graphics.DrawImage(mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
     else if (mario.isBig && !mario.flower && !mario.tino && !mario.star) // big mario
     {
         if (mario.isJumping)
         {
-            graphics.DrawImage(big_mario_jump, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, big_mario_jump, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else if (mario.isWalking)
         {
             if (mario.walk_motion == 0)
             {
-                graphics.DrawImage(big_mario_walk_motion_1, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, big_mario_walk_motion_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.walk_motion == 1)
             {
-                graphics.DrawImage(big_mario_walk_motion_2, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, big_mario_walk_motion_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.walk_motion == 2)
             {
-                graphics.DrawImage(big_mario_walk_motion_3, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, big_mario_walk_motion_3, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
         else
         {
-            graphics.DrawImage(big_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-
     else if (!mario.isBig && !mario.flower && !mario.tino && mario.star) // star small mario
     {
         if (frame_motion_star == 0)
         {
             if (mario.isJumping)
             {
-                graphics.DrawImage(star_mario_jump_1, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_mario_jump_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.isWalking)
             {
                 if (mario.walk_motion == 0)
                 {
-                    graphics.DrawImage(star_mario_walk_motion_1_1, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_mario_walk_motion_1_1, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 1)
                 {
-                    graphics.DrawImage(star_mario_walk_motion_2_1, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_mario_walk_motion_2_1, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 2)
                 {
-                    graphics.DrawImage(star_mario_walk_motion_3_1, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_mario_walk_motion_3_1, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
             }
             else
             {
-                graphics.DrawImage(star_mario_stop_1, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_mario_stop_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
         else if (frame_motion_star == 1)
         {
             if (mario.isJumping)
             {
-                graphics.DrawImage(star_mario_jump_2, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_mario_jump_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.isWalking)
             {
                 if (mario.walk_motion == 0)
                 {
-                    graphics.DrawImage(star_mario_walk_motion_1_2, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_mario_walk_motion_1_2, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 1)
                 {
-                    graphics.DrawImage(star_mario_walk_motion_2_2, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_mario_walk_motion_2_2, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 2)
                 {
-                    graphics.DrawImage(star_mario_walk_motion_3_2, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_mario_walk_motion_3_2, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
             }
             else
             {
-                graphics.DrawImage(star_mario_stop_2, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_mario_stop_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
         else if (frame_motion_star == 2)
         {
             if (mario.isJumping)
             {
-                graphics.DrawImage(star_mario_jump_3, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_mario_jump_3, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.isWalking)
             {
                 if (mario.walk_motion == 0)
                 {
-                    graphics.DrawImage(star_mario_walk_motion_1_3, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_mario_walk_motion_1_3, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 1)
                 {
-                    graphics.DrawImage(star_mario_walk_motion_2_3, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_mario_walk_motion_2_3, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 2)
                 {
-                    graphics.DrawImage(star_mario_walk_motion_3_3, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_mario_walk_motion_3_3, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
             }
             else
             {
-                graphics.DrawImage(star_mario_stop_3, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_mario_stop_3, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
     }
     else if ((mario.isBig || mario.flower || mario.tino) && mario.star) // star big mario
     {
-        if(frame_motion_star == 0)
+        if (frame_motion_star == 0)
         {
             if (mario.isJumping)
             {
-                graphics.DrawImage(star_big_mario_jump_1, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_big_mario_jump_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.isWalking)
             {
                 if (mario.walk_motion == 0)
                 {
-                    graphics.DrawImage(star_big_mario_walk_motion_1_1, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_big_mario_walk_motion_1_1, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 1)
                 {
-                    graphics.DrawImage(star_big_mario_walk_motion_2_1, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_big_mario_walk_motion_2_1, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 2)
                 {
-                    graphics.DrawImage(star_big_mario_walk_motion_3_1, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_big_mario_walk_motion_3_1, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
             }
             else
             {
-                graphics.DrawImage(star_big_mario_stop_1, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_big_mario_stop_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
         else if (frame_motion_star == 1)
         {
             if (mario.isJumping)
             {
-                graphics.DrawImage(star_big_mario_jump_2, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_big_mario_jump_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.isWalking)
             {
                 if (mario.walk_motion == 0)
                 {
-                    graphics.DrawImage(star_big_mario_walk_motion_1_2, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_big_mario_walk_motion_1_2, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 1)
                 {
-                    graphics.DrawImage(star_big_mario_walk_motion_2_2, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_big_mario_walk_motion_2_2, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 2)
                 {
-                    graphics.DrawImage(star_big_mario_walk_motion_3_2, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_big_mario_walk_motion_3_2, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
             }
             else
             {
-                graphics.DrawImage(star_big_mario_stop_2, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_big_mario_stop_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
         else if (frame_motion_star == 2)
         {
             if (mario.isJumping)
             {
-                graphics.DrawImage(star_big_mario_jump_3, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_big_mario_jump_3, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.isWalking)
             {
                 if (mario.walk_motion == 0)
                 {
-                    graphics.DrawImage(star_big_mario_walk_motion_1_3, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_big_mario_walk_motion_1_3, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 1)
                 {
-                    graphics.DrawImage(star_big_mario_walk_motion_2_3, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_big_mario_walk_motion_2_3, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
                 else if (mario.walk_motion == 2)
                 {
-                    graphics.DrawImage(star_big_mario_walk_motion_3_3, mario.x, mario.y, mario.width, mario.height);
+                    DrawSprite(graphics, star_big_mario_walk_motion_3_3, mario.x, mario.y, mario.width, mario.height, flipX);
                 }
             }
             else
             {
-                graphics.DrawImage(star_big_mario_stop_3, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, star_big_mario_stop_3, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
     }
-
     else if (mario.flower) // flower mario
     {
         if (mario.fire_motion)
         {
-            graphics.DrawImage(flower_mario_fire, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, flower_mario_fire, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else if (mario.isJumping)
         {
-            graphics.DrawImage(flower_mario_jump, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, flower_mario_jump, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else if (mario.isWalking)
         {
             if (mario.walk_motion == 0)
             {
-                graphics.DrawImage(flower_mario_walk_motion_1, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, flower_mario_walk_motion_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.walk_motion == 1)
             {
-                graphics.DrawImage(flower_mario_walk_motion_2, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, flower_mario_walk_motion_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.walk_motion == 2)
             {
-                graphics.DrawImage(flower_mario_walk_motion_3, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, flower_mario_walk_motion_3, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
         else
         {
-            graphics.DrawImage(flower_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
     else if (mario.tino) // tino mario
@@ -671,59 +687,58 @@ void Draw_mario()
         {
             if (mario.motion_timer >= 0 && mario.motion_timer <= 5)
             {
-                graphics.DrawImage(tino_mario_attack_6, mario.x - 25, mario.y - 15, 100, 100);
+                DrawSprite(graphics, tino_mario_attack_6, mario.x - 25, mario.y - 15, 100, 100, flipX);
             }
             else if (mario.motion_timer > 5 && mario.motion_timer <= 10)
             {
-                graphics.DrawImage(tino_mario_attack_5, mario.x - 25, mario.y - 15, 100, 100);
+                DrawSprite(graphics, tino_mario_attack_5, mario.x - 25, mario.y - 15, 100, 100, flipX);
             }
             else if (mario.motion_timer > 10 && mario.motion_timer <= 15)
             {
-                graphics.DrawImage(tino_mario_attack_4, mario.x - 25, mario.y - 15, 100, 100);
+                DrawSprite(graphics, tino_mario_attack_4, mario.x - 25, mario.y - 15, 100, 100, flipX);
             }
             else if (mario.motion_timer > 15 && mario.motion_timer <= 20)
             {
-                graphics.DrawImage(tino_mario_attack_3, mario.x - 25, mario.y - 15, 100, 100);
+                DrawSprite(graphics, tino_mario_attack_3, mario.x - 25, mario.y - 15, 100, 100, flipX);
             }
             else if (mario.motion_timer > 20 && mario.motion_timer <= 25)
             {
-                graphics.DrawImage(tino_mario_attack_2, mario.x - 25, mario.y - 15, 100, 100);
+                DrawSprite(graphics, tino_mario_attack_2, mario.x - 25, mario.y - 15, 100, 100, flipX);
             }
             else if (mario.motion_timer > 25 && mario.motion_timer <= 30)
             {
-                graphics.DrawImage(tino_mario_attack_1, mario.x - 25, mario.y - 15, 100, 100);
+                DrawSprite(graphics, tino_mario_attack_1, mario.x - 25, mario.y - 15, 100, 100, flipX);
             }
             tino_attack();
         }
         else if (mario.tino_fire_motion)
         {
-            graphics.DrawImage(tino_mario_attack_2, mario.x - 25, mario.y - 15, 100, 100);
+            DrawSprite(graphics, tino_mario_attack_2, mario.x - 25, mario.y - 15, 100, 100, flipX);
         }
         else if (mario.isJumping)
         {
-            graphics.DrawImage(tino_mario_jump, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, tino_mario_jump, mario.x, mario.y, mario.width, mario.height, flipX);
         }
         else if (mario.isWalking)
         {
             if (mario.walk_motion == 0)
             {
-                graphics.DrawImage(tino_mario_walk_motion_1, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, tino_mario_walk_motion_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.walk_motion == 1)
             {
-                graphics.DrawImage(tino_mario_walk_motion_2, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, tino_mario_walk_motion_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
             else if (mario.walk_motion == 2)
             {
-                graphics.DrawImage(tino_mario_walk_motion_3, mario.x, mario.y, mario.width, mario.height);
+                DrawSprite(graphics, tino_mario_walk_motion_3, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
         else
         {
-            graphics.DrawImage(tino_mario_stop, mario.x, mario.y, mario.width, mario.height);
+            DrawSprite(graphics, tino_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-
 }
 void Draw_spawn_item()
 {
