@@ -141,7 +141,7 @@ void InitAngelTurtles()
         angelTurtles[i].x = tileX[i] * TILE_SIZE;
         angelTurtles[i].y = tileY[i] * TILE_SIZE;
         angelTurtles[i].width = 40;
-        angelTurtles[i].height = 50;
+        angelTurtles[i].height = 60;
         angelTurtles[i].vy = 1;
         angelTurtles[i].topY = angelTurtles[i].y - 30;  // 위쪽 이동 한계
         angelTurtles[i].bottomY = angelTurtles[i].y + 30;  // 아래쪽 이동 한계
@@ -650,7 +650,7 @@ void CheckMarioAngelTurtleCollision()
 
         int turtleLeft = angelTurtles[i].x - cameraX;
         int turtleRight = turtleLeft + angelTurtles[i].width;
-        int turtleTop = angelTurtles[i].y;
+        int turtleTop = angelTurtles[i].y - TILE_SIZE;
         int turtleBottom = turtleTop + angelTurtles[i].height;
 
         if (mario.vy > 0 &&
