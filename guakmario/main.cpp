@@ -80,16 +80,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
                 FillRect(g_memDC, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));  // 배경 클리어
 
-                graphics.DrawImage(title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);    // 타이틀
+                graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);    // 타이틀
 
                 // 커서
                 if (g_game.title_select == 0)
                 {
-                    graphics.DrawImage(title_cursor, 220, 380, 25, 25);
+                    graphics.DrawImage(g_images.title_cursor, 220, 380, 25, 25);
                 }
                 else if (g_game.title_select == 1)
                 {
-                    graphics.DrawImage(title_cursor, 220, 420, 25, 25);
+                    graphics.DrawImage(g_images.title_cursor, 220, 420, 25, 25);
                 }
                 
                 Draw_information();
