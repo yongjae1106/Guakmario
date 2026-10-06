@@ -274,23 +274,9 @@ void dead()
 }
 void resurrection()
 {
-    if (g_player.mario.direction == 0)
-    {
-        g_images.mario_stop->RotateFlip(RotateNoneFlipX); // 좌우반전
-        g_images.mario_walk_motion_1->RotateFlip(RotateNoneFlipX); // 좌우반전
-        g_images.mario_walk_motion_2->RotateFlip(RotateNoneFlipX); // 좌우반전
-        g_images.mario_walk_motion_3->RotateFlip(RotateNoneFlipX); // 좌우반전
-        g_images.mario_jump->RotateFlip(RotateNoneFlipX); // 좌우반전
-
-        g_images.big_mario_stop->RotateFlip(RotateNoneFlipX); // 좌우반전
-        g_images.big_mario_walk_motion_1->RotateFlip(RotateNoneFlipX); // 좌우반전
-        g_images.big_mario_walk_motion_2->RotateFlip(RotateNoneFlipX); // 좌우반전
-        g_images.big_mario_walk_motion_3->RotateFlip(RotateNoneFlipX); // 좌우반전
-        g_images.big_mario_jump->RotateFlip(RotateNoneFlipX); // 좌우반전
-    }
-    item_reset();
-    monster_reset();
-    stage_load();
+    ResetItems();
+    ResetMonsters();
+    LoadStage();
     g_game.cameraX = 0;
     g_game.gameState = GAME_RUNNING;
     ResetMario(g_player.mario.life, g_player.mario.coin);

@@ -709,7 +709,7 @@ void Draw_mario()
             {
                 DrawSprite(graphics, g_images.tino_mario_attack_1, g_player.mario.x - 25, g_player.mario.y - 15, 100, 100, flipX);
             }
-            tino_attack();
+            TinoAttack();
         }
         else if (g_player.mario.tino_fire_motion)
         {

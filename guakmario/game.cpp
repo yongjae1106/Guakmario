@@ -34,17 +34,17 @@ void UpdateGame()
     // 변신 모션 (mushroom / flower / tino)
     if (g_game.gameState == GAME_TRANSFORMING)
     {
-        handle_transform(g_player.mario.isBig,   transform_bigmario,  transform_smallmario);
+        handle_transform(g_player.mario.isBig,   TransformToBig,  TransformToSmall);
         return; // 게임 상태 업데이트 생략해서 "멈춘 듯한" 연출
     }
     else if (g_game.gameState == GAME_FLOWER_TRANS)
     {
-        handle_transform(g_player.mario.flower,  transform_to_flower, transform_bigmario);
+        handle_transform(g_player.mario.flower,  TransformToFlower, TransformToBig);
         return;
     }
     else if (g_game.gameState == GAME_TINO_TRANS)
     {
-        handle_transform(g_player.mario.tino,    transform_to_tino,   transform_bigmario);
+        handle_transform(g_player.mario.tino,    TransformToTino,   TransformToBig);
         return;
     }
     // 승리 모션
@@ -56,7 +56,7 @@ void UpdateGame()
         if (now - g_game.victoryStart >= 5000)
         {
             g_game.stage++;
-            stage_load();
+            LoadStage();
             g_game.gameState = GAME_RUNNING;
         }
     }
@@ -124,12 +124,12 @@ void UpdateGame()
     // 무적처리
     if (g_player.mario.god)
     {
-        god_mario(g_game.godstart);
+        UpdateGodMode(g_game.godstart);
     }
     // 스타 무적처리
     else if (g_player.mario.star)
     {
-        star_mario(g_game.starStartTime);
+        UpdateStarMode(g_game.starStartTime);
     }
 
     if (g_player.mario.coin > 99)
@@ -162,7 +162,7 @@ void UpdateGame()
     CheckCollision_flower();
     CheckCollision_tino();
 
-    checkcollision_coin();
+    CheckCoinCollision();
     CheckMarioMonsterCollision();
     CheckMarioTurtleCollision();
     CheckMarioAngelTurtleCollision();
@@ -173,11 +173,11 @@ void UpdateGame()
     CheckMarioFireballCollision();
     CheckCollision_fireball();
     CheckCollision_tinofire();
-    checkcollision_flag();
-    if(g_game.stage == 3) checkcollision_clear();
+    CheckFlagCollision();
+    if(g_game.stage == 3) CheckClearCollision();
 }
 
-void timegoes()
+void TickTimer()
 {
     g_game.stage_time--;
     if (g_game.stage_time == 0)
@@ -186,7 +186,7 @@ void timegoes()
     }
 }
 
-void monster_reset()
+void ResetMonsters()
 {
     for (int i = 0; i < MAX_MONSTERS; i++)
     {
@@ -198,7 +198,7 @@ void monster_reset()
         g_monsters.angelTurtles[i].isAlive = false;
     }
 }
-void item_reset()
+void ResetItems()
 {
     for (int i = 0; i < MAX_ITEMS; i++) // 아이템 초기화
     {
@@ -226,11 +226,11 @@ void item_reset()
         tinofire[i].fade = false;
     }
 }
-void stage_load()
+void LoadStage()
 {
     SetStage_BGM();
-    item_reset();
-    trap_reset();
+    ResetItems();
+    ResetTraps();
     g_player.mario.god = false;
     g_player.mario.star = false;
 
@@ -250,7 +250,7 @@ void stage_load()
     }
     else if (g_game.stage == 2)
     {
-        monster_reset();
+        ResetMonsters();
         g_game.cameraX = 0;
         InitMap2();  //맵 초기화
         currentMap = map2;
@@ -265,7 +265,7 @@ void stage_load()
     }
     else if (g_game.stage == 3)
     {
-        monster_reset();
+        ResetMonsters();
         g_game.cameraX = 0;
         InitMap3();           // 맵 초기화
         currentMap = map3;

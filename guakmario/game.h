@@ -32,7 +32,7 @@ struct GameContext {
 extern GameContext g_game;
 
 void UpdateGame();
-void timegoes();
-void stage_load();
-void monster_reset();
-void item_reset();
+void TickTimer();
+void LoadStage();
+void ResetMonsters();
+void ResetItems();

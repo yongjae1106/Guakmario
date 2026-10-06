@@ -31,4 +31,4 @@ extern int fireTrapCount;
 void InitFireTraps();
 void UpdateFireTraps();
 void CheckMarioHazardCollision();
-void trap_reset();
+void ResetTraps();

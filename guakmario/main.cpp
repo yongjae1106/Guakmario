@@ -55,7 +55,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         {
                             mario_DC = CreateCompatibleDC(g_memDC);
 
-                            stage_load();
+                            LoadStage();
 
                             g_game.gamestart = true;
                         }
@@ -167,7 +167,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case(4):
             {
                 if (g_game.gameState == GAME_OVER || g_game.gameState == GAME_VICTORY || g_game.gameState == GAME_CLEAR) break;
-                timegoes();
+                TickTimer();
                 break;
             }
             case(5):
@@ -198,7 +198,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     PlaySoundBuffer(bowserfire_Sound);
                     g_player.mario.tino_fire_motion = true;
                     g_player.mario.motion_timer = 10;
-                    tinofire_spawn(g_player.mario.x + g_game.cameraX, g_player.mario.y);
+                    SpawnTinoFire(g_player.mario.x + g_game.cameraX, g_player.mario.y);
                     g_player.mario.tino_cooldown_z = 5;
                     break;
                 }
@@ -238,7 +238,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     g_monsters.bowser.ignore_tinobite = false;
                     g_player.mario.tino_motion = true;
                     g_player.mario.motion_timer = 30;
-                    tino_attack();
+                    TinoAttack();
                     g_player.mario.god = true;
                     if(!g_player.mario.supergod) g_game.godstart = GetTickCount();
                     g_player.mario.tino_cooldown_space = 15;
@@ -266,7 +266,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     if (GetTickCount() - flower_delay >= 50)
                     {
                         PlaySoundBuffer(fireball_Sound);
-                        fireball_spawn(g_player.mario.x + g_game.cameraX, g_player.mario.y);
+                        SpawnFireball(g_player.mario.x + g_game.cameraX, g_player.mario.y);
                         g_player.mario.fire_motion = true;
                         g_player.mario.motion_timer = 5;
                         flower_delay_bool = false;

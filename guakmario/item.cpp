@@ -298,7 +298,7 @@ void OnMonsterHit(int x, int y)
     tinofire_effect[tinofire_effect_count].active = true;
     tinofire_effect_count++;
 }
-void tino_attack()
+void TinoAttack()
 {
     for (int j = 0; j < MAX_MONSTERS; j++)
     {
@@ -362,28 +362,28 @@ void tino_attack()
 
 }
 
-void transform_to_flower()
+void TransformToFlower()
 {
     g_player.mario.isBig = false;
     g_player.mario.tino = false;
     g_player.mario.flower = true;
     g_player.mario.height = 80;          // 높이 맞추기
 }
-void transform_to_tino()
+void TransformToTino()
 {
     g_player.mario.isBig = false;
     g_player.mario.flower = false;
     g_player.mario.tino = true;
     g_player.mario.height = 80;          // 높이 맞추기
 }
-void transform_bigmario()
+void TransformToBig()
 {
     g_player.mario.tino = false;
     g_player.mario.flower = false;
     g_player.mario.isBig = true;
     g_player.mario.height = 80;          // 높이 맞추기
 }
-void transform_smallmario()
+void TransformToSmall()
 {
     g_player.mario.isBig = false;
     g_player.mario.height = 40;          // 높이 맞추기
@@ -783,7 +783,7 @@ void SpawnItem_tino(int x, int y)
     }
 }
 
-void fireball_spawn(int x, int y)
+void SpawnFireball(int x, int y)
 {
     static int fireball_count = 0;
 
@@ -800,7 +800,7 @@ void fireball_spawn(int x, int y)
     fireball[fireball_count].active = true;
     fireball_count++;
 }
-void tinofire_spawn(int x, int y)
+void SpawnTinoFire(int x, int y)
 {
     static int tinofire_count = 0;
 
@@ -823,7 +823,7 @@ void tinofire_spawn(int x, int y)
     tinofire_count++;
 }
 
-void god_mario(DWORD _godstart)
+void UpdateGodMode(DWORD _godstart)
 {
     DWORD now = GetTickCount();
     if (now - _godstart >= 1000)
@@ -831,7 +831,7 @@ void god_mario(DWORD _godstart)
         g_player.mario.god = false;
     }
 }
-void star_mario(DWORD _starstart)
+void UpdateStarMode(DWORD _starstart)
 {
     DWORD now = GetTickCount();
     if (now - _starstart >= 10000)

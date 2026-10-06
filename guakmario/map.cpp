@@ -124,7 +124,7 @@ void CheckMarioHazardCollision()
     }
 }
 
-void trap_reset()
+void ResetTraps()
 {
     for (int i = 0; i < MAX_HAZARDS; i++)
     {

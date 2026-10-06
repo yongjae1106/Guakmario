@@ -36,8 +36,8 @@
 | `checkcollision_clear()` | `CheckClearCollision()` |
 | `checkcollision_coin()` | `CheckCoinCollision()` |
 
-- [ ] 함수 정의 및 선언 이름 변경
-- [ ] `game.cpp` 호출부 수정
+- [x] 함수 정의 및 선언 이름 변경
+- [x] `game.cpp` 호출부 수정
 
 ### 2-2. item.cpp — 변신
 | 현재 | 변경 후 |
@@ -47,8 +47,8 @@
 | `transform_to_flower()` | `TransformToFlower()` |
 | `transform_to_tino()` | `TransformToTino()` |
 
-- [ ] 함수 정의 및 선언 이름 변경
-- [ ] 호출부 수정 (game.cpp, item.cpp)
+- [x] 함수 정의 및 선언 이름 변경
+- [x] 호출부 수정 (game.cpp, item.cpp)
 
 ### 2-3. item.cpp — 기타
 | 현재 | 변경 후 |
@@ -59,8 +59,8 @@
 | `tinofire_spawn()` | `SpawnTinoFire()` |
 | `tino_attack()` | `TinoAttack()` |
 
-- [ ] 함수 정의 및 선언 이름 변경
-- [ ] 호출부 수정
+- [x] 함수 정의 및 선언 이름 변경
+- [x] 호출부 수정
 
 ### 2-4. game.cpp
 | 현재 | 변경 후 |
@@ -70,16 +70,16 @@
 | `item_reset()` | `ResetItems()` |
 | `timegoes()` | `TickTimer()` |
 
-- [ ] 함수 정의 및 선언 이름 변경
-- [ ] 호출부 수정
+- [x] 함수 정의 및 선언 이름 변경
+- [x] 호출부 수정
 
 ### 2-5. map.cpp
 | 현재 | 변경 후 |
 |------|---------|
 | `trap_reset()` | `ResetTraps()` |
 
-- [ ] 함수 정의 및 선언 이름 변경
-- [ ] 호출부 수정
+- [x] 함수 정의 및 선언 이름 변경
+- [x] 호출부 수정
 
 ---
 

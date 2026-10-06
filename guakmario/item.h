@@ -54,18 +54,18 @@ void UpdateShot_tinofire();
 void UpdateShot_tinofire_effect();
 void OnMonsterHit(int x, int y);
 
-void transform_bigmario();
-void transform_smallmario();
-void transform_to_flower();
-void transform_to_tino();
+void TransformToBig();
+void TransformToSmall();
+void TransformToFlower();
+void TransformToTino();
 
 void SpawnItem(int x, int y);
 void SpawnItem_up_mushroom(int x, int y);
 void SpawnItem_star(int x, int y);
 void SpawnItem_flower(int x, int y);
 void SpawnItem_tino(int x, int y);
-void fireball_spawn(int x, int y);
-void tinofire_spawn(int x, int y);
+void SpawnFireball(int x, int y);
+void SpawnTinoFire(int x, int y);
 
 void CheckCollision_mushroom();
 void CheckCollision_up_mushroom();
@@ -75,7 +75,7 @@ void CheckCollision_tino();
 void CheckCollision_fireball();
 void CheckCollision_tinofire();
 
-void tino_attack();
+void TinoAttack();
 
-void god_mario(DWORD _godstart);
-void star_mario(DWORD _starstart);
+void UpdateGodMode(DWORD _godstart);
+void UpdateStarMode(DWORD _starstart);

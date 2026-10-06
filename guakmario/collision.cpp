@@ -4,7 +4,7 @@
 
 constexpr int STAGE3_CLEAR_COLUMN = 139;
 
-void checkcollision_flag()
+void CheckFlagCollision()
 {
     int left = (g_player.mario.x + g_game.cameraX) / TILE_SIZE;
     int right = (g_player.mario.x + g_player.mario.width - 1 + g_game.cameraX) / TILE_SIZE;
@@ -29,7 +29,7 @@ void checkcollision_flag()
     }
 }
 // 최종클리어 함수
-void checkcollision_clear()
+void CheckClearCollision()
 {
     for (int i = 0; i < MAP_HEIGHT; i++)
     {
@@ -50,7 +50,7 @@ void checkcollision_clear()
 }
 
 // 코인먹기 함수
-void checkcollision_coin()
+void CheckCoinCollision()
 {
     for (int i = 0; i < MAP_HEIGHT; i++)
     {
