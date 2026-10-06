@@ -194,7 +194,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (mario.tino)
                 {
                     if (mario.tino_cooldown_z > 0) break;
-                    bowser.ignore_tinofire = false;
+                    g_monsters.bowser.ignore_tinofire = false;
                     PlaySoundBuffer(bowserfire_Sound);
                     mario.tino_fire_motion = true;
                     mario.motion_timer = 10;
@@ -235,7 +235,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (mario.tino)
                 {
                     if (mario.tino_cooldown_space > 0) break;
-                    bowser.ignore_tinobite = false;
+                    g_monsters.bowser.ignore_tinobite = false;
                     mario.tino_motion = true;
                     mario.motion_timer = 30;
                     tino_attack();

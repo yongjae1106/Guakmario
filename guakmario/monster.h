@@ -17,8 +17,6 @@ struct Monster
     bool active;
     DWORD deadstart;
 };
-extern Monster monsters[MAX_MONSTERS];
-extern int monsterCount;
 
 //turtle
 typedef enum { NORMAL, SHELL, SPINNING } TurtleState;
@@ -39,10 +37,6 @@ struct Turtle
     int shellTimer;
     int damageTimer;
 };
-extern Turtle turtles[MAX_TURTLES];
-extern int turtleCount;
-extern Turtle brownTurtles[MAX_TURTLES];
-extern int brownTurtleCount;
 
 //angel turtle
 enum { FLYING, HIDE };
@@ -60,8 +54,6 @@ struct AngelTurtle
     int state;
     DWORD hideStartTime;
 };
-extern AngelTurtle angelTurtles[MAX_TURTLES];
-extern int angelTurtleCount;
 
 //boss bowser
 
@@ -102,9 +94,21 @@ struct Fireball
     int motion;
     bool active;
 };
-extern Fireball fireballs[MAX_FIREBALLS];
-extern Bowser bowser;
-extern Fireball bowserFire;
+
+struct MonsterState {
+    Monster     monsters[MAX_MONSTERS]       = {};
+    int         monsterCount                 = 0;
+    Turtle      turtles[MAX_TURTLES]         = {};
+    int         turtleCount                  = 0;
+    Turtle      brownTurtles[MAX_TURTLES]    = {};
+    int         brownTurtleCount             = 0;
+    AngelTurtle angelTurtles[MAX_TURTLES]    = {};
+    int         angelTurtleCount             = 0;
+    Fireball    fireballs[MAX_FIREBALLS]     = {};
+    Bowser      bowser                       = {};
+    Fireball    bowserFire                   = {};
+};
+extern MonsterState g_monsters;
 
 void InitMonsters();
 void InitMonsters2();

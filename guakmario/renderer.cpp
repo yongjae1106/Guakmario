@@ -1028,15 +1028,15 @@ void Draw_Monsters()
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
 
-    for (int i = 0; i < monsterCount; i++)
+    for (int i = 0; i < g_monsters.monsterCount; i++)
     {
-        if (!monsters[i].active)
+        if (!g_monsters.monsters[i].active)
             continue;
 
-        int screenX = monsters[i].x - g_game.cameraX;
-        int screenY = monsters[i].y;
+        int screenX = g_monsters.monsters[i].x - g_game.cameraX;
+        int screenY = g_monsters.monsters[i].y;
 
-        if (!monsters[i].isAlive)
+        if (!g_monsters.monsters[i].isAlive)
         {
             if (g_game.stage == 1)
                 graphics.DrawImage(monster1_dead, screenX, screenY, TILE_SIZE, TILE_SIZE);
@@ -1046,10 +1046,10 @@ void Draw_Monsters()
                 graphics.DrawImage(monster3_dead, screenX, screenY, TILE_SIZE, TILE_SIZE);
 
             DWORD now = GetTickCount();
-            if (monsters[i].deadstart == 0)
-                monsters[i].deadstart = now;
-            if (now - monsters[i].deadstart >= 300)
-                monsters[i].active = false;
+            if (g_monsters.monsters[i].deadstart == 0)
+                g_monsters.monsters[i].deadstart = now;
+            if (now - g_monsters.monsters[i].deadstart >= 300)
+                g_monsters.monsters[i].active = false;
 
             continue;
         }
@@ -1068,24 +1068,24 @@ void Draw_Turtles()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
-    for (int i = 0; i < turtleCount; i++)
+    for (int i = 0; i < g_monsters.turtleCount; i++)
     {
-        if (!turtles[i].isAlive) continue;
+        if (!g_monsters.turtles[i].isAlive) continue;
 
-        int drawX = turtles[i].x - g_game.cameraX;
-        int drawY = turtles[i].y;
+        int drawX = g_monsters.turtles[i].x - g_game.cameraX;
+        int drawY = g_monsters.turtles[i].y;
 
-        switch (turtles[i].turtleState)
+        switch (g_monsters.turtles[i].turtleState)
         {
         case NORMAL:
         {
-            if(turtles[i].direction == 0)
+            if(g_monsters.turtles[i].direction == 0)
             {
                 graphics.DrawImage((g_game.stage == 3)
                     ? ((g_game.frame_motion % 2 == 0) ? brown_turtle_1 : brown_turtle_2)
                     : ((g_game.frame_motion % 2 == 0) ? turtle_1 : turtle_2), drawX, drawY - TILE_SIZE, TILE_SIZE, TILE_SIZE * 2);
             }
-            else if (turtles[i].direction == 1)
+            else if (g_monsters.turtles[i].direction == 1)
             {
                 graphics.DrawImage((g_game.stage == 3) 
                     ? ((g_game.frame_motion % 2 == 0) ? brown_turtle_R_1 : brown_turtle_R_2) 
@@ -1106,14 +1106,14 @@ void Draw_Angel_Turtles()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
-    for (int i = 0; i < angelTurtleCount; i++)
+    for (int i = 0; i < g_monsters.angelTurtleCount; i++)
     {
-        if (!angelTurtles[i].isAlive) continue;
+        if (!g_monsters.angelTurtles[i].isAlive) continue;
 
-        int drawX = angelTurtles[i].x - g_game.cameraX;
-        int drawY = angelTurtles[i].y;
+        int drawX = g_monsters.angelTurtles[i].x - g_game.cameraX;
+        int drawY = g_monsters.angelTurtles[i].y;
 
-        switch (angelTurtles[i].state)
+        switch (g_monsters.angelTurtles[i].state)
         {
         case FLYING:
         {
@@ -1128,16 +1128,16 @@ void Draw_Angel_Turtles()
         }
     }
 }
-// bowser
+// g_monsters.bowser
 void Draw_Bowser()
 {
-    if (!bowser.isAlive) return;
+    if (!g_monsters.bowser.isAlive) return;
 
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
 
-    int screenX = bowser.x - g_game.cameraX;
-    int screenY = bowser.y;
+    int screenX = g_monsters.bowser.x - g_game.cameraX;
+    int screenY = g_monsters.bowser.y;
 
     // 걷기 또는 불뿜기 애니메이션 프레임 처리
     static int walkFrame = 0;
@@ -1149,18 +1149,18 @@ void Draw_Bowser()
     }
 
     // 불을 뿜는 중이면 fire 이미지 사용
-    if (bowser.isFiring)
+    if (g_monsters.bowser.isFiring)
     {
         if (walkFrame == 0)
-            graphics.DrawImage(bowser_fire_walk_1, screenX, screenY, bowser.width, bowser.height);
+            graphics.DrawImage(bowser_fire_walk_1, screenX, screenY, g_monsters.bowser.width, g_monsters.bowser.height);
         else
-            graphics.DrawImage(bowser_fire_walk_2, screenX, screenY, bowser.width, bowser.height);
+            graphics.DrawImage(bowser_fire_walk_2, screenX, screenY, g_monsters.bowser.width, g_monsters.bowser.height);
     }
     else {
         if (walkFrame == 0)
-            graphics.DrawImage(bowser_walk_1, screenX, screenY, bowser.width, bowser.height);
+            graphics.DrawImage(bowser_walk_1, screenX, screenY, g_monsters.bowser.width, g_monsters.bowser.height);
         else
-            graphics.DrawImage(bowser_walk_2, screenX, screenY, bowser.width, bowser.height);
+            graphics.DrawImage(bowser_walk_2, screenX, screenY, g_monsters.bowser.width, g_monsters.bowser.height);
     }
 }
 void Draw_Fireballs() 
@@ -1170,10 +1170,10 @@ void Draw_Fireballs()
 
     for (int i = 0; i < MAX_FIREBALLS; i++) 
     {
-        if (!fireballs[i].active) continue;
+        if (!g_monsters.fireballs[i].active) continue;
 
-        int sx = fireballs[i].x - g_game.cameraX;
-        int sy = fireballs[i].y;
+        int sx = g_monsters.fireballs[i].x - g_game.cameraX;
+        int sy = g_monsters.fireballs[i].y;
 
         if(fireball[i].motion < 3)
         {

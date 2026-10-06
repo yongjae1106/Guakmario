@@ -143,16 +143,16 @@ void CheckCollision_fireball()
 
         for (int j = 0; j < MAX_MONSTERS; j++)
         {
-            int monsterXWorld = monsters[j].x - g_game.cameraX;
-            if (!monsters[j].isDead && monsters[j].isAlive && fireball[i].active) // 여러 조건 같이 확인
+            int monsterXWorld = g_monsters.monsters[j].x - g_game.cameraX;
+            if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive && fireball[i].active) // 여러 조건 같이 확인
             {
-                if (IsColliding_item(monsterXWorld, monsters[j].y, monsters[j].width, monsters[j].height,
+                if (IsColliding_item(monsterXWorld, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
                     fireballXWorld, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    monsters[j].vy = -15;
-                    monsters[j].isDead = true;
-                    monsters[j].isFalling = true;
+                    g_monsters.monsters[j].vy = -15;
+                    g_monsters.monsters[j].isDead = true;
+                    g_monsters.monsters[j].isFalling = true;
                     fireball[i].active = false;
                     break; // 이미 충돌했으면 더 검사 X
                 }
@@ -161,16 +161,16 @@ void CheckCollision_fireball()
 
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int turtleXWorld = turtles[j].x - g_game.cameraX;
-            if (!turtles[j].isDead && turtles[j].isAlive && fireball[i].active)
+            int turtleXWorld = g_monsters.turtles[j].x - g_game.cameraX;
+            if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive && fireball[i].active)
             {
-                if (IsColliding_item(turtleXWorld, turtles[j].y, turtles[j].width, turtles[j].height,
+                if (IsColliding_item(turtleXWorld, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
                     fireballXWorld, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    turtles[j].vy = -15;
-                    turtles[j].isDead = true;
-                    turtles[j].isFalling = true;
+                    g_monsters.turtles[j].vy = -15;
+                    g_monsters.turtles[j].isDead = true;
+                    g_monsters.turtles[j].isFalling = true;
                     fireball[i].active = false;
                     break;
                 }
@@ -178,30 +178,30 @@ void CheckCollision_fireball()
         }
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int turtleXWorld = angelTurtles[j].x - g_game.cameraX;
-            if (!angelTurtles[j].isDead && angelTurtles[j].isAlive && fireball[i].active)
+            int turtleXWorld = g_monsters.angelTurtles[j].x - g_game.cameraX;
+            if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive && fireball[i].active)
             {
-                if (IsColliding_item(turtleXWorld, angelTurtles[j].y, angelTurtles[j].width, angelTurtles[j].height,
+                if (IsColliding_item(turtleXWorld, g_monsters.angelTurtles[j].y, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
                     fireballXWorld, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    angelTurtles[j].vy = -15;
-                    angelTurtles[j].isDead = true;
-                    angelTurtles[j].isFalling = true;
+                    g_monsters.angelTurtles[j].vy = -15;
+                    g_monsters.angelTurtles[j].isDead = true;
+                    g_monsters.angelTurtles[j].isFalling = true;
                     fireball[i].active = false;
                     break;
                 }
             }
         }
 
-        int bowserXWorld = bowser.x - g_game.cameraX;
-        if (!bowser.isDead && bowser.isAlive && fireball[i].active)
+        int bowserXWorld = g_monsters.bowser.x - g_game.cameraX;
+        if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive && fireball[i].active)
         {
-            if (IsColliding_item(bowserXWorld, bowser.y, bowser.width, bowser.height,
+            if (IsColliding_item(bowserXWorld, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
                 fireballXWorld, fireball[i].y, fireball[i].width, fireball[i].height))
             {
                 PlaySoundBuffer(bump_Sound);
-                bowser.hp--;
+                g_monsters.bowser.hp--;
                 fireball[i].active = false;
             }
         }
@@ -219,17 +219,17 @@ void CheckCollision_tinofire()
 
         for (int j = 0; j < MAX_MONSTERS; j++)
         {
-            int monsterXWorld = monsters[j].x - g_game.cameraX;
-            if (!monsters[j].isDead && monsters[j].isAlive && tinofire[i].active) // 여러 조건 같이 확인
+            int monsterXWorld = g_monsters.monsters[j].x - g_game.cameraX;
+            if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive && tinofire[i].active) // 여러 조건 같이 확인
             {
-                if (IsColliding_item(monsterXWorld, monsters[j].y, monsters[j].width, monsters[j].height,
+                if (IsColliding_item(monsterXWorld, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
                     tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    monsters[j].vy = -15;
-                    monsters[j].isDead = true;
-                    monsters[j].isFalling = true;
-                    OnMonsterHit(monsters[j].x, monsters[j].y);
+                    g_monsters.monsters[j].vy = -15;
+                    g_monsters.monsters[j].isDead = true;
+                    g_monsters.monsters[j].isFalling = true;
+                    OnMonsterHit(g_monsters.monsters[j].x, g_monsters.monsters[j].y);
                     break; // 이미 충돌했으면 더 검사 X
                 }
             }
@@ -237,49 +237,49 @@ void CheckCollision_tinofire()
 
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int turtleXWorld = turtles[j].x - g_game.cameraX;
-            if (!turtles[j].isDead && turtles[j].isAlive && tinofire[i].active)
+            int turtleXWorld = g_monsters.turtles[j].x - g_game.cameraX;
+            if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive && tinofire[i].active)
             {
-                if (IsColliding_item(turtleXWorld, turtles[j].y, turtles[j].width, turtles[j].height,
+                if (IsColliding_item(turtleXWorld, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
                     tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    turtles[j].vy = -15;
-                    turtles[j].isDead = true;
-                    turtles[j].isFalling = true;
-                    OnMonsterHit(turtles[j].x, turtles[j].y);
+                    g_monsters.turtles[j].vy = -15;
+                    g_monsters.turtles[j].isDead = true;
+                    g_monsters.turtles[j].isFalling = true;
+                    OnMonsterHit(g_monsters.turtles[j].x, g_monsters.turtles[j].y);
                     break;
                 }
             }
         }
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int angelturtleXWorld = angelTurtles[j].x - g_game.cameraX;
-            if (!angelTurtles[j].isDead && angelTurtles[j].isAlive && tinofire[i].active)
+            int angelturtleXWorld = g_monsters.angelTurtles[j].x - g_game.cameraX;
+            if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive && tinofire[i].active)
             {
-                if (IsColliding_item(angelturtleXWorld, angelTurtles[j].y + 20, angelTurtles[j].width, angelTurtles[j].height,
+                if (IsColliding_item(angelturtleXWorld, g_monsters.angelTurtles[j].y + 20, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
                     tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    angelTurtles[j].vy = -15;
-                    angelTurtles[j].isDead = true;
-                    angelTurtles[j].isFalling = true;
-                    OnMonsterHit(angelTurtles[j].x, angelTurtles[j].y);
+                    g_monsters.angelTurtles[j].vy = -15;
+                    g_monsters.angelTurtles[j].isDead = true;
+                    g_monsters.angelTurtles[j].isFalling = true;
+                    OnMonsterHit(g_monsters.angelTurtles[j].x, g_monsters.angelTurtles[j].y);
                     break;
                 }
             }
         }
 
-        int bowserXWorld = bowser.x - g_game.cameraX;
-        if (!bowser.isDead && bowser.isAlive && tinofire[i].active)
+        int bowserXWorld = g_monsters.bowser.x - g_game.cameraX;
+        if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive && tinofire[i].active)
         {
-            if (IsColliding_item(bowserXWorld, bowser.y, bowser.width, bowser.height,
-                tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height) && !bowser.ignore_tinofire)
+            if (IsColliding_item(bowserXWorld, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
+                tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height) && !g_monsters.bowser.ignore_tinofire)
             {
                 PlaySoundBuffer(kick_Sound);
-                OnMonsterHit(bowser.x, bowser.y);
-                bowser.hp -= 5;
-                bowser.ignore_tinofire = true;
+                OnMonsterHit(g_monsters.bowser.x, g_monsters.bowser.y);
+                g_monsters.bowser.hp -= 5;
+                g_monsters.bowser.ignore_tinofire = true;
             }
         }
     }
@@ -302,61 +302,61 @@ void tino_attack()
 {
     for (int j = 0; j < MAX_MONSTERS; j++)
     {
-        int monsterXWorld = monsters[j].x - g_game.cameraX;
-        if (!monsters[j].isDead && monsters[j].isAlive) // 여러 조건 같이 확인
+        int monsterXWorld = g_monsters.monsters[j].x - g_game.cameraX;
+        if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive) // 여러 조건 같이 확인
         {
-            if (IsColliding_item(monsterXWorld, monsters[j].y, monsters[j].width, monsters[j].height,
+            if (IsColliding_item(monsterXWorld, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
                 (mario.direction == 0) ? mario.x - 50 :mario.x, mario.y - 15, 50, 100))
             {
                 PlaySoundBuffer(kick_Sound);
-                monsters[j].vy = -15;
-                monsters[j].isDead = true;
-                monsters[j].isFalling = true;
+                g_monsters.monsters[j].vy = -15;
+                g_monsters.monsters[j].isDead = true;
+                g_monsters.monsters[j].isFalling = true;
             }
         }
     }
 
     for (int j = 0; j < MAX_TURTLES; j++)
     {
-        int turtleXWorld = turtles[j].x - g_game.cameraX;
-        if (!turtles[j].isDead && turtles[j].isAlive)
+        int turtleXWorld = g_monsters.turtles[j].x - g_game.cameraX;
+        if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive)
         {
-            if (IsColliding_item(turtleXWorld, turtles[j].y, turtles[j].width, turtles[j].height,
+            if (IsColliding_item(turtleXWorld, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
                 (mario.direction == 0) ? mario.x - 50 : mario.x, mario.y - 15, 50, 100))
             {
                 PlaySoundBuffer(kick_Sound);
-                turtles[j].vy = -15;
-                turtles[j].isDead = true;
-                turtles[j].isFalling = true;
+                g_monsters.turtles[j].vy = -15;
+                g_monsters.turtles[j].isDead = true;
+                g_monsters.turtles[j].isFalling = true;
             }
         }
     }
     for (int j = 0; j < MAX_TURTLES; j++)
     {
-        int turtleXWorld = angelTurtles[j].x - g_game.cameraX;
-        if (!angelTurtles[j].isDead && angelTurtles[j].isAlive)
+        int turtleXWorld = g_monsters.angelTurtles[j].x - g_game.cameraX;
+        if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive)
         {
-            if (IsColliding_item(turtleXWorld, angelTurtles[j].y, angelTurtles[j].width, angelTurtles[j].height,
+            if (IsColliding_item(turtleXWorld, g_monsters.angelTurtles[j].y, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
                 (mario.direction == 0) ? mario.x - 50 : mario.x, mario.y - 15, 50, 100))
             {
                 PlaySoundBuffer(kick_Sound);
-                angelTurtles[j].vy = -15;
-                angelTurtles[j].isDead = true;
-                angelTurtles[j].isFalling = true;
+                g_monsters.angelTurtles[j].vy = -15;
+                g_monsters.angelTurtles[j].isDead = true;
+                g_monsters.angelTurtles[j].isFalling = true;
                 break;
             }
         }
     }
 
-    int bowserXWorld = bowser.x - g_game.cameraX;
-    if (!bowser.isDead && bowser.isAlive)
+    int bowserXWorld = g_monsters.bowser.x - g_game.cameraX;
+    if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive)
     {
-        if (IsColliding_item(bowserXWorld, bowser.y, bowser.width, bowser.height,
-            (mario.direction == 0) ? mario.x - 50 : mario.x, mario.y - 15, 50, 100) && !bowser.ignore_tinobite)
+        if (IsColliding_item(bowserXWorld, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
+            (mario.direction == 0) ? mario.x - 50 : mario.x, mario.y - 15, 50, 100) && !g_monsters.bowser.ignore_tinobite)
         {
             PlaySoundBuffer(kick_Sound);
-            bowser.hp -= 10;
-            bowser.ignore_tinobite = true;
+            g_monsters.bowser.hp -= 10;
+            g_monsters.bowser.ignore_tinobite = true;
         }
     }
 

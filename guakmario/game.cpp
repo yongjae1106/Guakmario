@@ -190,12 +190,12 @@ void monster_reset()
 {
     for (int i = 0; i < MAX_MONSTERS; i++)
     {
-        monsters[i].active = false;
+        g_monsters.monsters[i].active = false;
     }
     for (int i = 0; i < MAX_TURTLES; i++)
     {
-        turtles[i].active = false;
-        angelTurtles[i].isAlive = false;
+        g_monsters.turtles[i].active = false;
+        g_monsters.angelTurtles[i].isAlive = false;
     }
 }
 void item_reset()

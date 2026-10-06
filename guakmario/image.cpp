@@ -589,7 +589,7 @@ void image_load()
         exit(1);
     }
 
-    //bowser
+    //g_monsters.bowser
     bowser_walk_1 = new Image(L"resource\\monster\\bowser_walk_1.png");
     if (bowser_walk_1->GetLastStatus() != Ok) {
         MessageBox(NULL, L"bowser_walk_1 이미지 로드 실패!", L"Error", MB_OK);
