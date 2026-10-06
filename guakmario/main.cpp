@@ -16,7 +16,7 @@ HWND hWnd;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 {
-    if (!g_game.gamestart)
+    if (!g_game.gameStart)
     {
         switch (message)
         {
@@ -57,7 +57,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                             LoadStage();
 
-                            g_game.gamestart = true;
+                            g_game.gameStart = true;
                         }
                         else if (g_game.title_select == 1)
                         {
@@ -146,21 +146,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case(3):
             {
-                if (g_game.frame_motion < 6)
+                if (g_game.frameMotion < 6)
                 {
-                    g_game.frame_motion++;
+                    g_game.frameMotion++;
                 }
                 else
                 {
-                    g_game.frame_motion = 0;
+                    g_game.frameMotion = 0;
                 }
-                if (g_game.frame_motion_star < 2)
+                if (g_game.frameMotionStar < 2)
                 {
-                    g_game.frame_motion_star++;
+                    g_game.frameMotionStar++;
                 }
                 else
                 {
-                    g_game.frame_motion_star = 0;
+                    g_game.frameMotionStar = 0;
                 }
                 break;
             }
@@ -194,7 +194,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (g_player.mario.tino)
                 {
                     if (g_player.mario.tino_cooldown_z > 0) break;
-                    g_monsters.bowser.ignore_tinofire = false;
+                    g_monsters.bowser.ignoreTinoFire = false;
                     PlaySoundBuffer(bowserfire_Sound);
                     g_player.mario.tino_fire_motion = true;
                     g_player.mario.motion_timer = 10;
@@ -215,7 +215,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case VK_UP:
             {
-                if (!g_player.mario.isJumping && !g_player.mario.isflying)
+                if (!g_player.mario.isJumping && !g_player.mario.isFlying)
                 {
                     if (g_player.mario.isBig || g_player.mario.flower)
                     {
@@ -235,7 +235,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (g_player.mario.tino)
                 {
                     if (g_player.mario.tino_cooldown_space > 0) break;
-                    g_monsters.bowser.ignore_tinobite = false;
+                    g_monsters.bowser.ignoreTinoBite = false;
                     g_player.mario.tino_motion = true;
                     g_player.mario.motion_timer = 30;
                     TinoAttack();

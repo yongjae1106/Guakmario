@@ -70,15 +70,15 @@ void UpdateGame()
         }
         else
         {
-            g_game.gameclear_text = true;
+            g_game.gameClearText = true;
             g_player.mario.isWalking = false;
             g_player.mario.vx = 0;
         }
         if (GetTickCount() - g_game.clearStart >= 10000)
         {
             g_game.stage = 1;
-            g_game.gameclear_text = false;
-            g_game.gamestart = false;
+            g_game.gameClearText = false;
+            g_game.gameStart = false;
             ResetMario(5, 0);
             g_game.gameState = GAME_RUNNING;
         }
@@ -101,8 +101,8 @@ void UpdateGame()
                 if (g_player.mario.life <= 0)
                 {
                     g_game.stage = 1;
-                    g_game.gameclear_text = false;
-                    g_game.gamestart = false;
+                    g_game.gameClearText = false;
+                    g_game.gameStart = false;
                     ResetMario(5, 0);
                     g_game.gameState = GAME_RUNNING;
                     return;

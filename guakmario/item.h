@@ -8,12 +8,12 @@ struct Item
     int x, y;
     int vx, vy;
     int width, height;
-    int spawn_motion;
+    int spawnMotion;
     bool active;
     bool motion;
 
-    Item(int _x = 0, int _y = 0, int _vx = 0, int _vy = 0, int _width = 30, int _height = 30, int _spawn_motion = 0, bool _active = false, bool _motion = false)
-        : x(_x), y(_y), vx(_vx), vy(_vy), width(_width), height(_height), active(_active), spawn_motion(_spawn_motion), motion(_motion) {
+    Item(int _x = 0, int _y = 0, int _vx = 0, int _vy = 0, int _width = 30, int _height = 30, int _spawnMotion = 0, bool _active = false, bool _motion = false)
+        : x(_x), y(_y), vx(_vx), vy(_vy), width(_width), height(_height), active(_active), spawnMotion(_spawnMotion), motion(_motion) {
     };
 };
 extern Item mushroom[MAX_ITEMS];

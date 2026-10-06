@@ -14,7 +14,7 @@ struct Player
     int tino_cooldown_z = 0;
     int tino_cooldown_space = 0;
     bool isJumping = false;
-    bool isflying = false;
+    bool isFlying = false;
     bool isWalking = false;
     bool isDead = false;
     bool gameover = false;

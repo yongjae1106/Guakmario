@@ -90,14 +90,14 @@
 |------|---------|
 | `isflying` | `isFlying` |
 
-- [ ] 선언 및 모든 참조 수정
+- [x] 선언 및 모든 참조 수정
 
 ### 3-2. Monster 구조체 (`monster.h`)
 | 현재 | 변경 후 |
 |------|---------|
 | `deadstart` | `deadStart` |
 
-- [ ] 선언 및 모든 참조 수정
+- [x] 선언 및 모든 참조 수정
 
 ### 3-3. GameContext 구조체 (`game.h`)
 | 현재 | 변경 후 |
@@ -107,14 +107,14 @@
 | `frame_motion` | `frameMotion` |
 | `frame_motion_star` | `frameMotionStar` |
 
-- [ ] 선언 및 모든 참조 수정
+- [x] 선언 및 모든 참조 수정
 
 ### 3-4. Item 구조체 (`item.h`)
 | 현재 | 변경 후 |
 |------|---------|
 | `spawn_motion` | `spawnMotion` |
 
-- [ ] 선언 및 모든 참조 수정
+- [x] 선언 및 모든 참조 수정
 
 ### 3-5. Bowser 구조체 (`monster.h`)
 | 현재 | 변경 후 |
@@ -122,7 +122,7 @@
 | `ignore_tinofire` | `ignoreTinoFire` |
 | `ignore_tinobite` | `ignoreTinoBite` |
 
-- [ ] 선언 및 모든 참조 수정
+- [x] 선언 및 모든 참조 수정
 
 ---
 

@@ -83,7 +83,7 @@ void UpdatePlayer()
     }
 
     // 중력 적용
-    g_player.mario.isflying = true;
+    g_player.mario.isFlying = true;
     g_player.mario.vy += 1;
     if (g_player.mario.vy > 15) g_player.mario.vy = 15;
     g_player.mario.y += g_player.mario.vy;
@@ -108,7 +108,7 @@ void UpdatePlayer()
         g_player.mario.y = bottom * TILE_SIZE - g_player.mario.height;
         g_player.mario.vy = 0;
         g_player.mario.isJumping = false;
-        g_player.mario.isflying = false;
+        g_player.mario.isFlying = false;
     }
     // 위 충돌
     else if (!(g_player.mario.y < 0) && g_player.mario.vy < 0 && (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[top][right])))

@@ -15,7 +15,7 @@ struct Monster
     bool isAlive;
     bool isDead;
     bool active;
-    DWORD deadstart;
+    DWORD deadStart;
 };
 
 //turtle
@@ -63,8 +63,8 @@ struct Bowser
     int x, y;
     int vx, vy;
     int width, height;
-    bool ignore_tinofire;
-    bool ignore_tinobite;
+    bool ignoreTinoFire;
+    bool ignoreTinoBite;
     bool isAlive;
     bool isDead;
     bool isJumping;

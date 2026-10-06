@@ -274,12 +274,12 @@ void CheckCollision_tinofire()
         if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive && tinofire[i].active)
         {
             if (IsColliding(bowserXWorld, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
-                tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height) && !g_monsters.bowser.ignore_tinofire)
+                tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height) && !g_monsters.bowser.ignoreTinoFire)
             {
                 PlaySoundBuffer(kick_Sound);
                 OnMonsterHit(g_monsters.bowser.x, g_monsters.bowser.y);
                 g_monsters.bowser.hp -= 5;
-                g_monsters.bowser.ignore_tinofire = true;
+                g_monsters.bowser.ignoreTinoFire = true;
             }
         }
     }
@@ -352,11 +352,11 @@ void TinoAttack()
     if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive)
     {
         if (IsColliding(bowserXWorld, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
-            (g_player.mario.direction == 0) ? g_player.mario.x - 50 : g_player.mario.x, g_player.mario.y - 15, 50, 100) && !g_monsters.bowser.ignore_tinobite)
+            (g_player.mario.direction == 0) ? g_player.mario.x - 50 : g_player.mario.x, g_player.mario.y - 15, 50, 100) && !g_monsters.bowser.ignoreTinoBite)
         {
             PlaySoundBuffer(kick_Sound);
             g_monsters.bowser.hp -= 10;
-            g_monsters.bowser.ignore_tinobite = true;
+            g_monsters.bowser.ignoreTinoBite = true;
         }
     }
 
@@ -398,12 +398,12 @@ void UpdateItems()
         if (mushroom[i].motion)
         {
             mushroom[i].y -= 3;
-            mushroom[i].spawn_motion++;
-            if (mushroom[i].spawn_motion == 18)
+            mushroom[i].spawnMotion++;
+            if (mushroom[i].spawnMotion == 18)
             {
                 mushroom[i].motion = false;
                 mushroom[i].active = true;
-                mushroom[i].spawn_motion = 0;
+                mushroom[i].spawnMotion = 0;
             }
         }
         if (!mushroom[i].active) continue;
@@ -458,12 +458,12 @@ void UpdateItems_up_mushroom()
         if (up_mushroom[i].motion)
         {
             up_mushroom[i].y -= 3;
-            up_mushroom[i].spawn_motion++;
-            if (up_mushroom[i].spawn_motion == 18)
+            up_mushroom[i].spawnMotion++;
+            if (up_mushroom[i].spawnMotion == 18)
             {
                 up_mushroom[i].motion = false;
                 up_mushroom[i].active = true;
-                up_mushroom[i].spawn_motion = 0;
+                up_mushroom[i].spawnMotion = 0;
             }
         }
         if (!up_mushroom[i].active) continue;
@@ -517,12 +517,12 @@ void UpdateItems_star()
         if (star[i].motion)
         {
             star[i].y -= 3;
-            star[i].spawn_motion++;
-            if (star[i].spawn_motion == 18)
+            star[i].spawnMotion++;
+            if (star[i].spawnMotion == 18)
             {
                 star[i].motion = false;
                 star[i].active = true;
-                star[i].spawn_motion = 0;
+                star[i].spawnMotion = 0;
             }
         }
         if (!star[i].active) continue;
@@ -592,12 +592,12 @@ void UpdateItems_flower()
         if (flower[i].motion)
         {
             flower[i].y -= 2;
-            flower[i].spawn_motion++;
-            if (flower[i].spawn_motion == 18)
+            flower[i].spawnMotion++;
+            if (flower[i].spawnMotion == 18)
             {
                 flower[i].motion = false;
                 flower[i].active = true;
-                flower[i].spawn_motion = 0;
+                flower[i].spawnMotion = 0;
             }
         }
         if (!flower[i].active) continue;
@@ -611,12 +611,12 @@ void UpdateItems_tino()
         if (tino[i].motion)
         {
             tino[i].y -= 2;
-            tino[i].spawn_motion++;
-            if (tino[i].spawn_motion == 18)
+            tino[i].spawnMotion++;
+            if (tino[i].spawnMotion == 18)
             {
                 tino[i].motion = false;
                 tino[i].active = true;
-                tino[i].spawn_motion = 0;
+                tino[i].spawnMotion = 0;
             }
         }
         if (!tino[i].active) continue;
