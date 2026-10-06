@@ -131,15 +131,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case(2):
             {
-                if (mario.isWalking)
+                if (g_player.mario.isWalking)
                 {
-                    if (mario.walk_motion < 2)
+                    if (g_player.mario.walk_motion < 2)
                     {
-                        mario.walk_motion++;
+                        g_player.mario.walk_motion++;
                     }
                     else
                     {
-                        mario.walk_motion = 0;
+                        g_player.mario.walk_motion = 0;
                     }
                 }
                 break;
@@ -172,13 +172,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case(5):
             {
-                if (mario.tino_cooldown_z > 0)
+                if (g_player.mario.tino_cooldown_z > 0)
                 {
-                    mario.tino_cooldown_z--;
+                    g_player.mario.tino_cooldown_z--;
                 }
-                if (mario.tino_cooldown_space > 0)
+                if (g_player.mario.tino_cooldown_space > 0)
                 {
-                    mario.tino_cooldown_space--;
+                    g_player.mario.tino_cooldown_space--;
                 }
             }
             }
@@ -191,15 +191,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case ('z'):
             {
-                if (mario.tino)
+                if (g_player.mario.tino)
                 {
-                    if (mario.tino_cooldown_z > 0) break;
+                    if (g_player.mario.tino_cooldown_z > 0) break;
                     g_monsters.bowser.ignore_tinofire = false;
                     PlaySoundBuffer(bowserfire_Sound);
-                    mario.tino_fire_motion = true;
-                    mario.motion_timer = 10;
-                    tinofire_spawn(mario.x + g_game.cameraX, mario.y);
-                    mario.tino_cooldown_z = 5;
+                    g_player.mario.tino_fire_motion = true;
+                    g_player.mario.motion_timer = 10;
+                    tinofire_spawn(g_player.mario.x + g_game.cameraX, g_player.mario.y);
+                    g_player.mario.tino_cooldown_z = 5;
                     break;
                 }
             }
@@ -209,39 +209,39 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_KEYDOWN:
         {
             if (g_game.gameState == GAME_OVER || g_game.gameState == GAME_VICTORY || g_game.gameState == GAME_CLEAR) break;
-            keyState[wParam] = true;
-            mario.isWalking = true;
+            g_player.keyState[wParam] = true;
+            g_player.mario.isWalking = true;
             switch (wParam)
             {
             case VK_UP:
             {
-                if (!mario.isJumping && !mario.isflying)
+                if (!g_player.mario.isJumping && !g_player.mario.isflying)
                 {
-                    if (mario.isBig || mario.flower)
+                    if (g_player.mario.isBig || g_player.mario.flower)
                     {
                         PlaySoundBuffer(jump_big_Sound);
                     }
-                    else if (!mario.isBig)
+                    else if (!g_player.mario.isBig)
                     {
                         PlaySoundBuffer(jump_small_Sound);
                     }
-                    mario.vy = -19;         // 점프 속도
-                    mario.isJumping = true; // 공중 상태로 설정
+                    g_player.mario.vy = -19;         // 점프 속도
+                    g_player.mario.isJumping = true; // 공중 상태로 설정
                 }
                 break;
             }
             case VK_SPACE:
             {
-                if (mario.tino)
+                if (g_player.mario.tino)
                 {
-                    if (mario.tino_cooldown_space > 0) break;
+                    if (g_player.mario.tino_cooldown_space > 0) break;
                     g_monsters.bowser.ignore_tinobite = false;
-                    mario.tino_motion = true;
-                    mario.motion_timer = 30;
+                    g_player.mario.tino_motion = true;
+                    g_player.mario.motion_timer = 30;
                     tino_attack();
-                    mario.god = true;
-                    if(!mario.supergod) g_game.godstart = GetTickCount();
-                    mario.tino_cooldown_space = 15;
+                    g_player.mario.god = true;
+                    if(!g_player.mario.supergod) g_game.godstart = GetTickCount();
+                    g_player.mario.tino_cooldown_space = 15;
                 }
             }
             }
@@ -249,12 +249,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         case WM_KEYUP:
         {
-            keyState[wParam] = false;
+            g_player.keyState[wParam] = false;
             switch (wParam)
             {
             case VK_SPACE:
             {
-                if (mario.flower)
+                if (g_player.mario.flower)
                 {
                     static bool flower_delay_bool = false;
                     static DWORD flower_delay;
@@ -266,9 +266,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     if (GetTickCount() - flower_delay >= 50)
                     {
                         PlaySoundBuffer(fireball_Sound);
-                        fireball_spawn(mario.x + g_game.cameraX, mario.y);
-                        mario.fire_motion = true;
-                        mario.motion_timer = 5;
+                        fireball_spawn(g_player.mario.x + g_game.cameraX, g_player.mario.y);
+                        g_player.mario.fire_motion = true;
+                        g_player.mario.motion_timer = 5;
                         flower_delay_bool = false;
                     }
 
@@ -283,12 +283,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case(ID_TRANS_TINO):
             {
-                if (!mario.tino && g_game.gameState == GAME_RUNNING)
+                if (!g_player.mario.tino && g_game.gameState == GAME_RUNNING)
                 {
                     PlaySoundBuffer(powerup_Sound);
-                    if (!mario.flower && !mario.isBig)
+                    if (!g_player.mario.flower && !g_player.mario.isBig)
                     {
-                        mario.y -= TILE_SIZE + 1;       // 위치 맞추기
+                        g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                     }
                     g_game.gameState = GAME_TINO_TRANS;
                     g_game.transformStartTime = GetTickCount();
@@ -297,12 +297,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case(ID_TRANS_FLOWER):
             {
-                if (!mario.flower && g_game.gameState == GAME_RUNNING)
+                if (!g_player.mario.flower && g_game.gameState == GAME_RUNNING)
                 {
                     PlaySoundBuffer(powerup_Sound);
-                    if (!mario.tino && !mario.isBig)
+                    if (!g_player.mario.tino && !g_player.mario.isBig)
                     {
-                        mario.y -= TILE_SIZE + 1;       // 위치 맞추기
+                        g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                     }
                     g_game.gameState = GAME_FLOWER_TRANS;
                     g_game.transformStartTime = GetTickCount();
@@ -311,10 +311,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case(ID_TRANS_BIG):
             {
-                if (!mario.isBig && !mario.flower && !mario.tino && g_game.gameState == GAME_RUNNING)
+                if (!g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino && g_game.gameState == GAME_RUNNING)
                 {
                     PlaySoundBuffer(powerup_Sound);
-                    mario.y -= TILE_SIZE + 1;       // 위치 맞추기
+                    g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                     g_game.gameState = GAME_TRANSFORMING;
                     g_game.transformStartTime = GetTickCount();
                 }
@@ -323,7 +323,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case(ID_TRANS_STAR):
             {
                 PlayBGM("resource\\sound\\bgm\\InvincibilityTheam.wav");
-                mario.star = true;
+                g_player.mario.star = true;
                 g_game.starStartTime = GetTickCount();
                 break;
             }
@@ -339,7 +339,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
 
             // 게임오버
-            if (mario.gameover)
+            if (g_player.mario.gameover)
             {
                 TCHAR gameover[30] = L"GAME OVER";
                 TextOut(g_memDC, 360, 300, gameover, lstrlen(gameover));    // 게임오버 문구

@@ -259,15 +259,15 @@ void UpdateMonsters()
         }
 
         // 마리오 밟기 판정
-        int marioLeft = mario.x + g_game.cameraX;
-        int marioRight = marioLeft + mario.width;
-        int marioBottom = mario.y + mario.height;
+        int marioLeft = g_player.mario.x + g_game.cameraX;
+        int marioRight = marioLeft + g_player.mario.width;
+        int marioBottom = g_player.mario.y + g_player.mario.height;
 
         int monsterLeft = g_monsters.monsters[i].x;
         int monsterRight = monsterLeft + g_monsters.monsters[i].width;
         int monsterTop = g_monsters.monsters[i].y;
 
-        if (mario.vy > 0 &&
+        if (g_player.mario.vy > 0 &&
             marioBottom >= monsterTop &&
             marioBottom <= monsterTop + 10 &&
             marioRight > monsterLeft &&
@@ -276,7 +276,7 @@ void UpdateMonsters()
 
             PlaySoundBuffer(stomp_Sound);
             g_monsters.monsters[i].isAlive = false;
-            mario.vy = -10;  // 마리오 튀어오르기
+            g_player.mario.vy = -10;  // 마리오 튀어오르기
         }
     }
 }
@@ -286,10 +286,10 @@ void CheckMarioMonsterCollision()
     {
         if (!g_monsters.monsters[i].isAlive || g_monsters.monsters[i].isDead) continue;
 
-        int marioLeft = mario.x;
-        int marioRight = mario.x + mario.width;
-        int marioTop = mario.y;
-        int marioBottom = mario.y + mario.height;
+        int marioLeft = g_player.mario.x;
+        int marioRight = g_player.mario.x + g_player.mario.width;
+        int marioTop = g_player.mario.y;
+        int marioBottom = g_player.mario.y + g_player.mario.height;
 
         int monsterLeft = g_monsters.monsters[i].x - g_game.cameraX;
         int monsterRight = monsterLeft + g_monsters.monsters[i].width;
@@ -300,20 +300,20 @@ void CheckMarioMonsterCollision()
         // 밟기 판정
         if (marioBottom >= monsterTop && marioTop < monsterTop &&
             marioRight > monsterLeft && marioLeft < monsterRight &&
-            mario.vy > 0)
+            g_player.mario.vy > 0)
         {
             PlaySoundBuffer(stomp_Sound);
             g_monsters.monsters[i].isAlive = false;
-            mario.vy = -10;
+            g_player.mario.vy = -10;
         }
         // 측면 충돌
-        else if (IsColliding(mario.x, mario.y, mario.width, mario.height,
+        else if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
             g_monsters.monsters[i].x - g_game.cameraX, g_monsters.monsters[i].y + 20, g_monsters.monsters[i].width, g_monsters.monsters[i].height) &&
             !g_monsters.monsters[i].isDead &&
             g_monsters.monsters[i].active)
         {
             // 스타 파워면 튕겨내기 처리
-            if (mario.star)
+            if (g_player.mario.star)
             {
                 PlaySoundBuffer(kick_Sound);
                 g_monsters.monsters[i].vy = -15;
@@ -504,10 +504,10 @@ void CheckMarioTurtleCollision()
     {
         if (!g_monsters.turtles[i].isAlive) continue;
 
-        int marioLeft = mario.x;
-        int marioRight = mario.x + mario.width;
-        int marioTop = mario.y;
-        int marioBottom = mario.y + mario.height;
+        int marioLeft = g_player.mario.x;
+        int marioRight = g_player.mario.x + g_player.mario.width;
+        int marioTop = g_player.mario.y;
+        int marioBottom = g_player.mario.y + g_player.mario.height;
 
         int turtleLeft = g_monsters.turtles[i].x - 10 - g_game.cameraX;
         int turtleRight = turtleLeft + g_monsters.turtles[i].width + 20;
@@ -516,7 +516,7 @@ void CheckMarioTurtleCollision()
 
         if (marioBottom >= turtleTop && marioTop < turtleTop &&
             marioRight > turtleLeft && marioLeft < turtleRight &&
-            mario.vy > 0)
+            g_player.mario.vy > 0)
         {
             if (g_monsters.turtles[i].turtleState == NORMAL) // 걷는 상태일 때
             {
@@ -528,7 +528,7 @@ void CheckMarioTurtleCollision()
             else if (g_monsters.turtles[i].turtleState == SHELL) // 껍데기 상태를 걷어차기
             {
                 PlaySoundBuffer(kick_Sound);
-                int marioCenter = mario.x + mario.width / 2;
+                int marioCenter = g_player.mario.x + g_player.mario.width / 2;
                 int turtleCenter = (g_monsters.turtles[i].x - g_game.cameraX) + g_monsters.turtles[i].width / 2;
 
                 g_monsters.turtles[i].turtleState = SPINNING;
@@ -541,10 +541,10 @@ void CheckMarioTurtleCollision()
                 g_monsters.turtles[i].vx = 0;
             }
 
-            mario.vy = -10;  // 반동 점프
+            g_player.mario.vy = -10;  // 반동 점프
         }
 
-        else if (IsColliding(mario.x, mario.y, mario.width, mario.height,
+        else if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
             turtleLeft, g_monsters.turtles[i].y + 20, g_monsters.turtles[i].width, g_monsters.turtles[i].height) &&
             !g_monsters.turtles[i].isDead &&
             g_monsters.turtles[i].active)
@@ -556,7 +556,7 @@ void CheckMarioTurtleCollision()
             else if (g_monsters.turtles[i].turtleState == NORMAL) 
             {
                 // 스타 파워면 튕겨내기 처리
-                if (mario.star)
+                if (g_player.mario.star)
                 {
                     PlaySoundBuffer(kick_Sound);
                     g_monsters.turtles[i].vy = -15;
@@ -570,7 +570,7 @@ void CheckMarioTurtleCollision()
             }
             else if (g_monsters.turtles[i].turtleState == SHELL)
             {
-                if (mario.star)
+                if (g_player.mario.star)
                 {
                     PlaySoundBuffer(kick_Sound);
                     g_monsters.turtles[i].vy = -15;
@@ -582,7 +582,7 @@ void CheckMarioTurtleCollision()
                     PlaySoundBuffer(kick_Sound);
                     g_monsters.turtles[i].damage = false;
                     g_monsters.turtles[i].damageTimer = GetTickCount();
-                    int marioCenter = mario.x + mario.width / 2;
+                    int marioCenter = g_player.mario.x + g_player.mario.width / 2;
                     int turtleCenter = (g_monsters.turtles[i].x - g_game.cameraX) + g_monsters.turtles[i].width / 2;
 
                     g_monsters.turtles[i].turtleState = SPINNING;
@@ -632,17 +632,17 @@ void CheckMarioAngelTurtleCollision()
     {
         if (!g_monsters.angelTurtles[i].isAlive) continue;
 
-        int marioLeft = mario.x;
-        int marioRight = mario.x + mario.width;
-        int marioTop = mario.y;
-        int marioBottom = mario.y + mario.height;
+        int marioLeft = g_player.mario.x;
+        int marioRight = g_player.mario.x + g_player.mario.width;
+        int marioTop = g_player.mario.y;
+        int marioBottom = g_player.mario.y + g_player.mario.height;
 
         int turtleLeft = g_monsters.angelTurtles[i].x - g_game.cameraX;
         int turtleRight = turtleLeft + g_monsters.angelTurtles[i].width;
         int turtleTop = g_monsters.angelTurtles[i].y - TILE_SIZE;
         int turtleBottom = turtleTop + g_monsters.angelTurtles[i].height;
 
-        if (mario.vy > 0 &&
+        if (g_player.mario.vy > 0 &&
             marioBottom >= turtleTop &&
             marioBottom <= turtleTop + 10 &&
             marioRight > turtleLeft &&
@@ -653,13 +653,13 @@ void CheckMarioAngelTurtleCollision()
             g_monsters.angelTurtles[i].vy = 2;
             g_monsters.angelTurtles[i].hideStartTime = GetTickCount();
 
-            mario.vy = -15;
+            g_player.mario.vy = -15;
         }
-        else if (IsColliding(mario.x, mario.y, mario.width, mario.height,
+        else if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
                 turtleLeft, g_monsters.angelTurtles[i].y, g_monsters.angelTurtles[i].width, g_monsters.angelTurtles[i].height) &&
                 g_monsters.angelTurtles[i].isAlive)
         {
-            if (!mario.god && !mario.star) 
+            if (!g_player.mario.god && !g_player.mario.star) 
             {  // 무적 상태가 아닐 때 데미지
                 damage_mario();
             }
@@ -717,7 +717,7 @@ void UpdateBowser()
             if (!g_monsters.fireballs[i].active)
             {
                 // 마리오 위치 기반으로 방향 결정
-                int dir = (mario.x + mario.width / 2 < g_monsters.bowser.x + g_monsters.bowser.width / 2) ? -1 : 1;
+                int dir = (g_player.mario.x + g_player.mario.width / 2 < g_monsters.bowser.x + g_monsters.bowser.width / 2) ? -1 : 1;
 
                 g_monsters.fireballs[i].x = g_monsters.bowser.x + g_monsters.bowser.width / 2;
                 g_monsters.fireballs[i].y = g_monsters.bowser.y + g_monsters.bowser.height / 2;
@@ -794,12 +794,12 @@ void CheckMarioBowserCollision()
 
     int bowserX = g_monsters.bowser.x - g_game.cameraX;
 
-    if (IsColliding(mario.x, mario.y, mario.width, mario.height,
+    if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
         bowserX, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height) &&
         !g_monsters.bowser.isDead) 
     {
         // 스타 파워면 튕겨내기 처리
-        if (mario.star)
+        if (g_player.mario.star)
         {
             PlaySoundBuffer(kick_Sound);
             g_monsters.bowser.vy = -15;
@@ -814,7 +814,7 @@ void CheckMarioBowserCollision()
 }
 void CheckMarioFireballCollision() 
 {
-    if (mario.star || mario.isDead || mario.god) return;
+    if (g_player.mario.star || g_player.mario.isDead || g_player.mario.god) return;
 
     for (int i = 0; i < MAX_FIREBALLS; i++) 
     {
@@ -823,7 +823,7 @@ void CheckMarioFireballCollision()
         // 파이어볼 화면 좌표, 마리오 화면 좌표 기준으로 계산
         int fireballX = g_monsters.fireballs[i].x - g_game.cameraX;
         
-        if (IsColliding(mario.x, mario.y, mario.width, mario.height,
+        if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
             fireballX, g_monsters.fireballs[i].y, g_monsters.fireballs[i].width, g_monsters.fireballs[i].height))
         {
             damage_mario();  // 데미지 적용
@@ -835,25 +835,25 @@ void CheckMarioFireballCollision()
 
 void damage_mario()
 {
-    if (mario.god || mario.star) return;
+    if (g_player.mario.god || g_player.mario.star) return;
 
-    if (mario.isBig)
+    if (g_player.mario.isBig)
     {
         // 작은 마리오로 변신
         PlaySoundBuffer(powerdown_Sound);
-        mario.y += TILE_SIZE + 1;       // 위치 낮추기
+        g_player.mario.y += TILE_SIZE + 1;       // 위치 낮추기
         g_game.gameState = GAME_TRANSFORMING;
         g_game.transformStartTime = GetTickCount();
         // 반동 점프 방지를 위해 vy 유지 또는 0으로
     }
-    else if (mario.flower)
+    else if (g_player.mario.flower)
     {
         PlaySoundBuffer(powerdown_Sound);
         g_game.gameState = GAME_FLOWER_TRANS;
         g_game.transformStartTime = GetTickCount();
         // 반동 점프 방지를 위해 vy 유지 또는 0으로
     }
-    else if (mario.tino)
+    else if (g_player.mario.tino)
     {
         PlaySoundBuffer(powerdown_Sound);
         g_game.gameState = GAME_TINO_TRANS;

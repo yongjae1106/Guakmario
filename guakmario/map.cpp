@@ -93,13 +93,13 @@ void UpdateFireTraps()
 
 void CheckMarioHazardCollision()
 {
-    if (mario.star || mario.isDead || mario.god || mario.supergod) return;
+    if (g_player.mario.star || g_player.mario.isDead || g_player.mario.god || g_player.mario.supergod) return;
 
     RECT rMario = 
     {
-        mario.x, mario.y,
-        mario.x + mario.width,
-        mario.y + mario.height
+        g_player.mario.x, g_player.mario.y,
+        g_player.mario.x + g_player.mario.width,
+        g_player.mario.y + g_player.mario.height
     };
 
     for (int i = 0; i < fireTrapCount; i++) 

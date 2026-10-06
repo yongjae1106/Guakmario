@@ -23,14 +23,14 @@ void CheckCollision_mushroom()
 
         int mushroomXWorld = mushroom[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
-        if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
+        if (IsColliding_item(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
             mushroomXWorld, mushroom[i].y, mushroom[i].width, mushroom[i].height))
         {
             PlaySoundBuffer(powerup_Sound);
             mushroom[i].active = false;  // 버섯 먹기
-            if (!mario.isBig && !mario.flower && !mario.tino && g_game.gameState == GAME_RUNNING) 
+            if (!g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino && g_game.gameState == GAME_RUNNING) 
             {
-                mario.y -= TILE_SIZE + 1;       // 위치 맞추기
+                g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                 g_game.gameState = GAME_TRANSFORMING;
                 g_game.transformStartTime = GetTickCount();
             }
@@ -47,12 +47,12 @@ void CheckCollision_up_mushroom()
 
         int mushroomXWorld = up_mushroom[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
-        if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
+        if (IsColliding_item(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
             mushroomXWorld, up_mushroom[i].y, up_mushroom[i].width, up_mushroom[i].height))
         {
             PlaySoundBuffer(up_Sound);
             up_mushroom[i].active = false;  // 버섯 먹기
-            mario.life++;
+            g_player.mario.life++;
         }
     }
 }
@@ -64,16 +64,16 @@ void CheckCollision_flower()
 
         int flowerXWorld = flower[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
-        if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
+        if (IsColliding_item(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
             flowerXWorld, flower[i].y, flower[i].width, flower[i].height))
         {
             PlaySoundBuffer(powerup_Sound);
             flower[i].active = false;  // 먹기
-            if (!mario.flower && g_game.gameState == GAME_RUNNING)
+            if (!g_player.mario.flower && g_game.gameState == GAME_RUNNING)
             {
-                if(!mario.tino && !mario.isBig)
+                if(!g_player.mario.tino && !g_player.mario.isBig)
                 {
-                    mario.y -= TILE_SIZE + 1;       // 위치 맞추기
+                    g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                 }
                 g_game.gameState = GAME_FLOWER_TRANS;
                 g_game.transformStartTime = GetTickCount();
@@ -91,16 +91,16 @@ void CheckCollision_tino()
 
         int tinoXWorld = tino[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
-        if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
+        if (IsColliding_item(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
             tinoXWorld, tino[i].y, tino[i].width, tino[i].height))
         {
             PlaySoundBuffer(powerup_Sound);
             tino[i].active = false;  // 먹기
-            if (!mario.tino && g_game.gameState == GAME_RUNNING)
+            if (!g_player.mario.tino && g_game.gameState == GAME_RUNNING)
             {
-                if (!mario.flower && !mario.isBig)
+                if (!g_player.mario.flower && !g_player.mario.isBig)
                 {
-                    mario.y -= TILE_SIZE + 1;       // 위치 맞추기
+                    g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                 }
                 g_game.gameState = GAME_TINO_TRANS;
                 g_game.transformStartTime = GetTickCount();
@@ -118,14 +118,14 @@ void CheckCollision_star()
 
         int starXWorld = star[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
-        if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
+        if (IsColliding_item(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
             starXWorld, star[i].y, star[i].width, star[i].height))
         {
             star[i].active = false;  // 먹기
-            if (!mario.star)
+            if (!g_player.mario.star)
             {
                 PlayBGM("resource\\sound\\bgm\\InvincibilityTheam.wav");
-                mario.star = true;
+                g_player.mario.star = true;
                 g_game.starStartTime = GetTickCount();
             }
             // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
@@ -306,7 +306,7 @@ void tino_attack()
         if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive) // 여러 조건 같이 확인
         {
             if (IsColliding_item(monsterXWorld, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
-                (mario.direction == 0) ? mario.x - 50 :mario.x, mario.y - 15, 50, 100))
+                (g_player.mario.direction == 0) ? g_player.mario.x - 50 :g_player.mario.x, g_player.mario.y - 15, 50, 100))
             {
                 PlaySoundBuffer(kick_Sound);
                 g_monsters.monsters[j].vy = -15;
@@ -322,7 +322,7 @@ void tino_attack()
         if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive)
         {
             if (IsColliding_item(turtleXWorld, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
-                (mario.direction == 0) ? mario.x - 50 : mario.x, mario.y - 15, 50, 100))
+                (g_player.mario.direction == 0) ? g_player.mario.x - 50 : g_player.mario.x, g_player.mario.y - 15, 50, 100))
             {
                 PlaySoundBuffer(kick_Sound);
                 g_monsters.turtles[j].vy = -15;
@@ -337,7 +337,7 @@ void tino_attack()
         if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive)
         {
             if (IsColliding_item(turtleXWorld, g_monsters.angelTurtles[j].y, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
-                (mario.direction == 0) ? mario.x - 50 : mario.x, mario.y - 15, 50, 100))
+                (g_player.mario.direction == 0) ? g_player.mario.x - 50 : g_player.mario.x, g_player.mario.y - 15, 50, 100))
             {
                 PlaySoundBuffer(kick_Sound);
                 g_monsters.angelTurtles[j].vy = -15;
@@ -352,7 +352,7 @@ void tino_attack()
     if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive)
     {
         if (IsColliding_item(bowserXWorld, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
-            (mario.direction == 0) ? mario.x - 50 : mario.x, mario.y - 15, 50, 100) && !g_monsters.bowser.ignore_tinobite)
+            (g_player.mario.direction == 0) ? g_player.mario.x - 50 : g_player.mario.x, g_player.mario.y - 15, 50, 100) && !g_monsters.bowser.ignore_tinobite)
         {
             PlaySoundBuffer(kick_Sound);
             g_monsters.bowser.hp -= 10;
@@ -364,29 +364,29 @@ void tino_attack()
 
 void transform_to_flower()
 {
-    mario.isBig = false;
-    mario.tino = false;
-    mario.flower = true;
-    mario.height = 80;          // 높이 맞추기
+    g_player.mario.isBig = false;
+    g_player.mario.tino = false;
+    g_player.mario.flower = true;
+    g_player.mario.height = 80;          // 높이 맞추기
 }
 void transform_to_tino()
 {
-    mario.isBig = false;
-    mario.flower = false;
-    mario.tino = true;
-    mario.height = 80;          // 높이 맞추기
+    g_player.mario.isBig = false;
+    g_player.mario.flower = false;
+    g_player.mario.tino = true;
+    g_player.mario.height = 80;          // 높이 맞추기
 }
 void transform_bigmario()
 {
-    mario.tino = false;
-    mario.flower = false;
-    mario.isBig = true;
-    mario.height = 80;          // 높이 맞추기
+    g_player.mario.tino = false;
+    g_player.mario.flower = false;
+    g_player.mario.isBig = true;
+    g_player.mario.height = 80;          // 높이 맞추기
 }
 void transform_smallmario()
 {
-    mario.isBig = false;
-    mario.height = 40;          // 높이 맞추기
+    g_player.mario.isBig = false;
+    g_player.mario.height = 40;          // 높이 맞추기
 }
 
 // 버섯 움직임
@@ -535,7 +535,7 @@ void UpdateItems_star()
         int right = (star[i].x + TILE_SIZE - 1) / TILE_SIZE;
         int top = star[i].y / TILE_SIZE;
         int bottom = (star[i].y + TILE_SIZE - 1) / TILE_SIZE;
-        int middle = (mario.y + mario.height / 2 - 1) / TILE_SIZE;
+        int middle = (g_player.mario.y + g_player.mario.height / 2 - 1) / TILE_SIZE;
         
         // 2️⃣ 수평 충돌 처리
         if (star[i].vx < 0 && 
@@ -793,7 +793,7 @@ void fireball_spawn(int x, int y)
     }
     fireball[fireball_count].x = x;
     fireball[fireball_count].y = y;
-    fireball[fireball_count].vx = (mario.direction == 0) ? -7 : 7;
+    fireball[fireball_count].vx = (g_player.mario.direction == 0) ? -7 : 7;
     fireball[fireball_count].vy = 0;
     fireball[fireball_count].width = 10;
     fireball[fireball_count].height = 10;
@@ -810,12 +810,12 @@ void tinofire_spawn(int x, int y)
     }
     tinofire[tinofire_count].x = x;
     tinofire[tinofire_count].y = y;
-    tinofire[tinofire_count].vx = (mario.direction == 0) ? -7 : 7;
+    tinofire[tinofire_count].vx = (g_player.mario.direction == 0) ? -7 : 7;
     tinofire[tinofire_count].vy = 0;
     tinofire[tinofire_count].motion = 0;
     tinofire[tinofire_count].motion_fade = 0;
     tinofire[tinofire_count].duration = 0;
-    tinofire[tinofire_count].direction = mario.direction;
+    tinofire[tinofire_count].direction = g_player.mario.direction;
     tinofire[tinofire_count].width = TILE_SIZE * 2;
     tinofire[tinofire_count].height = TILE_SIZE * 2;
     tinofire[tinofire_count].active = true;
@@ -828,7 +828,7 @@ void god_mario(DWORD _godstart)
     DWORD now = GetTickCount();
     if (now - _godstart >= 1000)
     {
-        mario.god = false;
+        g_player.mario.god = false;
     }
 }
 void star_mario(DWORD _starstart)
@@ -837,6 +837,6 @@ void star_mario(DWORD _starstart)
     if (now - _starstart >= 10000)
     {
         SetStage_BGM();
-        mario.star = false;
+        g_player.mario.star = false;
     }
 }

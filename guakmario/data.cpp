@@ -3,13 +3,9 @@
 #include "game.h"
 #include "renderer.h"
 
-Player mario = { 100, 300, 0, 0, 5, 0, 40, 40, 1, 0, 0, 0, 0, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
-// x, y, vx, xy, life, coin, width, height, direction, walk_motion, motion_timer, cooldown_z, cooldown_space, isJumping, isflying, isWalking, isDead, gameover, 
-// isBig, god, star, flower, flower_motion, tino, tino_motion, tino_fire_motion, supergod
+PlayerContext g_player;
 
 GameContext g_game;
-
-bool keyState[256] = { false };
 
 HDC g_memDC;				// ���� �޸� DC
 HBITMAP g_memBitmap;		// ���� ��Ʈ��

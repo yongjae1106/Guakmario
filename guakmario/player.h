@@ -1,35 +1,39 @@
-﻿#pragma once
+#pragma once
 #include "data.h"
 
 struct Player
 {
-    int x, y;
-    int vx, vy;
-    int life;
-    int coin;
-    int width, height;
-    int direction;      // 0: left  1: right
-    int walk_motion;
-    int motion_timer;
-    int tino_cooldown_z;
-    int tino_cooldown_space;
-    bool isJumping;
-    bool isflying;
-    bool isWalking;
-    bool isDead;
-    bool gameover;
-    bool isBig;
-    bool god;
-    bool star;
-    bool flower;
-    bool fire_motion;
-    bool tino;
-    bool tino_motion;
-    bool tino_fire_motion;
-    bool supergod;
+    int x = 100, y = 300;
+    int vx = 0, vy = 0;
+    int life = 5;
+    int coin = 0;
+    int width = 40, height = 40;
+    int direction = 1;
+    int walk_motion = 0;
+    int motion_timer = 0;
+    int tino_cooldown_z = 0;
+    int tino_cooldown_space = 0;
+    bool isJumping = false;
+    bool isflying = false;
+    bool isWalking = false;
+    bool isDead = false;
+    bool gameover = false;
+    bool isBig = false;
+    bool god = false;
+    bool star = false;
+    bool flower = false;
+    bool fire_motion = false;
+    bool tino = false;
+    bool tino_motion = false;
+    bool tino_fire_motion = false;
+    bool supergod = false;
 };
-extern Player mario;
-extern bool keyState[256];
+
+struct PlayerContext {
+    Player mario;
+    bool keyState[256] = {};
+};
+extern PlayerContext g_player;
 
 void movePlayer();
 void UpdatePlayer();
