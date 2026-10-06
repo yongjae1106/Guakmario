@@ -25,97 +25,50 @@ static void InitMonstersFromData(const int* tileX, const int* tileY, int count, 
     }
 }
 
-void InitMonsters()
+void InitMonsters(int stage)
 {
-    static const int tileX[] = { 15, 28, 35,42,48,54,65,73,76,91,94,98,99,100,101,102,103,104 }; //x좌표
-    static const int tileY[] = { 12, 12, 12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12 };  //y좌표
-    InitMonstersFromData(tileX, tileY, 18, 20, 10);
+    static const int tileX1[] = { 15, 28, 35,42,48,54,65,73,76,91,94,98,99,100,101,102,103,104 };
+    static const int tileY1[] = { 12, 12, 12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12 };
+    static const int tileX2[] = { 30,31,32,35,99,100,101,50,51,52 };
+    static const int tileY2[] = { 7,7,7,5,4,4,4,6,6,6 };
+    static const int tileX3[] = { 34,35,30,31,32,95,96,97,73,75,76 };
+    static const int tileY3[] = { 9,9,9,9,9,9,9,9,9,9,9 };
+
+    if      (stage == 1) InitMonstersFromData(tileX1, tileY1, 18, 20, 10);
+    else if (stage == 2) InitMonstersFromData(tileX2, tileY2, 10, 20, 20);
+    else if (stage == 3) InitMonstersFromData(tileX3, tileY3, 11, 20, 20);
 }
 
-void InitMonsters2()
+static void InitTurtlesFromData(const int* tileX, const int* tileY, int count)
 {
-    static const int tileX[] = { 30,31,32,35,99,100,101,50,51,52 }; //x좌표
-    static const int tileY[] = { 7,7,7,5,4,4,4,6,6,6 };  //y좌표
-    InitMonstersFromData(tileX, tileY, 10, 20, 20);
-}
-
-void InitMonsters3()
-{
-    static const int tileX[] = { 34,35,30,31,32,95,96,97,73,75,76 }; //x좌표
-    static const int tileY[] = { 9,9,9,9,9,9,9,9,9,9,9 };  //y좌표
-    InitMonstersFromData(tileX, tileY, 11, 20, 20);
-}
-
-void InitTurtles()
-{
-    g_monsters.turtleCount = 5;
-
-    int tileX[] = { 10, 33, 35, 50, 65 };
-    int tileY[] = { 12, 12, 12, 12, 12 };
-
-    for (int i = 0; i < g_monsters.turtleCount; i++)
+    g_monsters.turtleCount = count;
+    for (int i = 0; i < count; i++)
     {
-        g_monsters.turtles[i].x = tileX[i] * TILE_SIZE;
-        g_monsters.turtles[i].y = tileY[i] * TILE_SIZE;
-        g_monsters.turtles[i].vx = -1;
-        g_monsters.turtles[i].vy = 0;
-        g_monsters.turtles[i].width = 20;
-        g_monsters.turtles[i].height = 20;
-        g_monsters.turtles[i].direction = 0; // left
-        g_monsters.turtles[i].isFalling = false;
-        g_monsters.turtles[i].isAlive = true;
-        g_monsters.turtles[i].isDead = false;
-        g_monsters.turtles[i].active = true;
+        g_monsters.turtles[i] = {};
+        g_monsters.turtles[i].x         = tileX[i] * TILE_SIZE;
+        g_monsters.turtles[i].y         = tileY[i] * TILE_SIZE;
+        g_monsters.turtles[i].vx        = -1;
+        g_monsters.turtles[i].width     = 20;
+        g_monsters.turtles[i].height    = 20;
+        g_monsters.turtles[i].direction = 0;
+        g_monsters.turtles[i].isAlive   = true;
+        g_monsters.turtles[i].active    = true;
         g_monsters.turtles[i].turtleState = NORMAL;
-        g_monsters.turtles[i].shellTimer = 0;
     }
 }
-void InitTurtles2()
+
+void InitTurtles(int stage)
 {
-    g_monsters.turtleCount = 5;
+    static const int tileX1[] = { 10, 33, 35, 50, 65 };
+    static const int tileY1[] = { 12, 12, 12, 12, 12 };
+    static const int tileX2[] = { 17, 33, 35, 50, 65 };
+    static const int tileY2[] = { 5,  12, 12, 12, 12 };
+    static const int tileX3[] = { 60 };
+    static const int tileY3[] = { 9  };
 
-    int tileX[] = { 17, 33, 35, 50, 65 };
-    int tileY[] = { 5, 12, 12, 12, 12 };
-
-    for (int i = 0; i < g_monsters.turtleCount; i++)
-    {
-        g_monsters.turtles[i].x = tileX[i] * TILE_SIZE;
-        g_monsters.turtles[i].y = tileY[i] * TILE_SIZE;
-        g_monsters.turtles[i].vx = -1;
-        g_monsters.turtles[i].vy = 0;
-        g_monsters.turtles[i].width = 20;
-        g_monsters.turtles[i].height = 20;
-        g_monsters.turtles[i].direction = 0; // left
-        g_monsters.turtles[i].isFalling = false;
-        g_monsters.turtles[i].isAlive = true;
-        g_monsters.turtles[i].isDead = false;
-        g_monsters.turtles[i].active = true;
-        g_monsters.turtles[i].turtleState = NORMAL;
-        g_monsters.turtles[i].shellTimer = 0;
-    }
-}
-void InitTurtles3()
-{
-    g_monsters.turtleCount = 1;
-
-    int tileX[] = { 60 };
-    int tileY[] = { 9 };
-
-    for (int i = 0; i < g_monsters.turtleCount; i++)
-    {
-        g_monsters.turtles[i].x = tileX[i] * TILE_SIZE;
-        g_monsters.turtles[i].y = tileY[i] * TILE_SIZE;
-        g_monsters.turtles[i].vx = -1;
-        g_monsters.turtles[i].vy = 0;
-        g_monsters.turtles[i].width = 20;
-        g_monsters.turtles[i].height = 20;
-        g_monsters.turtles[i].isFalling = false;
-        g_monsters.turtles[i].isAlive = true;
-        g_monsters.turtles[i].isDead = false;
-        g_monsters.turtles[i].active = true;
-        g_monsters.turtles[i].turtleState = NORMAL;
-        g_monsters.turtles[i].shellTimer = 0;
-    }
+    if      (stage == 1) InitTurtlesFromData(tileX1, tileY1, 5);
+    else if (stage == 2) InitTurtlesFromData(tileX2, tileY2, 5);
+    else if (stage == 3) InitTurtlesFromData(tileX3, tileY3, 1);
 }
 void InitAngelTurtles()
 {

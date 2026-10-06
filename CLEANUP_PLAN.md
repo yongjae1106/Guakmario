@@ -194,9 +194,9 @@ CheckMarioFireballCollision()
 ### 5-2. `InitTurtles(int stage)` 통합
 현재 `InitTurtles()`, `InitTurtles2()`, `InitTurtles3()`로 분리된 것을 파라미터로 통합.
 
-- [ ] 통합 함수 작성
-- [ ] `stage_load()` 호출부 수정
-- [ ] 기존 함수 제거
+- [x] 통합 함수 작성
+- [x] `LoadStage()` 호출부 수정
+- [x] 기존 함수 제거
 
 ---
 

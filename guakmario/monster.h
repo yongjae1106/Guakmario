@@ -110,12 +110,8 @@ struct MonsterState {
 };
 extern MonsterState g_monsters;
 
-void InitMonsters();
-void InitMonsters2();
-void InitMonsters3();
-void InitTurtles();
-void InitTurtles2();
-void InitTurtles3();
+void InitMonsters(int stage);
+void InitTurtles(int stage);
 void InitAngelTurtles();
 void InitBowser();
 

@@ -210,49 +210,21 @@ void LoadStage()
     g_player.mario.god = false;
     g_player.mario.star = false;
 
-    if (g_game.stage == 1)
-    {
-        g_game.cameraX = 0;
-        InitMap();           // 맵 초기화
-        currentMap = map1;
+    static void (*initMap[])() = { nullptr, InitMap, InitMap2, InitMap3 };
+    static int (*mapData[])[MAP_WIDTH] = { nullptr, map1, map2, map3 };
+    int s = g_game.stage;
 
-        InitMonsters();     //몬스터 초기화
-        InitTurtles();
+    ResetMonsters();
+    g_game.cameraX = 0;
+    initMap[s]();
+    currentMap = mapData[s];
 
-        g_player.mario.x = 100;
-        g_player.mario.y = 300;
-        g_game.stage_time = 400;
+    InitMonsters(s);
+    InitTurtles(s);
+    if (s == 2) InitAngelTurtles();
+    if (s == 3) { InitFireTraps(); InitBowser(); }
 
-    }
-    else if (g_game.stage == 2)
-    {
-        ResetMonsters();
-        g_game.cameraX = 0;
-        InitMap2();  //맵 초기화
-        currentMap = map2;
-
-        InitMonsters2();     //몬스터 초기화
-        InitTurtles2();
-        InitAngelTurtles();
-
-        g_player.mario.x = 100;
-        g_player.mario.y = 300;
-        g_game.stage_time = 400;
-    }
-    else if (g_game.stage == 3)
-    {
-        ResetMonsters();
-        g_game.cameraX = 0;
-        InitMap3();           // 맵 초기화
-        currentMap = map3;
-
-        InitFireTraps();
-        InitMonsters3();     //몬스터 초기화
-        InitTurtles3();
-        InitBowser();
-
-        g_player.mario.x = 100;
-        g_player.mario.y = 300;
-        g_game.stage_time = 400;
-    }
+    g_player.mario.x = 100;
+    g_player.mario.y = 300;
+    g_game.stage_time = 400;
 }
