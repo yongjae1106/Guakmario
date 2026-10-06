@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "data.h"
 
 extern HDC g_memDC;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "data.h"
 
 extern int map1[MAP_HEIGHT][MAP_WIDTH];

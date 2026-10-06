@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "map.h"
 #include "renderer.h"
 #include "player.h"

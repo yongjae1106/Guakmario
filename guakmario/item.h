@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "data.h"
 #define MAX_ITEMS 30
 #define MAX_SHOT 10
