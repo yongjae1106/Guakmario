@@ -1,5 +1,6 @@
 #include "item.h"
 #include "data.h"
+#include "renderer.h"
 #include "player.h"
 #include "game.h"
 #include "map.h"
