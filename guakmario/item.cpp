@@ -21,18 +21,18 @@ void CheckCollision_mushroom()
     {
         if (!mushroom[i].active) continue;
 
-        int mushroomXWorld = mushroom[i].x - cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
+        int mushroomXWorld = mushroom[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
         if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
             mushroomXWorld, mushroom[i].y, mushroom[i].width, mushroom[i].height))
         {
             PlaySoundBuffer(powerup_Sound);
             mushroom[i].active = false;  // 버섯 먹기
-            if (!mario.isBig && !mario.flower && !mario.tino && gameState == GAME_RUNNING) 
+            if (!mario.isBig && !mario.flower && !mario.tino && g_game.gameState == GAME_RUNNING) 
             {
                 mario.y -= TILE_SIZE + 1;       // 위치 맞추기
-                gameState = GAME_TRANSFORMING;
-                transformStartTime = GetTickCount();
+                g_game.gameState = GAME_TRANSFORMING;
+                g_game.transformStartTime = GetTickCount();
             }
             // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
             // 예) score += 1000;
@@ -45,7 +45,7 @@ void CheckCollision_up_mushroom()
     {
         if (!up_mushroom[i].active) continue;
 
-        int mushroomXWorld = up_mushroom[i].x - cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
+        int mushroomXWorld = up_mushroom[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
         if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
             mushroomXWorld, up_mushroom[i].y, up_mushroom[i].width, up_mushroom[i].height))
@@ -62,21 +62,21 @@ void CheckCollision_flower()
     {
         if (!flower[i].active) continue;
 
-        int flowerXWorld = flower[i].x - cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
+        int flowerXWorld = flower[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
         if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
             flowerXWorld, flower[i].y, flower[i].width, flower[i].height))
         {
             PlaySoundBuffer(powerup_Sound);
             flower[i].active = false;  // 먹기
-            if (!mario.flower && gameState == GAME_RUNNING)
+            if (!mario.flower && g_game.gameState == GAME_RUNNING)
             {
                 if(!mario.tino && !mario.isBig)
                 {
                     mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                 }
-                gameState = GAME_FLOWER_TRANS;
-                transformStartTime = GetTickCount();
+                g_game.gameState = GAME_FLOWER_TRANS;
+                g_game.transformStartTime = GetTickCount();
             }
             // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
             // 예) score += 1000;
@@ -89,21 +89,21 @@ void CheckCollision_tino()
     {
         if (!tino[i].active) continue;
 
-        int tinoXWorld = tino[i].x - cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
+        int tinoXWorld = tino[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
         if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
             tinoXWorld, tino[i].y, tino[i].width, tino[i].height))
         {
             PlaySoundBuffer(powerup_Sound);
             tino[i].active = false;  // 먹기
-            if (!mario.tino && gameState == GAME_RUNNING)
+            if (!mario.tino && g_game.gameState == GAME_RUNNING)
             {
                 if (!mario.flower && !mario.isBig)
                 {
                     mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                 }
-                gameState = GAME_TINO_TRANS;
-                transformStartTime = GetTickCount();
+                g_game.gameState = GAME_TINO_TRANS;
+                g_game.transformStartTime = GetTickCount();
             }
             // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
             // 예) score += 1000;
@@ -116,7 +116,7 @@ void CheckCollision_star()
     {
         if (!star[i].active) continue;
 
-        int starXWorld = star[i].x - cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
+        int starXWorld = star[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
 
         if (IsColliding_item(mario.x, mario.y, mario.width, mario.height,
             starXWorld, star[i].y, star[i].width, star[i].height))
@@ -126,7 +126,7 @@ void CheckCollision_star()
             {
                 PlayBGM("resource\\sound\\bgm\\InvincibilityTheam.wav");
                 mario.star = true;
-                starStartTime = GetTickCount();
+                g_game.starStartTime = GetTickCount();
             }
             // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
             // 예) score += 1000;
@@ -139,11 +139,11 @@ void CheckCollision_fireball()
     {
         if (!fireball[i].active) continue;
 
-        int fireballXWorld = fireball[i].x - cameraX;
+        int fireballXWorld = fireball[i].x - g_game.cameraX;
 
         for (int j = 0; j < MAX_MONSTERS; j++)
         {
-            int monsterXWorld = monsters[j].x - cameraX;
+            int monsterXWorld = monsters[j].x - g_game.cameraX;
             if (!monsters[j].isDead && monsters[j].isAlive && fireball[i].active) // 여러 조건 같이 확인
             {
                 if (IsColliding_item(monsterXWorld, monsters[j].y, monsters[j].width, monsters[j].height,
@@ -161,7 +161,7 @@ void CheckCollision_fireball()
 
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int turtleXWorld = turtles[j].x - cameraX;
+            int turtleXWorld = turtles[j].x - g_game.cameraX;
             if (!turtles[j].isDead && turtles[j].isAlive && fireball[i].active)
             {
                 if (IsColliding_item(turtleXWorld, turtles[j].y, turtles[j].width, turtles[j].height,
@@ -178,7 +178,7 @@ void CheckCollision_fireball()
         }
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int turtleXWorld = angelTurtles[j].x - cameraX;
+            int turtleXWorld = angelTurtles[j].x - g_game.cameraX;
             if (!angelTurtles[j].isDead && angelTurtles[j].isAlive && fireball[i].active)
             {
                 if (IsColliding_item(turtleXWorld, angelTurtles[j].y, angelTurtles[j].width, angelTurtles[j].height,
@@ -194,7 +194,7 @@ void CheckCollision_fireball()
             }
         }
 
-        int bowserXWorld = bowser.x - cameraX;
+        int bowserXWorld = bowser.x - g_game.cameraX;
         if (!bowser.isDead && bowser.isAlive && fireball[i].active)
         {
             if (IsColliding_item(bowserXWorld, bowser.y, bowser.width, bowser.height,
@@ -215,11 +215,11 @@ void CheckCollision_tinofire()
     {
         if (!tinofire[i].active) continue;
 
-        int tinofireXWorld = tinofire[i].x - cameraX;
+        int tinofireXWorld = tinofire[i].x - g_game.cameraX;
 
         for (int j = 0; j < MAX_MONSTERS; j++)
         {
-            int monsterXWorld = monsters[j].x - cameraX;
+            int monsterXWorld = monsters[j].x - g_game.cameraX;
             if (!monsters[j].isDead && monsters[j].isAlive && tinofire[i].active) // 여러 조건 같이 확인
             {
                 if (IsColliding_item(monsterXWorld, monsters[j].y, monsters[j].width, monsters[j].height,
@@ -237,7 +237,7 @@ void CheckCollision_tinofire()
 
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int turtleXWorld = turtles[j].x - cameraX;
+            int turtleXWorld = turtles[j].x - g_game.cameraX;
             if (!turtles[j].isDead && turtles[j].isAlive && tinofire[i].active)
             {
                 if (IsColliding_item(turtleXWorld, turtles[j].y, turtles[j].width, turtles[j].height,
@@ -254,7 +254,7 @@ void CheckCollision_tinofire()
         }
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int angelturtleXWorld = angelTurtles[j].x - cameraX;
+            int angelturtleXWorld = angelTurtles[j].x - g_game.cameraX;
             if (!angelTurtles[j].isDead && angelTurtles[j].isAlive && tinofire[i].active)
             {
                 if (IsColliding_item(angelturtleXWorld, angelTurtles[j].y + 20, angelTurtles[j].width, angelTurtles[j].height,
@@ -270,7 +270,7 @@ void CheckCollision_tinofire()
             }
         }
 
-        int bowserXWorld = bowser.x - cameraX;
+        int bowserXWorld = bowser.x - g_game.cameraX;
         if (!bowser.isDead && bowser.isAlive && tinofire[i].active)
         {
             if (IsColliding_item(bowserXWorld, bowser.y, bowser.width, bowser.height,
@@ -302,7 +302,7 @@ void tino_attack()
 {
     for (int j = 0; j < MAX_MONSTERS; j++)
     {
-        int monsterXWorld = monsters[j].x - cameraX;
+        int monsterXWorld = monsters[j].x - g_game.cameraX;
         if (!monsters[j].isDead && monsters[j].isAlive) // 여러 조건 같이 확인
         {
             if (IsColliding_item(monsterXWorld, monsters[j].y, monsters[j].width, monsters[j].height,
@@ -318,7 +318,7 @@ void tino_attack()
 
     for (int j = 0; j < MAX_TURTLES; j++)
     {
-        int turtleXWorld = turtles[j].x - cameraX;
+        int turtleXWorld = turtles[j].x - g_game.cameraX;
         if (!turtles[j].isDead && turtles[j].isAlive)
         {
             if (IsColliding_item(turtleXWorld, turtles[j].y, turtles[j].width, turtles[j].height,
@@ -333,7 +333,7 @@ void tino_attack()
     }
     for (int j = 0; j < MAX_TURTLES; j++)
     {
-        int turtleXWorld = angelTurtles[j].x - cameraX;
+        int turtleXWorld = angelTurtles[j].x - g_game.cameraX;
         if (!angelTurtles[j].isDead && angelTurtles[j].isAlive)
         {
             if (IsColliding_item(turtleXWorld, angelTurtles[j].y, angelTurtles[j].width, angelTurtles[j].height,
@@ -348,7 +348,7 @@ void tino_attack()
         }
     }
 
-    int bowserXWorld = bowser.x - cameraX;
+    int bowserXWorld = bowser.x - g_game.cameraX;
     if (!bowser.isDead && bowser.isAlive)
     {
         if (IsColliding_item(bowserXWorld, bowser.y, bowser.width, bowser.height,
@@ -565,7 +565,7 @@ void UpdateItems_star()
         if (star[i].vy < 0 && (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[top][right])))
         {
             // 마리오가 정통으로 친 블럭 찾기
-            int centerX = star[i].x + TILE_SIZE / 2 + cameraX;
+            int centerX = star[i].x + TILE_SIZE / 2 + g_game.cameraX;
             int blockX = centerX / TILE_SIZE;
 
             star[i].y = (top + 1) * TILE_SIZE;

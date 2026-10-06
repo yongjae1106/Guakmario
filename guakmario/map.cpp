@@ -61,7 +61,7 @@ void InitFireTraps()
 
 void UpdateFireTraps() 
 {
-    if (stage != 3) return; // 3스테이지가 아닐 때 동작 안 하게
+    if (g_game.stage != 3) return; // 3스테이지가 아닐 때 동작 안 하게
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -107,8 +107,8 @@ void CheckMarioHazardCollision()
         if (!fireTraps[i].active) continue;
 
         RECT rTrap = {
-            fireTraps[i].x - cameraX, fireTraps[i].y,
-            fireTraps[i].x - cameraX + fireTraps[i].width,
+            fireTraps[i].x - g_game.cameraX, fireTraps[i].y,
+            fireTraps[i].x - g_game.cameraX + fireTraps[i].width,
             fireTraps[i].y + fireTraps[i].height
         };
 

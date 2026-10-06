@@ -16,95 +16,95 @@ static void handle_transform(bool& flag, void (*primary_fn)(), void (*fallback_f
 {
     mario.god = true;
     DWORD now = GetTickCount();
-    if (now - transformStartTime >= 700)
+    if (now - g_game.transformStartTime >= 700)
     {
         if (!flag)
             primary_fn();
         else if (mario.god)
         {
             fallback_fn();
-            godstart = GetTickCount();
+            g_game.godstart = GetTickCount();
         }
-        gameState = GAME_RUNNING;  // 다시 정상 진행
+        g_game.gameState = GAME_RUNNING;  // 다시 정상 진행
     }
 }
 
 void UpdateGame()
 {
     // 변신 모션 (mushroom / flower / tino)
-    if (gameState == GAME_TRANSFORMING)
+    if (g_game.gameState == GAME_TRANSFORMING)
     {
         handle_transform(mario.isBig,   transform_bigmario,  transform_smallmario);
         return; // 게임 상태 업데이트 생략해서 "멈춘 듯한" 연출
     }
-    else if (gameState == GAME_FLOWER_TRANS)
+    else if (g_game.gameState == GAME_FLOWER_TRANS)
     {
         handle_transform(mario.flower,  transform_to_flower, transform_bigmario);
         return;
     }
-    else if (gameState == GAME_TINO_TRANS)
+    else if (g_game.gameState == GAME_TINO_TRANS)
     {
         handle_transform(mario.tino,    transform_to_tino,   transform_bigmario);
         return;
     }
     // 승리 모션
-    else if (gameState == GAME_VICTORY)
+    else if (g_game.gameState == GAME_VICTORY)
     {
         DWORD now = GetTickCount();
         mario.vx = 1;
         mario.x += mario.vx;
-        if (now - victoryStart >= 5000)
+        if (now - g_game.victoryStart >= 5000)
         {
-            stage++;
+            g_game.stage++;
             stage_load();
-            gameState = GAME_RUNNING;
+            g_game.gameState = GAME_RUNNING;
         }
     }
     // 최종 승리 모션
-    else if (gameState == GAME_CLEAR)
+    else if (g_game.gameState == GAME_CLEAR)
     {
-        if (GetTickCount() - clearStart >= 0 && GetTickCount() - clearStart <= 5000)
+        if (GetTickCount() - g_game.clearStart >= 0 && GetTickCount() - g_game.clearStart <= 5000)
         {
             mario.vx = 1;
             mario.x += mario.vx;
         }
         else
         {
-            gameclear_text = true;
+            g_game.gameclear_text = true;
             mario.isWalking = false;
             mario.vx = 0;
         }
-        if (GetTickCount() - clearStart >= 10000)
+        if (GetTickCount() - g_game.clearStart >= 10000)
         {
-            stage = 1;
-            gameclear_text = false;
-            gamestart = false;
+            g_game.stage = 1;
+            g_game.gameclear_text = false;
+            g_game.gamestart = false;
             ResetMario(5, 0);
-            gameState = GAME_RUNNING;
+            g_game.gameState = GAME_RUNNING;
         }
     }
     // 시망모션
-    else if (gameState == GAME_OVER)
+    else if (g_game.gameState == GAME_OVER)
     {
         DWORD now = GetTickCount();
         if (mario.isDead)
         {
             static bool motion1;
             if (motion1) UpdateDeadMotion();
-            if (now - deadStartTime >= 500 && !motion1)
+            if (now - g_game.deadStartTime >= 500 && !motion1)
             {
                 mario.vy -= 14;
                 motion1 = true;
             }
-            if (now - deadStartTime >= 2000)
+            if (now - g_game.deadStartTime >= 2000)
             {
                 if (mario.life <= 0)
                 {
-                    stage = 1;
-                    gameclear_text = false;
-                    gamestart = false;
+                    g_game.stage = 1;
+                    g_game.gameclear_text = false;
+                    g_game.gamestart = false;
                     ResetMario(5, 0);
-                    gameState = GAME_RUNNING;
+                    g_game.gameState = GAME_RUNNING;
                     return;
                 }
                 mario.isDead = false;
@@ -112,9 +112,9 @@ void UpdateGame()
             }
             return;
         }
-        if (now - deadStartTime >= 3000)
+        if (now - g_game.deadStartTime >= 3000)
         {
-            gameState = GAME_RUNNING;  // 다시 정상 진행
+            g_game.gameState = GAME_RUNNING;  // 다시 정상 진행
             resurrection();
         }
 
@@ -124,12 +124,12 @@ void UpdateGame()
     // 무적처리
     if (mario.god)
     {
-        god_mario(godstart);
+        god_mario(g_game.godstart);
     }
     // 스타 무적처리
     else if (mario.star)
     {
-        star_mario(starStartTime);
+        star_mario(g_game.starStartTime);
     }
 
     if (mario.coin > 99)
@@ -174,13 +174,13 @@ void UpdateGame()
     CheckCollision_fireball();
     CheckCollision_tinofire();
     checkcollision_flag();
-    if(stage == 3) checkcollision_clear();
+    if(g_game.stage == 3) checkcollision_clear();
 }
 
 void timegoes()
 {
-    stage_time--;
-    if (stage_time == 0)
+    g_game.stage_time--;
+    if (g_game.stage_time == 0)
     {
         dead();
     }
@@ -234,9 +234,9 @@ void stage_load()
     mario.god = false;
     mario.star = false;
 
-    if (stage == 1)
+    if (g_game.stage == 1)
     {
-        cameraX = 0;
+        g_game.cameraX = 0;
         InitMap();           // 맵 초기화
         currentMap = map1;
 
@@ -245,13 +245,13 @@ void stage_load()
 
         mario.x = 100;
         mario.y = 300;
-        stage_time = 400;
+        g_game.stage_time = 400;
 
     }
-    else if (stage == 2)
+    else if (g_game.stage == 2)
     {
         monster_reset();
-        cameraX = 0;
+        g_game.cameraX = 0;
         InitMap2();  //맵 초기화
         currentMap = map2;
 
@@ -261,12 +261,12 @@ void stage_load()
 
         mario.x = 100;
         mario.y = 300;
-        stage_time = 400;
+        g_game.stage_time = 400;
     }
-    else if (stage == 3)
+    else if (g_game.stage == 3)
     {
         monster_reset();
-        cameraX = 0;
+        g_game.cameraX = 0;
         InitMap3();           // 맵 초기화
         currentMap = map3;
 
@@ -277,6 +277,6 @@ void stage_load()
 
         mario.x = 100;
         mario.y = 300;
-        stage_time = 400;
+        g_game.stage_time = 400;
     }
 }

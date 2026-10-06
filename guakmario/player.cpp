@@ -54,7 +54,7 @@ void UpdateMario_motion()
 
 void UpdatePlayer()
 {
-    if(gameState != GAME_VICTORY && gameState != GAME_CLEAR)
+    if(g_game.gameState != GAME_VICTORY && g_game.gameState != GAME_CLEAR)
     {
         movePlayer();
     }
@@ -62,8 +62,8 @@ void UpdatePlayer()
     mario.x += mario.vx;
 
     // 좌우 충돌 처리
-    int left = (mario.x + cameraX) / TILE_SIZE;
-    int right = (mario.x + mario.width - 1 + cameraX) / TILE_SIZE;
+    int left = (mario.x + g_game.cameraX) / TILE_SIZE;
+    int right = (mario.x + mario.width - 1 + g_game.cameraX) / TILE_SIZE;
     int top = mario.y / TILE_SIZE;
     int bottom = (mario.y + mario.height - 1) / TILE_SIZE;
     int middle = (mario.y + mario.height / 2 - 1) / TILE_SIZE;
@@ -72,14 +72,14 @@ void UpdatePlayer()
     if (!(mario.y < 0) && mario.vx < 0 &&
         (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
     {
-        mario.x = left * TILE_SIZE - cameraX + TILE_SIZE;
+        mario.x = left * TILE_SIZE - g_game.cameraX + TILE_SIZE;
     }
 
     // 블럭 오른쪽 벽 충돌
     if (!(mario.y < 0) && mario.vx > 0 &&
         (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right]) || isSolidTile(currentMap[middle][right])))
     {
-        mario.x = right * TILE_SIZE - cameraX - mario.width;
+        mario.x = right * TILE_SIZE - g_game.cameraX - mario.width;
     }
 
     // 중력 적용
@@ -89,8 +89,8 @@ void UpdatePlayer()
     mario.y += mario.vy;
 
     // y축 충돌 다시 계산
-    left = (mario.x + cameraX) / TILE_SIZE;
-    right = (mario.x + mario.width - 1 + cameraX) / TILE_SIZE;
+    left = (mario.x + g_game.cameraX) / TILE_SIZE;
+    right = (mario.x + mario.width - 1 + g_game.cameraX) / TILE_SIZE;
     top = mario.y / TILE_SIZE;
     bottom = (mario.y + mario.height - 1) / TILE_SIZE;
 
@@ -102,7 +102,7 @@ void UpdatePlayer()
         {
             dead();
         }
-        int centerX = mario.x + TILE_SIZE / 2 + cameraX;
+        int centerX = mario.x + TILE_SIZE / 2 + g_game.cameraX;
         int blockX = centerX / TILE_SIZE;
         
         mario.y = bottom * TILE_SIZE - mario.height;
@@ -114,7 +114,7 @@ void UpdatePlayer()
     else if (!(mario.y < 0) && mario.vy < 0 && (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[top][right])))
     {
         // 마리오가 정통으로 친 블럭 찾기
-        int centerX = mario.x + TILE_SIZE / 2 + cameraX;
+        int centerX = mario.x + TILE_SIZE / 2 + g_game.cameraX;
         int blockX = centerX / TILE_SIZE;
         
         mario.y = (top + 1) * TILE_SIZE;
@@ -231,18 +231,18 @@ void UpdatePlayer()
     // 카메라 이동
     if (mario.x > SCREEN_WIDTH / 2)
     {
-        cameraX += mario.vx;
+        g_game.cameraX += mario.vx;
         mario.x = SCREEN_WIDTH / 2;
     }
-    if (mario.x < SCREEN_WIDTH / 2 && cameraX > 0)
+    if (mario.x < SCREEN_WIDTH / 2 && g_game.cameraX > 0)
     {
-        cameraX += mario.vx;
+        g_game.cameraX += mario.vx;
         mario.x = SCREEN_WIDTH / 2;
     }
 
-    if (cameraX < 0) cameraX = 0;
-    if (cameraX > MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH)
-        cameraX = MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH;
+    if (g_game.cameraX < 0) g_game.cameraX = 0;
+    if (g_game.cameraX > MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH)
+        g_game.cameraX = MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH;
 
     if (mario.y > 800)
     {
@@ -261,15 +261,15 @@ void dead()
 {
     g_pBGMBuffer->Stop();
     PlaySoundBuffer(die_Sound);
-    gameState = GAME_OVER;
+    g_game.gameState = GAME_OVER;
     mario.isDead = true;
     mario.isBig = false;
     mario.flower = false;
     mario.tino = false;
-    deadStartTime = GetTickCount();
+    g_game.deadStartTime = GetTickCount();
 
     mario.life--;
-    stage_time = 400;
+    g_game.stage_time = 400;
 
 }
 void resurrection()
@@ -291,8 +291,8 @@ void resurrection()
     item_reset();
     monster_reset();
     stage_load();
-    cameraX = 0;
-    gameState = GAME_RUNNING;
+    g_game.cameraX = 0;
+    g_game.gameState = GAME_RUNNING;
     ResetMario(mario.life, mario.coin);
 }
 

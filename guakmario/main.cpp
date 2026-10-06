@@ -16,7 +16,7 @@ HWND hWnd;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 {
-    if (!gamestart)
+    if (!g_game.gamestart)
     {
         switch (message)
         {
@@ -35,31 +35,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     case VK_UP:
                     {
-                        if (title_select == 1)
+                        if (g_game.title_select == 1)
                         {
-                            title_select = 0;
+                            g_game.title_select = 0;
                         }
                         break;
                     }
                     case VK_DOWN:
                     {
-                        if (title_select == 0)
+                        if (g_game.title_select == 0)
                         {
-                            title_select = 1;
+                            g_game.title_select = 1;
                         }
                         break;
                     }
                     case VK_RETURN:
                     {
-                        if (title_select == 0)
+                        if (g_game.title_select == 0)
                         {
                             mario_DC = CreateCompatibleDC(g_memDC);
 
                             stage_load();
 
-                            gamestart = true;
+                            g_game.gamestart = true;
                         }
-                        else if (title_select == 1)
+                        else if (g_game.title_select == 1)
                         {
                             exit(1);
                         }
@@ -83,11 +83,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 graphics.DrawImage(title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);    // 타이틀
 
                 // 커서
-                if (title_select == 0)
+                if (g_game.title_select == 0)
                 {
                     graphics.DrawImage(title_cursor, 220, 380, 25, 25);
                 }
-                else if (title_select == 1)
+                else if (g_game.title_select == 1)
                 {
                     graphics.DrawImage(title_cursor, 220, 420, 25, 25);
                 }
@@ -146,27 +146,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case(3):
             {
-                if (frame_motion < 6)
+                if (g_game.frame_motion < 6)
                 {
-                    frame_motion++;
+                    g_game.frame_motion++;
                 }
                 else
                 {
-                    frame_motion = 0;
+                    g_game.frame_motion = 0;
                 }
-                if (frame_motion_star < 2)
+                if (g_game.frame_motion_star < 2)
                 {
-                    frame_motion_star++;
+                    g_game.frame_motion_star++;
                 }
                 else
                 {
-                    frame_motion_star = 0;
+                    g_game.frame_motion_star = 0;
                 }
                 break;
             }
             case(4):
             {
-                if (gameState == GAME_OVER || gameState == GAME_VICTORY || gameState == GAME_CLEAR) break;
+                if (g_game.gameState == GAME_OVER || g_game.gameState == GAME_VICTORY || g_game.gameState == GAME_CLEAR) break;
                 timegoes();
                 break;
             }
@@ -198,7 +198,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     PlaySoundBuffer(bowserfire_Sound);
                     mario.tino_fire_motion = true;
                     mario.motion_timer = 10;
-                    tinofire_spawn(mario.x + cameraX, mario.y);
+                    tinofire_spawn(mario.x + g_game.cameraX, mario.y);
                     mario.tino_cooldown_z = 5;
                     break;
                 }
@@ -208,7 +208,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         case WM_KEYDOWN:
         {
-            if (gameState == GAME_OVER || gameState == GAME_VICTORY || gameState == GAME_CLEAR) break;
+            if (g_game.gameState == GAME_OVER || g_game.gameState == GAME_VICTORY || g_game.gameState == GAME_CLEAR) break;
             keyState[wParam] = true;
             mario.isWalking = true;
             switch (wParam)
@@ -240,7 +240,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     mario.motion_timer = 30;
                     tino_attack();
                     mario.god = true;
-                    if(!mario.supergod) godstart = GetTickCount();
+                    if(!mario.supergod) g_game.godstart = GetTickCount();
                     mario.tino_cooldown_space = 15;
                 }
             }
@@ -266,7 +266,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     if (GetTickCount() - flower_delay >= 50)
                     {
                         PlaySoundBuffer(fireball_Sound);
-                        fireball_spawn(mario.x + cameraX, mario.y);
+                        fireball_spawn(mario.x + g_game.cameraX, mario.y);
                         mario.fire_motion = true;
                         mario.motion_timer = 5;
                         flower_delay_bool = false;
@@ -283,40 +283,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case(ID_TRANS_TINO):
             {
-                if (!mario.tino && gameState == GAME_RUNNING)
+                if (!mario.tino && g_game.gameState == GAME_RUNNING)
                 {
                     PlaySoundBuffer(powerup_Sound);
                     if (!mario.flower && !mario.isBig)
                     {
                         mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                     }
-                    gameState = GAME_TINO_TRANS;
-                    transformStartTime = GetTickCount();
+                    g_game.gameState = GAME_TINO_TRANS;
+                    g_game.transformStartTime = GetTickCount();
                 }
                 break;
             }
             case(ID_TRANS_FLOWER):
             {
-                if (!mario.flower && gameState == GAME_RUNNING)
+                if (!mario.flower && g_game.gameState == GAME_RUNNING)
                 {
                     PlaySoundBuffer(powerup_Sound);
                     if (!mario.tino && !mario.isBig)
                     {
                         mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                     }
-                    gameState = GAME_FLOWER_TRANS;
-                    transformStartTime = GetTickCount();
+                    g_game.gameState = GAME_FLOWER_TRANS;
+                    g_game.transformStartTime = GetTickCount();
                 }
                 break;
             }
             case(ID_TRANS_BIG):
             {
-                if (!mario.isBig && !mario.flower && !mario.tino && gameState == GAME_RUNNING)
+                if (!mario.isBig && !mario.flower && !mario.tino && g_game.gameState == GAME_RUNNING)
                 {
                     PlaySoundBuffer(powerup_Sound);
                     mario.y -= TILE_SIZE + 1;       // 위치 맞추기
-                    gameState = GAME_TRANSFORMING;
-                    transformStartTime = GetTickCount();
+                    g_game.gameState = GAME_TRANSFORMING;
+                    g_game.transformStartTime = GetTickCount();
                 }
                 break;
             }
@@ -324,7 +324,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 PlayBGM("resource\\sound\\bgm\\InvincibilityTheam.wav");
                 mario.star = true;
-                starStartTime = GetTickCount();
+                g_game.starStartTime = GetTickCount();
                 break;
             }
             }

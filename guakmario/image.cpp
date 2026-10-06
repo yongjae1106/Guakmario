@@ -251,7 +251,7 @@ void image_load()
         exit(1);
     }
 
-    //stage 3 fire
+    //g_game.stage 3 fire
     fire_head = new Image(L"resource\\tile\\fire_head.png");
     if (fire_head->GetLastStatus() != Ok)
     {

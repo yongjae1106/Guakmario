@@ -6,8 +6,8 @@ constexpr int STAGE3_CLEAR_COLUMN = 139;
 
 void checkcollision_flag()
 {
-    int left = (mario.x + cameraX) / TILE_SIZE;
-    int right = (mario.x + mario.width - 1 + cameraX) / TILE_SIZE;
+    int left = (mario.x + g_game.cameraX) / TILE_SIZE;
+    int right = (mario.x + mario.width - 1 + g_game.cameraX) / TILE_SIZE;
     int top = mario.y / TILE_SIZE;
     int bottom = (mario.y + mario.height - 1) / TILE_SIZE;
     int middle = (mario.y + mario.height / 2 - 1) / TILE_SIZE;
@@ -15,14 +15,14 @@ void checkcollision_flag()
     {
         for (int j = 0; j < MAP_WIDTH; j++)
         {
-            int screenX = j * TILE_SIZE - cameraX;
+            int screenX = j * TILE_SIZE - g_game.cameraX;
             int screenY = i * TILE_SIZE;
             if ((currentMap[i][j] == TILE_FLAG || currentMap[i][j] == TILE_FLAG_TOP) && IsColliding_item(mario.x, mario.y, mario.width, mario.height, screenX, screenY, 10, 30))
             {
                 g_pBGMBuffer->Stop();
                 PlaySoundBuffer(stage_clear_Sound);
-                gameState = GAME_VICTORY;
-                victoryStart = GetTickCount();
+                g_game.gameState = GAME_VICTORY;
+                g_game.victoryStart = GetTickCount();
             }
 
         }
@@ -35,14 +35,14 @@ void checkcollision_clear()
     {
         for (int j = 0; j < MAP_WIDTH; j++)
         {
-            int screenX = j * TILE_SIZE - cameraX;
+            int screenX = j * TILE_SIZE - g_game.cameraX;
             int screenY = i * TILE_SIZE;
             if (j == STAGE3_CLEAR_COLUMN && IsColliding_item(mario.x, mario.y, mario.width, mario.height, screenX, screenY, 40, 40))
             {
                 g_pBGMBuffer->Stop();
                 PlaySoundBuffer(world_clear_Sound);
-                gameState = GAME_CLEAR;
-                clearStart = GetTickCount();
+                g_game.gameState = GAME_CLEAR;
+                g_game.clearStart = GetTickCount();
             }
 
         }
@@ -56,7 +56,7 @@ void checkcollision_coin()
     {
         for (int j = 0; j < MAP_WIDTH; j++)
         {
-            int screenX = j * TILE_SIZE - cameraX;
+            int screenX = j * TILE_SIZE - g_game.cameraX;
             int screenY = i * TILE_SIZE;
             if (currentMap[i][j] == TILE_COIN && IsColliding_item(mario.x, mario.y, mario.width, mario.height, screenX, screenY, 30, 30))
             {

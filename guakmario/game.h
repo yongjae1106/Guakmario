@@ -11,24 +11,25 @@ enum GameState
     GAME_CLEAR,
     GAME_OVER
 };
-extern GameState gameState;
-extern DWORD transformStartTime;
-extern DWORD starStartTime;
-extern DWORD deadStartTime;
-extern DWORD godstart;
-extern DWORD victoryStart;
-extern DWORD clearStart;
-
-extern bool gamestart;
-extern int title_select;
-
-extern double cameraX;
-extern int worldMarioX;
-extern int stage;
-extern int stage_time;
-extern int frame_motion;
-extern int frame_motion_star;
-extern bool gameclear_text;
+struct GameContext {
+    GameState gameState      = GAME_RUNNING;
+    DWORD transformStartTime = 0;
+    DWORD starStartTime      = 0;
+    DWORD deadStartTime      = 0;
+    DWORD godstart           = 0;
+    DWORD victoryStart       = 0;
+    DWORD clearStart         = 0;
+    bool  gamestart          = false;
+    int   title_select       = 0;
+    double cameraX           = 0;
+    int   worldMarioX        = 0;
+    int   stage              = 1;
+    int   stage_time         = 400;
+    int   frame_motion       = 0;
+    int   frame_motion_star  = 0;
+    bool  gameclear_text     = false;
+};
+extern GameContext g_game;
 
 void UpdateGame();
 void timegoes();

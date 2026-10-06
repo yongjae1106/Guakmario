@@ -27,8 +27,8 @@ static void DrawSprite(Graphics& g, Image* img, int x, int y, int w, int h, bool
 void Draw()
 {
     RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-    if (stage == 1 || stage == 2) FillRect(g_memDC, &rect, sky_brush);
-    else if (stage == 3) FillRect(g_memDC, &rect, black_brush);
+    if (g_game.stage == 1 || g_game.stage == 2) FillRect(g_memDC, &rect, sky_brush);
+    else if (g_game.stage == 3) FillRect(g_memDC, &rect, black_brush);
     Draw_background();
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -47,7 +47,7 @@ void Draw()
     const bool flipX = (mario.direction == 0);
 
     // mario
-    if (gameState == GAME_TRANSFORMING && !mario.isBig && !mario.flower && !mario.tino)
+    if (g_game.gameState == GAME_TRANSFORMING && !mario.isBig && !mario.flower && !mario.tino)
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -59,7 +59,7 @@ void Draw()
         }
     }
     // flower
-    else if (gameState == GAME_TRANSFORMING && mario.isBig && !mario.flower && !mario.tino)
+    else if (g_game.gameState == GAME_TRANSFORMING && mario.isBig && !mario.flower && !mario.tino)
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -70,7 +70,7 @@ void Draw()
             DrawSprite(graphics, mario_stop, mario.x, mario.y, mario.width, TILE_SIZE, flipX);
         }
     }
-    else if (gameState == GAME_FLOWER_TRANS && !mario.isBig && !mario.flower && !mario.tino)    // small mario >> flower
+    else if (g_game.gameState == GAME_FLOWER_TRANS && !mario.isBig && !mario.flower && !mario.tino)    // small mario >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -81,7 +81,7 @@ void Draw()
             DrawSprite(graphics, mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
         }
     }
-    else if (gameState == GAME_FLOWER_TRANS && mario.isBig && !mario.flower && !mario.tino)     // big mario >> flower
+    else if (g_game.gameState == GAME_FLOWER_TRANS && mario.isBig && !mario.flower && !mario.tino)     // big mario >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -92,7 +92,7 @@ void Draw()
             DrawSprite(graphics, big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-    else if (gameState == GAME_FLOWER_TRANS && !mario.isBig && !mario.flower && mario.tino)     // tino >> flower
+    else if (g_game.gameState == GAME_FLOWER_TRANS && !mario.isBig && !mario.flower && mario.tino)     // tino >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -103,7 +103,7 @@ void Draw()
             DrawSprite(graphics, flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-    else if (gameState == GAME_FLOWER_TRANS && mario.flower)     // flower >> big mario
+    else if (g_game.gameState == GAME_FLOWER_TRANS && mario.flower)     // flower >> big mario
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -115,7 +115,7 @@ void Draw()
         }
     }
     // tino
-    else if (gameState == GAME_TINO_TRANS && !mario.isBig && !mario.flower && !mario.tino)    // small mario >> tino
+    else if (g_game.gameState == GAME_TINO_TRANS && !mario.isBig && !mario.flower && !mario.tino)    // small mario >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -126,7 +126,7 @@ void Draw()
             DrawSprite(graphics, mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
         }
     }
-    else if (gameState == GAME_TINO_TRANS && mario.isBig && !mario.flower && !mario.tino)     // big mario >> tino
+    else if (g_game.gameState == GAME_TINO_TRANS && mario.isBig && !mario.flower && !mario.tino)     // big mario >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -137,7 +137,7 @@ void Draw()
             DrawSprite(graphics, big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-    else if (gameState == GAME_TINO_TRANS && !mario.isBig && mario.flower && !mario.tino)     // flower >> tino
+    else if (g_game.gameState == GAME_TINO_TRANS && !mario.isBig && mario.flower && !mario.tino)     // flower >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -148,7 +148,7 @@ void Draw()
             DrawSprite(graphics, flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-    else if (gameState == GAME_TINO_TRANS && mario.tino)     // tino >> big mario
+    else if (g_game.gameState == GAME_TINO_TRANS && mario.tino)     // tino >> big mario
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -160,12 +160,12 @@ void Draw()
         }
     }
     // gameover
-    else if (gameState == GAME_OVER && !mario.isDead)
+    else if (g_game.gameState == GAME_OVER && !mario.isDead)
     {
         graphics.DrawImage(title_dead, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
         Draw_information();
         TCHAR life_print_dead[32], world_dead[32];
-        _stprintf_s(world_dead, _T("WORLD %d"), stage);
+        _stprintf_s(world_dead, _T("WORLD %d"), g_game.stage);
         _stprintf_s(life_print_dead, _T("%d"), mario.life);
 
         TextOut(g_memDC, 300, 207, world_dead, lstrlen(world_dead));
@@ -196,7 +196,7 @@ void Draw_map()
     {
         for (int j = 0; j < MAP_WIDTH; j++)
         {
-            int screenX = j * TILE_SIZE - cameraX;
+            int screenX = j * TILE_SIZE - g_game.cameraX;
             int screenY = i * TILE_SIZE;
             if (currentMap[i][j] == TILE_GROUND)         // 장애물
             {
@@ -216,15 +216,15 @@ void Draw_map()
             {
                 if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
                 {
-                    if (frame_motion == 0 || (frame_motion >= 4 && frame_motion < 7))
+                    if (g_game.frame_motion == 0 || (g_game.frame_motion >= 4 && g_game.frame_motion < 7))
                     {
                         graphics.DrawImage(coin_1, screenX, screenY, TILE_SIZE + 1, TILE_SIZE);
                     }
-                    else if (frame_motion == 1 || frame_motion == 3)
+                    else if (g_game.frame_motion == 1 || g_game.frame_motion == 3)
                     {
                         graphics.DrawImage(coin_2, screenX, screenY, TILE_SIZE + 1, TILE_SIZE);
                     }
-                    else if (frame_motion == 2)
+                    else if (g_game.frame_motion == 2)
                     {
                         graphics.DrawImage(coin_3, screenX, screenY, TILE_SIZE + 1, TILE_SIZE);
                     }
@@ -241,15 +241,15 @@ void Draw_map()
             {
                 if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
                 {
-                    if (frame_motion == 0 || (frame_motion >= 4 && frame_motion < 7))
+                    if (g_game.frame_motion == 0 || (g_game.frame_motion >= 4 && g_game.frame_motion < 7))
                     {
                         graphics.DrawImage(item_block_1, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
                     }
-                    else if (frame_motion == 1 || frame_motion == 3)
+                    else if (g_game.frame_motion == 1 || g_game.frame_motion == 3)
                     {
                         graphics.DrawImage(item_block_2, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
                     }
-                    else if (frame_motion == 2)
+                    else if (g_game.frame_motion == 2)
                     {
                         graphics.DrawImage(item_block_3, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
                     }
@@ -418,7 +418,7 @@ void Draw_castle_blank()
     {
         for (int j = 0; j < MAP_WIDTH; j++)
         {
-            int screenX = j * TILE_SIZE - cameraX;
+            int screenX = j * TILE_SIZE - g_game.cameraX;
             int screenY = i * TILE_SIZE;
             if (currentMap[i][j] == TILE_CASTLE)
             {
@@ -491,7 +491,7 @@ void Draw_mario()
     }
     else if (!mario.isBig && !mario.flower && !mario.tino && mario.star) // star small mario
     {
-        if (frame_motion_star == 0)
+        if (g_game.frame_motion_star == 0)
         {
             if (mario.isJumping)
             {
@@ -517,7 +517,7 @@ void Draw_mario()
                 DrawSprite(graphics, star_mario_stop_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
-        else if (frame_motion_star == 1)
+        else if (g_game.frame_motion_star == 1)
         {
             if (mario.isJumping)
             {
@@ -543,7 +543,7 @@ void Draw_mario()
                 DrawSprite(graphics, star_mario_stop_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
-        else if (frame_motion_star == 2)
+        else if (g_game.frame_motion_star == 2)
         {
             if (mario.isJumping)
             {
@@ -572,7 +572,7 @@ void Draw_mario()
     }
     else if ((mario.isBig || mario.flower || mario.tino) && mario.star) // star big mario
     {
-        if (frame_motion_star == 0)
+        if (g_game.frame_motion_star == 0)
         {
             if (mario.isJumping)
             {
@@ -598,7 +598,7 @@ void Draw_mario()
                 DrawSprite(graphics, star_big_mario_stop_1, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
-        else if (frame_motion_star == 1)
+        else if (g_game.frame_motion_star == 1)
         {
             if (mario.isJumping)
             {
@@ -624,7 +624,7 @@ void Draw_mario()
                 DrawSprite(graphics, star_big_mario_stop_2, mario.x, mario.y, mario.width, mario.height, flipX);
             }
         }
-        else if (frame_motion_star == 2)
+        else if (g_game.frame_motion_star == 2)
         {
             if (mario.isJumping)
             {
@@ -751,57 +751,57 @@ void Draw_spawn_item()
         // 버섯
         if (mushroom[i].motion)
         {
-            graphics.DrawImage(item_mushroom, mushroom[i].x - cameraX, mushroom[i].y, 40, 40);
+            graphics.DrawImage(item_mushroom, mushroom[i].x - g_game.cameraX, mushroom[i].y, 40, 40);
         }
         // 생명 버섯
         if (up_mushroom[i].motion)
         {
-            graphics.DrawImage(item_up_mushroom, up_mushroom[i].x - cameraX, up_mushroom[i].y, 40, 40);
+            graphics.DrawImage(item_up_mushroom, up_mushroom[i].x - g_game.cameraX, up_mushroom[i].y, 40, 40);
         }
         // 스타
         if (star[i].motion)
         {
-            if (frame_motion == 0 || frame_motion == 4 || frame_motion == 5 || frame_motion == 6)
+            if (g_game.frame_motion == 0 || g_game.frame_motion == 4 || g_game.frame_motion == 5 || g_game.frame_motion == 6)
             {
-                graphics.DrawImage(item_star_1, star[i].x - cameraX, star[i].y, 40, 40);
+                graphics.DrawImage(item_star_1, star[i].x - g_game.cameraX, star[i].y, 40, 40);
             }
-            else if (frame_motion == 1)
+            else if (g_game.frame_motion == 1)
             {
-                graphics.DrawImage(item_star_2, star[i].x - cameraX, star[i].y, 40, 40);
+                graphics.DrawImage(item_star_2, star[i].x - g_game.cameraX, star[i].y, 40, 40);
             }
-            else if (frame_motion == 2)
+            else if (g_game.frame_motion == 2)
             {
-                graphics.DrawImage(item_star_3, star[i].x - cameraX, star[i].y, 40, 40);
+                graphics.DrawImage(item_star_3, star[i].x - g_game.cameraX, star[i].y, 40, 40);
             }
-            else if (frame_motion == 3)
+            else if (g_game.frame_motion == 3)
             {
-                graphics.DrawImage(item_star_4, star[i].x - cameraX, star[i].y, 40, 40);
+                graphics.DrawImage(item_star_4, star[i].x - g_game.cameraX, star[i].y, 40, 40);
             }
         }
         // 꽃
         if (flower[i].motion) // 꽃
         {
-            if (frame_motion == 0 || frame_motion == 4 || frame_motion == 5 || frame_motion == 6)
+            if (g_game.frame_motion == 0 || g_game.frame_motion == 4 || g_game.frame_motion == 5 || g_game.frame_motion == 6)
             {
-                graphics.DrawImage(item_flower_1, flower[i].x - cameraX, flower[i].y, 40, 40);
+                graphics.DrawImage(item_flower_1, flower[i].x - g_game.cameraX, flower[i].y, 40, 40);
             }
-            else if (frame_motion == 1)
+            else if (g_game.frame_motion == 1)
             {
-                graphics.DrawImage(item_flower_2, flower[i].x - cameraX, flower[i].y, 40, 40);
+                graphics.DrawImage(item_flower_2, flower[i].x - g_game.cameraX, flower[i].y, 40, 40);
             }
-            else if (frame_motion == 2)
+            else if (g_game.frame_motion == 2)
             {
-                graphics.DrawImage(item_flower_3, flower[i].x - cameraX, flower[i].y, 40, 40);
+                graphics.DrawImage(item_flower_3, flower[i].x - g_game.cameraX, flower[i].y, 40, 40);
             }
-            else if (frame_motion == 3)
+            else if (g_game.frame_motion == 3)
             {
-                graphics.DrawImage(item_flower_4, flower[i].x - cameraX, flower[i].y, 40, 40);
+                graphics.DrawImage(item_flower_4, flower[i].x - g_game.cameraX, flower[i].y, 40, 40);
             }
         }
         // 티노
         if (tino[i].motion)
         {
-            graphics.DrawImage(item_tino, tino[i].x - cameraX, tino[i].y, 40, 40);
+            graphics.DrawImage(item_tino, tino[i].x - g_game.cameraX, tino[i].y, 40, 40);
         }
     }
 
@@ -816,56 +816,56 @@ void Draw_item()
         // 버섯
         if (mushroom[i].active) // 버섯
         {
-            graphics.DrawImage(item_mushroom, mushroom[i].x - cameraX, mushroom[i].y, 40, 40);
+            graphics.DrawImage(item_mushroom, mushroom[i].x - g_game.cameraX, mushroom[i].y, 40, 40);
         }
         if (up_mushroom[i].active) // 생명버섯
         {
-            graphics.DrawImage(item_up_mushroom, up_mushroom[i].x - cameraX, up_mushroom[i].y, 40, 40);
+            graphics.DrawImage(item_up_mushroom, up_mushroom[i].x - g_game.cameraX, up_mushroom[i].y, 40, 40);
         }
         // 스타
         if (star[i].active) // 스타
         {
-            if(frame_motion == 0 || frame_motion == 4 || frame_motion == 5 || frame_motion == 6)
+            if(g_game.frame_motion == 0 || g_game.frame_motion == 4 || g_game.frame_motion == 5 || g_game.frame_motion == 6)
             {
-                graphics.DrawImage(item_star_1, star[i].x - cameraX, star[i].y, 40, 40);
+                graphics.DrawImage(item_star_1, star[i].x - g_game.cameraX, star[i].y, 40, 40);
             }
-            else if (frame_motion == 1)
+            else if (g_game.frame_motion == 1)
             {
-                graphics.DrawImage(item_star_2, star[i].x - cameraX, star[i].y, 40, 40);
+                graphics.DrawImage(item_star_2, star[i].x - g_game.cameraX, star[i].y, 40, 40);
             }
-            else if (frame_motion == 2)
+            else if (g_game.frame_motion == 2)
             {
-                graphics.DrawImage(item_star_3, star[i].x - cameraX, star[i].y, 40, 40);
+                graphics.DrawImage(item_star_3, star[i].x - g_game.cameraX, star[i].y, 40, 40);
             }
-            else if (frame_motion == 3)
+            else if (g_game.frame_motion == 3)
             {
-                graphics.DrawImage(item_star_4, star[i].x - cameraX, star[i].y, 40, 40);
+                graphics.DrawImage(item_star_4, star[i].x - g_game.cameraX, star[i].y, 40, 40);
             }
         }
         // 꽃
         if (flower[i].active) // 꽃
         {
-            if (frame_motion == 0 || frame_motion == 4 || frame_motion == 5 || frame_motion == 6)
+            if (g_game.frame_motion == 0 || g_game.frame_motion == 4 || g_game.frame_motion == 5 || g_game.frame_motion == 6)
             {
-                graphics.DrawImage(item_flower_1, flower[i].x - cameraX, flower[i].y, 40, 40);
+                graphics.DrawImage(item_flower_1, flower[i].x - g_game.cameraX, flower[i].y, 40, 40);
             }
-            else if (frame_motion == 1)
+            else if (g_game.frame_motion == 1)
             {
-                graphics.DrawImage(item_flower_2, flower[i].x - cameraX, flower[i].y, 40, 40);
+                graphics.DrawImage(item_flower_2, flower[i].x - g_game.cameraX, flower[i].y, 40, 40);
             }
-            else if (frame_motion == 2)
+            else if (g_game.frame_motion == 2)
             {
-                graphics.DrawImage(item_flower_3, flower[i].x - cameraX, flower[i].y, 40, 40);
+                graphics.DrawImage(item_flower_3, flower[i].x - g_game.cameraX, flower[i].y, 40, 40);
             }
-            else if (frame_motion == 3)
+            else if (g_game.frame_motion == 3)
             {
-                graphics.DrawImage(item_flower_4, flower[i].x - cameraX, flower[i].y, 40, 40);
+                graphics.DrawImage(item_flower_4, flower[i].x - g_game.cameraX, flower[i].y, 40, 40);
             }
         }
         // 티노
         if (tino[i].active)
         {
-            graphics.DrawImage(item_tino, tino[i].x - cameraX, tino[i].y, 40, 40);
+            graphics.DrawImage(item_tino, tino[i].x - g_game.cameraX, tino[i].y, 40, 40);
         }
 
     }
@@ -880,7 +880,7 @@ void Draw_fireball()
     {
         // flower fire
         if (!fireball[i].active) continue;
-        int screenX = fireball[i].x - cameraX;
+        int screenX = fireball[i].x - g_game.cameraX;
         int screenY = fireball[i].y;
         if (fireball[i].motion == 0)
         {
@@ -905,7 +905,7 @@ void Draw_fireball()
         // tino fire
         if (tinofire_effect[i].active)
         {
-            int screenX = tinofire_effect[i].x - cameraX;
+            int screenX = tinofire_effect[i].x - g_game.cameraX;
             int screenY = tinofire_effect[i].y;
             if(tinofire_effect[i].timer < 5)
             {
@@ -921,7 +921,7 @@ void Draw_fireball()
             }
         }
         if (!tinofire[i].active) continue;
-        int screenX = tinofire[i].x - cameraX;
+        int screenX = tinofire[i].x - g_game.cameraX;
         int screenY = tinofire[i].y;
         if (tinofire[i].direction == 0)
         {
@@ -959,11 +959,11 @@ void Draw_information()
     _stprintf_s(life_print, _T("MARIO"));
     _stprintf_s(life_print2, _T("%05d"), mario.life);
     _stprintf_s(time_print, _T("TIME"));
-    _stprintf_s(time_print2, _T("%03d"), stage_time);
+    _stprintf_s(time_print2, _T("%03d"), g_game.stage_time);
     _stprintf_s(coin_print, _T("%02d"), mario.coin);
-    _stprintf_s(time_print2, _T("%03d"), stage_time);
+    _stprintf_s(time_print2, _T("%03d"), g_game.stage_time);
     _stprintf_s(stage_print, _T("WORLD"));
-    _stprintf_s(stage_print2, _T("%d"), stage);
+    _stprintf_s(stage_print2, _T("%d"), g_game.stage);
     _stprintf_s(cooldown_z, _T("Z (fire): %d"), mario.tino_cooldown_z);
     _stprintf_s(cooldown_space, _T("SPACE (bite): %d"), mario.tino_cooldown_space);
     _stprintf_s(clear_text_1, _T("THANK YOU MARIO!"));
@@ -978,15 +978,15 @@ void Draw_information()
 
 
     // 코인
-    if (frame_motion < 4)
+    if (g_game.frame_motion < 4)
     {
         graphics.DrawImage(screen_coin_1, 260, 40, 25, 25);
     }
-    else if (frame_motion == 4 || frame_motion == 6)
+    else if (g_game.frame_motion == 4 || g_game.frame_motion == 6)
     {
         graphics.DrawImage(screen_coin_2, 260, 40, 25, 25);
     }
-    else if (frame_motion == 5)
+    else if (g_game.frame_motion == 5)
     {
         graphics.DrawImage(screen_coin_3, 260, 40, 25, 25);
     }
@@ -1001,7 +1001,7 @@ void Draw_information()
         TextOut(g_memDC, 80, 80, cooldown_z, lstrlen(cooldown_z));         // 쿨타임
         TextOut(g_memDC, 80, 100, cooldown_space, lstrlen(cooldown_space));         // 쿨타임
     }
-    if (gameclear_text)
+    if (g_game.gameclear_text)
     {
         TextOut(g_memDC, 240, 160, clear_text_1, lstrlen(clear_text_1));         
         TextOut(g_memDC, 200, 240, clear_text_2, lstrlen(clear_text_2));        
@@ -1014,13 +1014,13 @@ void Draw_background()
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
 
-    if (stage == 1)
+    if (g_game.stage == 1)
     {
-        graphics.DrawImage(stage_1_background, -cameraX, -36, 4600, SCREEN_HEIGHT);
+        graphics.DrawImage(stage_1_background, -g_game.cameraX, -36, 4600, SCREEN_HEIGHT);
     }
-    else if (stage == 2)
+    else if (g_game.stage == 2)
     {
-        graphics.DrawImage(stage_2_background, -cameraX, -36, 4600, SCREEN_HEIGHT);
+        graphics.DrawImage(stage_2_background, -g_game.cameraX, -36, 4600, SCREEN_HEIGHT);
     }
 }
 void Draw_Monsters()
@@ -1033,16 +1033,16 @@ void Draw_Monsters()
         if (!monsters[i].active)
             continue;
 
-        int screenX = monsters[i].x - cameraX;
+        int screenX = monsters[i].x - g_game.cameraX;
         int screenY = monsters[i].y;
 
         if (!monsters[i].isAlive)
         {
-            if (stage == 1)
+            if (g_game.stage == 1)
                 graphics.DrawImage(monster1_dead, screenX, screenY, TILE_SIZE, TILE_SIZE);
-            else if (stage == 2)
+            else if (g_game.stage == 2)
                 graphics.DrawImage(monster2_dead, screenX, screenY, TILE_SIZE, TILE_SIZE);
-            else if (stage == 3)
+            else if (g_game.stage == 3)
                 graphics.DrawImage(monster3_dead, screenX, screenY, TILE_SIZE, TILE_SIZE);
 
             DWORD now = GetTickCount();
@@ -1056,12 +1056,12 @@ void Draw_Monsters()
 
         if (screenX + TILE_SIZE < 0 || screenX >= SCREEN_WIDTH) continue;
 
-        if (stage == 1)
-            graphics.DrawImage((frame_motion % 2 == 0) ? monster1_motion1 : monster1_motion2, screenX, screenY, TILE_SIZE, TILE_SIZE);
-        else if (stage == 2)
-            graphics.DrawImage((frame_motion % 2 == 0) ? monster2_motion1 : monster2_motion2, screenX, screenY, TILE_SIZE, TILE_SIZE);
-        else if (stage == 3)
-            graphics.DrawImage((frame_motion % 2 == 0) ? monster3_motion1 : monster3_motion2, screenX, screenY, TILE_SIZE, TILE_SIZE);
+        if (g_game.stage == 1)
+            graphics.DrawImage((g_game.frame_motion % 2 == 0) ? monster1_motion1 : monster1_motion2, screenX, screenY, TILE_SIZE, TILE_SIZE);
+        else if (g_game.stage == 2)
+            graphics.DrawImage((g_game.frame_motion % 2 == 0) ? monster2_motion1 : monster2_motion2, screenX, screenY, TILE_SIZE, TILE_SIZE);
+        else if (g_game.stage == 3)
+            graphics.DrawImage((g_game.frame_motion % 2 == 0) ? monster3_motion1 : monster3_motion2, screenX, screenY, TILE_SIZE, TILE_SIZE);
     }
 }
 void Draw_Turtles()
@@ -1072,7 +1072,7 @@ void Draw_Turtles()
     {
         if (!turtles[i].isAlive) continue;
 
-        int drawX = turtles[i].x - cameraX;
+        int drawX = turtles[i].x - g_game.cameraX;
         int drawY = turtles[i].y;
 
         switch (turtles[i].turtleState)
@@ -1081,22 +1081,22 @@ void Draw_Turtles()
         {
             if(turtles[i].direction == 0)
             {
-                graphics.DrawImage((stage == 3)
-                    ? ((frame_motion % 2 == 0) ? brown_turtle_1 : brown_turtle_2)
-                    : ((frame_motion % 2 == 0) ? turtle_1 : turtle_2), drawX, drawY - TILE_SIZE, TILE_SIZE, TILE_SIZE * 2);
+                graphics.DrawImage((g_game.stage == 3)
+                    ? ((g_game.frame_motion % 2 == 0) ? brown_turtle_1 : brown_turtle_2)
+                    : ((g_game.frame_motion % 2 == 0) ? turtle_1 : turtle_2), drawX, drawY - TILE_SIZE, TILE_SIZE, TILE_SIZE * 2);
             }
             else if (turtles[i].direction == 1)
             {
-                graphics.DrawImage((stage == 3) 
-                    ? ((frame_motion % 2 == 0) ? brown_turtle_R_1 : brown_turtle_R_2) 
-                    : ((frame_motion % 2 == 0) ? turtle_R_1 : turtle_R_2), drawX, drawY - TILE_SIZE, TILE_SIZE, TILE_SIZE * 2);
+                graphics.DrawImage((g_game.stage == 3) 
+                    ? ((g_game.frame_motion % 2 == 0) ? brown_turtle_R_1 : brown_turtle_R_2) 
+                    : ((g_game.frame_motion % 2 == 0) ? turtle_R_1 : turtle_R_2), drawX, drawY - TILE_SIZE, TILE_SIZE, TILE_SIZE * 2);
             }
             break;
         }
         case SHELL:
         case SPINNING:
         {
-            graphics.DrawImage(stage==3 ? brown_turtle_hide : turtle_hide, drawX, drawY, 40, 40);
+            graphics.DrawImage(g_game.stage==3 ? brown_turtle_hide : turtle_hide, drawX, drawY, 40, 40);
             break;
         }
         }
@@ -1110,14 +1110,14 @@ void Draw_Angel_Turtles()
     {
         if (!angelTurtles[i].isAlive) continue;
 
-        int drawX = angelTurtles[i].x - cameraX;
+        int drawX = angelTurtles[i].x - g_game.cameraX;
         int drawY = angelTurtles[i].y;
 
         switch (angelTurtles[i].state)
         {
         case FLYING:
         {
-            graphics.DrawImage((frame_motion % 2 == 0) ? angel_turtle_1 : angel_turtle_2, drawX, drawY - TILE_SIZE, TILE_SIZE, TILE_SIZE + 20);
+            graphics.DrawImage((g_game.frame_motion % 2 == 0) ? angel_turtle_1 : angel_turtle_2, drawX, drawY - TILE_SIZE, TILE_SIZE, TILE_SIZE + 20);
             break;
         }
         case HIDE:
@@ -1136,7 +1136,7 @@ void Draw_Bowser()
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
 
-    int screenX = bowser.x - cameraX;
+    int screenX = bowser.x - g_game.cameraX;
     int screenY = bowser.y;
 
     // 걷기 또는 불뿜기 애니메이션 프레임 처리
@@ -1172,7 +1172,7 @@ void Draw_Fireballs()
     {
         if (!fireballs[i].active) continue;
 
-        int sx = fireballs[i].x - cameraX;
+        int sx = fireballs[i].x - g_game.cameraX;
         int sy = fireballs[i].y;
 
         if(fireball[i].motion < 3)
@@ -1196,7 +1196,7 @@ void DrawFireTraps()
 
         for (int j = 0; j < fireTraps[i].tileCount; j++)
         {
-            int drawX = fireTraps[i].x - cameraX - 20;
+            int drawX = fireTraps[i].x - g_game.cameraX - 20;
             int drawY = fireTraps[i].y + j * TILE_SIZE;
 
             graphics.DrawImage(firetrap, drawX, drawY, TILE_SIZE, TILE_SIZE);
