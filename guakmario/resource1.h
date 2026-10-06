@@ -10,13 +10,17 @@
 #define ID_TRANS_FLOWER                 40006
 #define ID_TRANS_BIG                    40007
 #define ID_TRANS_STAR                   40008
+#define ID_CHEAT_STAGE                  40009
+#define ID_STAGE_1                      40010
+#define ID_STAGE_2                      40011
+#define ID_STAGE_3                      40012
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        102
-#define _APS_NEXT_COMMAND_VALUE         40009
+#define _APS_NEXT_COMMAND_VALUE         40013
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

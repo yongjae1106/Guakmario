@@ -18,100 +18,100 @@ using namespace Gdiplus;
 // 윈도우 핸들
 HWND hWnd;
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     if (!g_game.gameStart)
     {
         switch (message)
         {
-            case WM_CREATE:
+        case WM_CREATE:
+        {
+            SetTimer(hWnd, 1, 15, NULL);            // 1번타이머 기본(카메라)타이머
+            SetTimer(hWnd, 2, 60, NULL);            // 2번타이머 모션 타이머
+            SetTimer(hWnd, 3, 120, NULL);           // 3번타이머 블럭 모션 타이머
+            SetTimer(hWnd, 4, 500, NULL);           // 4번타이머 시간초 타이머
+            SetTimer(hWnd, 5, 1000, NULL);          // 5번타이머 쿨타임 타이머
+            break;
+        }
+        case WM_KEYDOWN:
+        {
+            switch (wParam)
             {
-                SetTimer(hWnd, 1, 15, NULL);            // 1번타이머 기본(카메라)타이머
-                SetTimer(hWnd, 2, 60, NULL);            // 2번타이머 모션 타이머
-                SetTimer(hWnd, 3, 120, NULL);           // 3번타이머 블럭 모션 타이머
-                SetTimer(hWnd, 4, 500, NULL);           // 4번타이머 시간초 타이머
-                SetTimer(hWnd, 5, 1000, NULL);          // 5번타이머 쿨타임 타이머
-                break;
-            }
-            case WM_KEYDOWN:
+            case VK_UP:
             {
-                switch (wParam)
+                if (g_game.title_select == 1)
                 {
-                    case VK_UP:
-                    {
-                        if (g_game.title_select == 1)
-                        {
-                            g_game.title_select = 0;
-                        }
-                        break;
-                    }
-                    case VK_DOWN:
-                    {
-                        if (g_game.title_select == 0)
-                        {
-                            g_game.title_select = 1;
-                        }
-                        break;
-                    }
-                    case VK_RETURN:
-                    {
-                        if (g_game.title_select == 0)
-                        {
-                            mario_DC = CreateCompatibleDC(g_memDC);
-
-                            LoadStage();
-
-                            g_game.gameStart = true;
-                        }
-                        else if (g_game.title_select == 1)
-                        {
-                            exit(1);
-                        }
-                    }
+                    g_game.title_select = 0;
                 }
-                InvalidateRect(hWnd, NULL, FALSE);
                 break;
             }
-            case WM_PAINT:
+            case VK_DOWN:
             {
-                PAINTSTRUCT ps;
-                HDC hdc = BeginPaint(hWnd, &ps);
-
-                // 이미지 로드
-                Graphics graphics(g_memDC);
-                graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
-
-                RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-                FillRect(g_memDC, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));  // 배경 클리어
-
-                graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);    // 타이틀
-
-                // 커서
                 if (g_game.title_select == 0)
                 {
-                    graphics.DrawImage(g_images.title_cursor, 220, 380, 25, 25);
+                    g_game.title_select = 1;
+                }
+                break;
+            }
+            case VK_RETURN:
+            {
+                if (g_game.title_select == 0)
+                {
+                    mario_DC = CreateCompatibleDC(g_memDC);
+
+                    LoadStage();
+
+                    g_game.gameStart = true;
                 }
                 else if (g_game.title_select == 1)
                 {
-                    graphics.DrawImage(g_images.title_cursor, 220, 420, 25, 25);
+                    exit(1);
                 }
-                
-                Draw_information();
-
-
-                BitBlt(hdc, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, g_memDC, 0, 0, SRCCOPY);
-
-                EndPaint(hWnd, &ps);
-                break;
             }
+            }
+            InvalidateRect(hWnd, NULL, FALSE);
+            break;
+        }
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hWnd, &ps);
 
-            case WM_DESTROY:
+            // 이미지 로드
+            Graphics graphics(g_memDC);
+            graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+
+            RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+            FillRect(g_memDC, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));  // 배경 클리어
+
+            graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);    // 타이틀
+
+            // 커서
+            if (g_game.title_select == 0)
             {
-                RemoveFontResourceEx(L"SuperMarioBrosNES.ttf", FR_PRIVATE, 0);
-                GdiplusShutdown(gdiplusToken);
-                PostQuitMessage(0);
-                break;
+                graphics.DrawImage(g_images.title_cursor, 220, 380, 25, 25);
             }
+            else if (g_game.title_select == 1)
+            {
+                graphics.DrawImage(g_images.title_cursor, 220, 420, 25, 25);
+            }
+
+            Draw_information();
+
+
+            BitBlt(hdc, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, g_memDC, 0, 0, SRCCOPY);
+
+            EndPaint(hWnd, &ps);
+            break;
+        }
+
+        case WM_DESTROY:
+        {
+            RemoveFontResourceEx(L"SuperMarioBrosNES.ttf", FR_PRIVATE, 0);
+            GdiplusShutdown(gdiplusToken);
+            PostQuitMessage(0);
+            break;
+        }
 
         }
     }
@@ -244,7 +244,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     g_player.mario.motion_timer = 30;
                     TinoAttack();
                     g_player.mario.god = true;
-                    if(!g_player.mario.supergod) g_game.godstart = GetTickCount();
+                    if (!g_player.mario.supergod) g_game.godstart = GetTickCount();
                     g_player.mario.tino_cooldown_space = 15;
                 }
             }
@@ -331,7 +331,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 g_game.starStartTime = GetTickCount();
                 break;
             }
+            case(ID_STAGE_1):
+            {
+                LoadStage();
+                break;
             }
+            case(ID_STAGE_2):
+            {
+                g_game.stage = 2;
+                LoadStage();
+                break;
+            }
+            case(ID_STAGE_3):
+            {
+                g_game.stage = 3;
+                LoadStage();
+                break;
+            }
+            }
+        break;
         }
         case WM_PAINT:
         {
@@ -355,9 +373,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             FillRect(g_memDC, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));  // 배경 클리어
 
             Draw();
-               
+
             Draw_information();
-                
+
             BitBlt(hdc, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, g_memDC, 0, 0, SRCCOPY);
 
             EndPaint(hWnd, &ps);
@@ -379,8 +397,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
-
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
+{
     WNDCLASS wc = { 0 };
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
