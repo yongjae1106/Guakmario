@@ -17,7 +17,7 @@ void checkcollision_flag()
         {
             int screenX = j * TILE_SIZE - g_game.cameraX;
             int screenY = i * TILE_SIZE;
-            if ((currentMap[i][j] == TILE_FLAG || currentMap[i][j] == TILE_FLAG_TOP) && IsColliding_item(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, screenX, screenY, 10, 30))
+            if ((currentMap[i][j] == TILE_FLAG || currentMap[i][j] == TILE_FLAG_TOP) && IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, screenX, screenY, 10, 30))
             {
                 g_pBGMBuffer->Stop();
                 PlaySoundBuffer(stage_clear_Sound);
@@ -37,7 +37,7 @@ void checkcollision_clear()
         {
             int screenX = j * TILE_SIZE - g_game.cameraX;
             int screenY = i * TILE_SIZE;
-            if (j == STAGE3_CLEAR_COLUMN && IsColliding_item(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, screenX, screenY, 40, 40))
+            if (j == STAGE3_CLEAR_COLUMN && IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, screenX, screenY, 40, 40))
             {
                 g_pBGMBuffer->Stop();
                 PlaySoundBuffer(world_clear_Sound);
@@ -58,7 +58,7 @@ void checkcollision_coin()
         {
             int screenX = j * TILE_SIZE - g_game.cameraX;
             int screenY = i * TILE_SIZE;
-            if (currentMap[i][j] == TILE_COIN && IsColliding_item(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, screenX, screenY, 30, 30))
+            if (currentMap[i][j] == TILE_COIN && IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, screenX, screenY, 30, 30))
             {
                 PlaySoundBuffer(coin_Sound);
                 currentMap[i][j] = 0;
@@ -80,13 +80,6 @@ bool isSolidTile(int tile)
 
 // 충돌 확인 함수
 bool IsColliding(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)
-{
-    return (ax < bx + bw &&
-        ax + aw > bx &&
-        ay < by + bh &&
-        ay + ah > by);
-}
-bool IsColliding_item(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)
 {
     return (ax < bx + bw &&
         ax + aw > bx &&
