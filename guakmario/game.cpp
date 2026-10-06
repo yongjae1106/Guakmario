@@ -12,15 +12,15 @@
 
 using namespace Gdiplus;
 
-static void handle_transform(bool& flag, void (*primary_fn)(), void (*fallback_fn)())
+static void handle_transform(MarioForm targetForm, void (*primary_fn)(), void (*fallback_fn)())
 {
     g_player.mario.god = true;
     DWORD now = GetTickCount();
     if (now - g_game.transformStartTime >= 700)
     {
-        if (!flag)
+        if (g_player.mario.form != targetForm)
             primary_fn();
-        else if (g_player.mario.god)
+        else
         {
             fallback_fn();
             g_game.godstart = GetTickCount();
@@ -34,17 +34,17 @@ void UpdateGame()
     // 변신 모션 (mushroom / flower / tino)
     if (g_game.gameState == GAME_TRANSFORMING)
     {
-        handle_transform(g_player.mario.isBig,   TransformToBig,  TransformToSmall);
+        handle_transform(FORM_BIG,    TransformToBig,    TransformToSmall);
         return; // 게임 상태 업데이트 생략해서 "멈춘 듯한" 연출
     }
     else if (g_game.gameState == GAME_FLOWER_TRANS)
     {
-        handle_transform(g_player.mario.flower,  TransformToFlower, TransformToBig);
+        handle_transform(FORM_FLOWER, TransformToFlower, TransformToBig);
         return;
     }
     else if (g_game.gameState == GAME_TINO_TRANS)
     {
-        handle_transform(g_player.mario.tino,    TransformToTino,   TransformToBig);
+        handle_transform(FORM_TINO,   TransformToTino,   TransformToBig);
         return;
     }
     // 승리 모션

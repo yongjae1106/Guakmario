@@ -5,9 +5,25 @@
 #include "sound.h"
 #include "monster.h"
 #include "map.h"
-#include "func.h"
+#include "player.h"
+#include "game.h"
+#include "renderer.h"
 
 using namespace Gdiplus;
+
+static void Draw_spawn_item();
+static void Draw_map();
+static void Draw_castle_blank();
+static void Draw_mario();
+static void Draw_item();
+static void Draw_background();
+static void Draw_fireball();
+static void Draw_Monsters();
+static void Draw_Turtles();
+static void Draw_Angel_Turtles();
+static void Draw_Bowser();
+static void Draw_Fireballs();
+static void DrawFireTraps();
 
 static void DrawSprite(Graphics& g, Image* img, int x, int y, int w, int h, bool flipX)
 {
@@ -47,7 +63,7 @@ void Draw()
     const bool flipX = (g_player.mario.direction == 0);
 
     // mario
-    if (g_game.gameState == GAME_TRANSFORMING && !g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino)
+    if (g_game.gameState == GAME_TRANSFORMING && g_player.mario.form == FORM_SMALL)
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -58,8 +74,7 @@ void Draw()
             DrawSprite(graphics, g_images.mario_stop, g_player.mario.x, g_player.mario.y + TILE_SIZE, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    // flower
-    else if (g_game.gameState == GAME_TRANSFORMING && g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino)
+    else if (g_game.gameState == GAME_TRANSFORMING && g_player.mario.form == FORM_BIG)
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -70,7 +85,7 @@ void Draw()
             DrawSprite(graphics, g_images.mario_stop, g_player.mario.x, g_player.mario.y, g_player.mario.width, TILE_SIZE, flipX);
         }
     }
-    else if (g_game.gameState == GAME_FLOWER_TRANS && !g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino)    // small mario >> flower
+    else if (g_game.gameState == GAME_FLOWER_TRANS && g_player.mario.form == FORM_SMALL)    // small mario >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -81,7 +96,7 @@ void Draw()
             DrawSprite(graphics, g_images.mario_stop, g_player.mario.x, g_player.mario.y + TILE_SIZE, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_FLOWER_TRANS && g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino)     // big mario >> flower
+    else if (g_game.gameState == GAME_FLOWER_TRANS && g_player.mario.form == FORM_BIG)     // big mario >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -92,7 +107,7 @@ void Draw()
             DrawSprite(graphics, g_images.big_mario_stop, g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_FLOWER_TRANS && !g_player.mario.isBig && !g_player.mario.flower && g_player.mario.tino)     // tino >> flower
+    else if (g_game.gameState == GAME_FLOWER_TRANS && g_player.mario.form == FORM_TINO)     // tino >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -103,7 +118,7 @@ void Draw()
             DrawSprite(graphics, g_images.flower_mario_stop, g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_FLOWER_TRANS && g_player.mario.flower)     // flower >> big mario
+    else if (g_game.gameState == GAME_FLOWER_TRANS && g_player.mario.form == FORM_FLOWER)     // flower >> big mario
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -115,7 +130,7 @@ void Draw()
         }
     }
     // tino
-    else if (g_game.gameState == GAME_TINO_TRANS && !g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino)    // small mario >> tino
+    else if (g_game.gameState == GAME_TINO_TRANS && g_player.mario.form == FORM_SMALL)    // small mario >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -126,7 +141,7 @@ void Draw()
             DrawSprite(graphics, g_images.mario_stop, g_player.mario.x, g_player.mario.y + TILE_SIZE, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_TINO_TRANS && g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino)     // big mario >> tino
+    else if (g_game.gameState == GAME_TINO_TRANS && g_player.mario.form == FORM_BIG)     // big mario >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -137,7 +152,7 @@ void Draw()
             DrawSprite(graphics, g_images.big_mario_stop, g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_TINO_TRANS && !g_player.mario.isBig && g_player.mario.flower && !g_player.mario.tino)     // flower >> tino
+    else if (g_game.gameState == GAME_TINO_TRANS && g_player.mario.form == FORM_FLOWER)     // flower >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -148,7 +163,7 @@ void Draw()
             DrawSprite(graphics, g_images.flower_mario_stop, g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_TINO_TRANS && g_player.mario.tino)     // tino >> big mario
+    else if (g_game.gameState == GAME_TINO_TRANS && g_player.mario.form == FORM_TINO)     // tino >> big mario
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -184,7 +199,7 @@ void Draw()
 
     Draw_castle_blank();
 }
-void Draw_map()
+static void Draw_map()
 {
     // 0: 구멍 1: 땅 2: 코인 3:굼바 4:파이프 5:계단 6:미스테리박스 7:깃발 8: 깃발꼭짓점 9:성 10: 벽돌 
     // 90. 버섯머리1 91. 버섯머리2 92. 버섯머리3 11. 버섯줄기 12. 버섯줄기2 13.구름 16: 사용된블럭 60:스타박스 61:꽃박스
@@ -409,7 +424,7 @@ void Draw_map()
     }
 
 }
-void Draw_castle_blank()
+static void Draw_castle_blank()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -431,13 +446,13 @@ void Draw_castle_blank()
         }
     }
 }
-void Draw_mario()
+static void Draw_mario()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
     const bool flipX = (g_player.mario.direction == 0);
 
-    if (!g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino && !g_player.mario.star) // small mario
+    if (g_player.mario.form == FORM_SMALL && !g_player.mario.star) // small mario
     {
         if (g_player.mario.isJumping)
         {
@@ -463,7 +478,7 @@ void Draw_mario()
             DrawSprite(graphics, g_images.mario_stop, g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    else if (g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino && !g_player.mario.star) // big mario
+    else if (g_player.mario.form == FORM_BIG && !g_player.mario.star) // big mario
     {
         if (g_player.mario.isJumping)
         {
@@ -489,7 +504,7 @@ void Draw_mario()
             DrawSprite(graphics, g_images.big_mario_stop, g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    else if (!g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino && g_player.mario.star) // star small mario
+    else if (g_player.mario.form == FORM_SMALL && g_player.mario.star) // star small mario
     {
         if (g_game.frameMotionStar == 0)
         {
@@ -570,7 +585,7 @@ void Draw_mario()
             }
         }
     }
-    else if ((g_player.mario.isBig || g_player.mario.flower || g_player.mario.tino) && g_player.mario.star) // star big mario
+    else if (g_player.mario.form != FORM_SMALL && g_player.mario.star) // star big mario
     {
         if (g_game.frameMotionStar == 0)
         {
@@ -651,7 +666,7 @@ void Draw_mario()
             }
         }
     }
-    else if (g_player.mario.flower) // flower mario
+    else if (g_player.mario.form == FORM_FLOWER) // flower mario
     {
         if (g_player.mario.fire_motion)
         {
@@ -681,7 +696,7 @@ void Draw_mario()
             DrawSprite(graphics, g_images.flower_mario_stop, g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, flipX);
         }
     }
-    else if (g_player.mario.tino) // tino mario
+    else if (g_player.mario.form == FORM_TINO) // tino mario
     {
         if (g_player.mario.tino_motion)
         {
@@ -709,7 +724,6 @@ void Draw_mario()
             {
                 DrawSprite(graphics, g_images.tino_mario_attack_1, g_player.mario.x - 25, g_player.mario.y - 15, 100, 100, flipX);
             }
-            TinoAttack();
         }
         else if (g_player.mario.tino_fire_motion)
         {
@@ -740,7 +754,7 @@ void Draw_mario()
         }
     }
 }
-void Draw_spawn_item()
+static void Draw_spawn_item()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -806,7 +820,7 @@ void Draw_spawn_item()
     }
 
 }
-void Draw_item()
+static void Draw_item()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -871,7 +885,7 @@ void Draw_item()
     }
 
 }
-void Draw_fireball()
+static void Draw_fireball()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -996,7 +1010,7 @@ void Draw_information()
     TextOut(g_memDC, 440, 20, stage_print, lstrlen(stage_print));         // 월드
     TextOut(g_memDC, 480, 40, stage_print2, lstrlen(stage_print2));
 
-    if(g_player.mario.tino)
+    if(g_player.mario.form == FORM_TINO)
     {
         TextOut(g_memDC, 80, 80, cooldown_z, lstrlen(cooldown_z));         // 쿨타임
         TextOut(g_memDC, 80, 100, cooldown_space, lstrlen(cooldown_space));         // 쿨타임
@@ -1009,7 +1023,7 @@ void Draw_information()
 
 }
 
-void Draw_background()
+static void Draw_background()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -1023,7 +1037,7 @@ void Draw_background()
         graphics.DrawImage(g_images.stage_2_background, -g_game.cameraX, -36, 4600, SCREEN_HEIGHT);
     }
 }
-void Draw_Monsters()
+static void Draw_Monsters()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -1064,7 +1078,7 @@ void Draw_Monsters()
             graphics.DrawImage((g_game.frameMotion % 2 == 0) ? g_images.monster3_motion1 : g_images.monster3_motion2, screenX, screenY, TILE_SIZE, TILE_SIZE);
     }
 }
-void Draw_Turtles()
+static void Draw_Turtles()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -1102,7 +1116,7 @@ void Draw_Turtles()
         }
     }
 }
-void Draw_Angel_Turtles()
+static void Draw_Angel_Turtles()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -1129,7 +1143,7 @@ void Draw_Angel_Turtles()
     }
 }
 // g_monsters.bowser
-void Draw_Bowser()
+static void Draw_Bowser()
 {
     if (!g_monsters.bowser.isAlive) return;
 
@@ -1163,7 +1177,7 @@ void Draw_Bowser()
             graphics.DrawImage(g_images.bowser_walk_2, screenX, screenY, g_monsters.bowser.width, g_monsters.bowser.height);
     }
 }
-void Draw_Fireballs() 
+static void Draw_Fireballs()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -1185,7 +1199,7 @@ void Draw_Fireballs()
         }
     }
 }
-void DrawFireTraps()
+static void DrawFireTraps()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);

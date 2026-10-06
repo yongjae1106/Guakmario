@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include "data.h"
-#include "func.h"
+#include "player.h"
+#include "game.h"
+#include "map.h"
+#include "collision.h"
 #include "image.h"
 #include "monster.h"
 #include "sound.h"
@@ -790,7 +793,7 @@ void damage_mario()
 {
     if (g_player.mario.god || g_player.mario.star) return;
 
-    if (g_player.mario.isBig)
+    if (g_player.mario.form == FORM_BIG)
     {
         // 작은 마리오로 변신
         PlaySoundBuffer(powerdown_Sound);
@@ -799,14 +802,14 @@ void damage_mario()
         g_game.transformStartTime = GetTickCount();
         // 반동 점프 방지를 위해 vy 유지 또는 0으로
     }
-    else if (g_player.mario.flower)
+    else if (g_player.mario.form == FORM_FLOWER)
     {
         PlaySoundBuffer(powerdown_Sound);
         g_game.gameState = GAME_FLOWER_TRANS;
         g_game.transformStartTime = GetTickCount();
         // 반동 점프 방지를 위해 vy 유지 또는 0으로
     }
-    else if (g_player.mario.tino)
+    else if (g_player.mario.form == FORM_TINO)
     {
         PlaySoundBuffer(powerdown_Sound);
         g_game.gameState = GAME_TINO_TRANS;

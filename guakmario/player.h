@@ -1,6 +1,8 @@
 #pragma once
 #include "data.h"
 
+enum MarioForm { FORM_SMALL, FORM_BIG, FORM_FLOWER, FORM_TINO };
+
 struct Player
 {
     int x = 100, y = 300;
@@ -18,12 +20,10 @@ struct Player
     bool isWalking = false;
     bool isDead = false;
     bool gameover = false;
-    bool isBig = false;
+    MarioForm form = FORM_SMALL;
     bool god = false;
     bool star = false;
-    bool flower = false;
     bool fire_motion = false;
-    bool tino = false;
     bool tino_motion = false;
     bool tino_fire_motion = false;
     bool supergod = false;

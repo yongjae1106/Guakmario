@@ -5,7 +5,10 @@
 #include "sound.h"
 #include "monster.h"
 #include "map.h"
-#include "func.h"
+#include "player.h"
+#include "game.h"
+#include "map.h"
+#include "collision.h"
 
 using namespace Gdiplus;
 
@@ -263,9 +266,7 @@ void dead()
     PlaySoundBuffer(die_Sound);
     g_game.gameState = GAME_OVER;
     g_player.mario.isDead = true;
-    g_player.mario.isBig = false;
-    g_player.mario.flower = false;
-    g_player.mario.tino = false;
+    g_player.mario.form = FORM_SMALL;
     g_game.deadStartTime = GetTickCount();
 
     g_player.mario.life--;

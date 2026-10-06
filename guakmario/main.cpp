@@ -1,8 +1,12 @@
 ﻿// 마리오 스타일 WinAPI 엔진 (카메라 포함, Y 고정)
 #define _CRT_SECURE_NO_WARNINGS
 #include <tchar.h>
-#include "func.h"
 #include "data.h"
+#include "map.h"
+#include "renderer.h"
+#include "player.h"
+#include "collision.h"
+#include "game.h"
 #include "image.h"
 #include "item.h"
 #include "monster.h"
@@ -191,7 +195,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case ('z'):
             {
-                if (g_player.mario.tino)
+                if (g_player.mario.form == FORM_TINO)
                 {
                     if (g_player.mario.tino_cooldown_z > 0) break;
                     g_monsters.bowser.ignoreTinoFire = false;
@@ -217,11 +221,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 if (!g_player.mario.isJumping && !g_player.mario.isFlying)
                 {
-                    if (g_player.mario.isBig || g_player.mario.flower)
+                    if (g_player.mario.form == FORM_BIG || g_player.mario.form == FORM_FLOWER)
                     {
                         PlaySoundBuffer(jump_big_Sound);
                     }
-                    else if (!g_player.mario.isBig)
+                    else
                     {
                         PlaySoundBuffer(jump_small_Sound);
                     }
@@ -232,7 +236,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case VK_SPACE:
             {
-                if (g_player.mario.tino)
+                if (g_player.mario.form == FORM_TINO)
                 {
                     if (g_player.mario.tino_cooldown_space > 0) break;
                     g_monsters.bowser.ignoreTinoBite = false;
@@ -254,7 +258,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case VK_SPACE:
             {
-                if (g_player.mario.flower)
+                if (g_player.mario.form == FORM_FLOWER)
                 {
                     static bool flower_delay_bool = false;
                     static DWORD flower_delay;
@@ -283,10 +287,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case(ID_TRANS_TINO):
             {
-                if (!g_player.mario.tino && g_game.gameState == GAME_RUNNING)
+                if (g_player.mario.form != FORM_TINO && g_game.gameState == GAME_RUNNING)
                 {
                     PlaySoundBuffer(powerup_Sound);
-                    if (!g_player.mario.flower && !g_player.mario.isBig)
+                    if (g_player.mario.form == FORM_SMALL)
                     {
                         g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                     }
@@ -297,10 +301,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case(ID_TRANS_FLOWER):
             {
-                if (!g_player.mario.flower && g_game.gameState == GAME_RUNNING)
+                if (g_player.mario.form != FORM_FLOWER && g_game.gameState == GAME_RUNNING)
                 {
                     PlaySoundBuffer(powerup_Sound);
-                    if (!g_player.mario.tino && !g_player.mario.isBig)
+                    if (g_player.mario.form == FORM_SMALL)
                     {
                         g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                     }
@@ -311,7 +315,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case(ID_TRANS_BIG):
             {
-                if (!g_player.mario.isBig && !g_player.mario.flower && !g_player.mario.tino && g_game.gameState == GAME_RUNNING)
+                if (g_player.mario.form == FORM_SMALL && g_game.gameState == GAME_RUNNING)
                 {
                     PlaySoundBuffer(powerup_Sound);
                     g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기

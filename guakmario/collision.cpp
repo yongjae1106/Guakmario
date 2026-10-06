@@ -1,4 +1,7 @@
-﻿#include "func.h"
+﻿#include "map.h"
+#include "player.h"
+#include "game.h"
+#include "collision.h"
 #include "item.h"
 #include "sound.h"
 

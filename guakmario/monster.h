@@ -5,85 +5,70 @@
 #define MAX_BOWSER 1
 #define MAX_FIREBALLS 100
 
-struct Monster
+struct Entity
 {
-    int x, y;
-    int vx, vy;
-    int width, height;
-    int leftBound, rightBound;
-    bool isFalling;
-    bool isAlive;
-    bool isDead;
-    bool active;
-    DWORD deadStart;
+    int x = 0, y = 0;
+    int vx = 0, vy = 0;
+    int width = 0, height = 0;
+    bool isAlive = false;
+    bool isDead = false;
+    bool active = false;
+    bool isFalling = false;
+};
+
+struct Monster : Entity
+{
+    int leftBound = 0, rightBound = 0;
+    DWORD deadStart = 0;
 };
 
 //turtle
 typedef enum { NORMAL, SHELL, SPINNING } TurtleState;
 
-struct Turtle
+struct Turtle : Entity
 {
-    int x, y;
-    int vx, vy;
-    int width, height;
-    int direction;      // 0: left  1: right
-    bool isFalling;
-    bool isAlive;
-    bool isDead;
-    bool active;
-    bool damage;
+    int direction = 0;      // 0: left  1: right
+    bool damage = false;
 
-    TurtleState turtleState;
-    int shellTimer;
-    int damageTimer;
+    TurtleState turtleState = NORMAL;
+    int shellTimer = 0;
+    int damageTimer = 0;
 };
 
 //angel turtle
 enum { FLYING, HIDE };
 
-struct AngelTurtle 
+struct AngelTurtle : Entity
 {
-    int x, y;
-    int width, height;
-    int vy;
-    int topY, bottomY;
-    bool isFalling;
-    bool isDead;
-    bool goingUp;
-    bool isAlive;
-    int state;
-    DWORD hideStartTime;
+    int topY = 0, bottomY = 0;
+    bool goingUp = false;
+    int state = FLYING;
+    DWORD hideStartTime = 0;
 };
 
 //boss bowser
 
-struct Bowser 
+struct Bowser : Entity
 {
-    int hp;
-    int x, y;
-    int vx, vy;
-    int width, height;
-    bool ignoreTinoFire;
-    bool ignoreTinoBite;
-    bool isAlive;
-    bool isDead;
-    bool isJumping;
-    bool isFalling;
-    bool isFiring;
-    int fireTimer;// 추가: 불 공격 중인지 여부
-    int frame;
+    int hp = 0;
+    bool ignoreTinoFire = false;
+    bool ignoreTinoBite = false;
+    bool isJumping = false;
+    bool isFiring = false;
+    int fireTimer = 0;// 추가: 불 공격 중인지 여부
+    int frame = 0;
 
-    int jumpTimer;  //랜덤하게 점프하기
-    int jumpInterval;
+    int jumpTimer = 0;  //랜덤하게 점프하기
+    int jumpInterval = 0;
 
-    int startX;            // 시작 위치 x 좌표
-    int direction;         // 이동 방향 (-1: 왼쪽, 1: 오른쪽)
-    int moveDistance;      // 이동한 거리 누적
-    int maxDistance;
+    int startX = 0;            // 시작 위치 x 좌표
+    int direction = 0;         // 이동 방향 (-1: 왼쪽, 1: 오른쪽)
+    int moveDistance = 0;      // 이동한 거리 누적
+    int maxDistance = 0;
 
-    int fireInterval;
+    int fireInterval = 0;
 
-    int fireDuration; // 불 애니메이션 유지 시간용
+    int fireDuration = 0; // 불 애니메이션 유지 시간용
 };
 //fireball
 struct Fireball 
