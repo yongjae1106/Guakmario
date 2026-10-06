@@ -141,40 +141,16 @@ void UpdateGame()
 
     UpdateMario_motion();
     UpdatePlayer();
-    UpdateItems();
-    UpdateItems_up_mushroom();
-    UpdateItems_star();
-    UpdateItems_flower();
-    UpdateItems_tino();
-    UpdateMonsters();
-    UpdateTurtles();
-    UpdateAngelTurtles();
-    UpdateBowser();
-    UpdateFireballs();
-    UpdateFireTraps();
-    UpdateShot_fireball();
-    UpdateShot_tinofire();
-    UpdateShot_tinofire_effect();
+    UpdateAllItems();
+    UpdateAllMonsters();
+    UpdateAllShots();
 
-    CheckCollision_mushroom();
-    CheckCollision_up_mushroom();
-    CheckCollision_star();
-    CheckCollision_flower();
-    CheckCollision_tino();
-
+    CheckItemCollisions();
     CheckCoinCollision();
-    CheckMarioMonsterCollision();
-    CheckMarioTurtleCollision();
-    CheckMarioAngelTurtleCollision();
-
-    CheckMarioHazardCollision();
-
-    CheckMarioBowserCollision();
-    CheckMarioFireballCollision();
-    CheckCollision_fireball();
-    CheckCollision_tinofire();
+    CheckAllMonsterCollisions();
+    CheckShotCollisions();
     CheckFlagCollision();
-    if(g_game.stage == 3) CheckClearCollision();
+    if (g_game.stage == 3) CheckClearCollision();
 }
 
 void TickTimer()

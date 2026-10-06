@@ -840,3 +840,34 @@ void UpdateStarMode(DWORD _starstart)
         g_player.mario.star = false;
     }
 }
+
+void UpdateAllItems()
+{
+    UpdateItems();
+    UpdateItems_up_mushroom();
+    UpdateItems_star();
+    UpdateItems_flower();
+    UpdateItems_tino();
+}
+
+void UpdateAllShots()
+{
+    UpdateShot_fireball();
+    UpdateShot_tinofire();
+    UpdateShot_tinofire_effect();
+}
+
+void CheckItemCollisions()
+{
+    CheckCollision_mushroom();
+    CheckCollision_up_mushroom();
+    CheckCollision_star();
+    CheckCollision_flower();
+    CheckCollision_tino();
+}
+
+void CheckShotCollisions()
+{
+    CheckCollision_fireball();
+    CheckCollision_tinofire();
+}

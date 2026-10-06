@@ -181,8 +181,8 @@ CheckMarioBowserCollision()
 CheckMarioFireballCollision()
 ```
 
-- [ ] 래퍼 함수 추가
-- [ ] `game.cpp`의 `UpdateGame()` 호출부 단순화
+- [x] 래퍼 함수 추가
+- [x] `game.cpp`의 `UpdateGame()` 호출부 단순화
 
 ---
 

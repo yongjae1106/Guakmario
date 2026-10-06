@@ -79,3 +79,8 @@ void TinoAttack();
 
 void UpdateGodMode(DWORD _godstart);
 void UpdateStarMode(DWORD _starstart);
+
+void UpdateAllItems();
+void UpdateAllShots();
+void CheckItemCollisions();
+void CheckShotCollisions();

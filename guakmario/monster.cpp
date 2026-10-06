@@ -866,3 +866,23 @@ void damage_mario()
         dead();
     }
 }
+
+void UpdateAllMonsters()
+{
+    UpdateMonsters();
+    UpdateTurtles();
+    UpdateAngelTurtles();
+    UpdateBowser();
+    UpdateFireballs();
+    UpdateFireTraps();
+}
+
+void CheckAllMonsterCollisions()
+{
+    CheckMarioMonsterCollision();
+    CheckMarioTurtleCollision();
+    CheckMarioAngelTurtleCollision();
+    CheckMarioHazardCollision();
+    CheckMarioBowserCollision();
+    CheckMarioFireballCollision();
+}

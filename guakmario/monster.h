@@ -134,3 +134,6 @@ void CheckMarioBowserCollision();
 void CheckMarioFireballCollision();
 
 void damage_mario();
+
+void UpdateAllMonsters();
+void CheckAllMonsterCollisions();
