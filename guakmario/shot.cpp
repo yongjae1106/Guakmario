@@ -8,6 +8,7 @@
 #include "image.h"
 #include "sound.h"
 #include "monster.h"
+#include "config.h"
 
 void CheckCollision_fireball()
 {
@@ -15,15 +16,15 @@ void CheckCollision_fireball()
     {
         if (!fireball[i].active) continue;
 
-        int fireballXWorld = fireball[i].x - g_game.cameraX;
+        int fireballScreenX = fireball[i].x - g_game.cameraX;
 
         for (int j = 0; j < MAX_MONSTERS; j++)
         {
-            int monsterXWorld = g_monsters.monsters[j].x - g_game.cameraX;
+            int monsterScreenX = g_monsters.monsters[j].x - g_game.cameraX;
             if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive && fireball[i].active) // 여러 조건 같이 확인
             {
-                if (IsColliding(monsterXWorld, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
-                    fireballXWorld, fireball[i].y, fireball[i].width, fireball[i].height))
+                if (IsColliding(monsterScreenX, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
+                    fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
                     g_monsters.monsters[j].vy = -15;
@@ -37,11 +38,11 @@ void CheckCollision_fireball()
 
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int turtleXWorld = g_monsters.turtles[j].x - g_game.cameraX;
+            int turtleScreenX = g_monsters.turtles[j].x - g_game.cameraX;
             if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive && fireball[i].active)
             {
-                if (IsColliding(turtleXWorld, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
-                    fireballXWorld, fireball[i].y, fireball[i].width, fireball[i].height))
+                if (IsColliding(turtleScreenX, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
+                    fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
                     g_monsters.turtles[j].vy = -15;
@@ -54,11 +55,11 @@ void CheckCollision_fireball()
         }
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int turtleXWorld = g_monsters.angelTurtles[j].x - g_game.cameraX;
+            int turtleScreenX = g_monsters.angelTurtles[j].x - g_game.cameraX;
             if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive && fireball[i].active)
             {
-                if (IsColliding(turtleXWorld, g_monsters.angelTurtles[j].y, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
-                    fireballXWorld, fireball[i].y, fireball[i].width, fireball[i].height))
+                if (IsColliding(turtleScreenX, g_monsters.angelTurtles[j].y, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
+                    fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
                     g_monsters.angelTurtles[j].vy = -15;
@@ -70,11 +71,11 @@ void CheckCollision_fireball()
             }
         }
 
-        int bowserXWorld = g_monsters.bowser.x - g_game.cameraX;
+        int bowserScreenX = g_monsters.bowser.x - g_game.cameraX;
         if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive && fireball[i].active)
         {
-            if (IsColliding(bowserXWorld, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
-                fireballXWorld, fireball[i].y, fireball[i].width, fireball[i].height))
+            if (IsColliding(bowserScreenX, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
+                fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
             {
                 PlaySoundBuffer(bump_Sound);
                 g_monsters.bowser.hp--;
@@ -91,15 +92,15 @@ void CheckCollision_tinofire()
     {
         if (!tinofire[i].active) continue;
 
-        int tinofireXWorld = tinofire[i].x - g_game.cameraX;
+        int tinofireScreenX = tinofire[i].x - g_game.cameraX;
 
         for (int j = 0; j < MAX_MONSTERS; j++)
         {
-            int monsterXWorld = g_monsters.monsters[j].x - g_game.cameraX;
+            int monsterScreenX = g_monsters.monsters[j].x - g_game.cameraX;
             if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive && tinofire[i].active) // 여러 조건 같이 확인
             {
-                if (IsColliding(monsterXWorld, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
-                    tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height))
+                if (IsColliding(monsterScreenX, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
+                    tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
                     g_monsters.monsters[j].vy = -15;
@@ -113,11 +114,11 @@ void CheckCollision_tinofire()
 
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int turtleXWorld = g_monsters.turtles[j].x - g_game.cameraX;
+            int turtleScreenX = g_monsters.turtles[j].x - g_game.cameraX;
             if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive && tinofire[i].active)
             {
-                if (IsColliding(turtleXWorld, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
-                    tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height))
+                if (IsColliding(turtleScreenX, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
+                    tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
                     g_monsters.turtles[j].vy = -15;
@@ -130,11 +131,11 @@ void CheckCollision_tinofire()
         }
         for (int j = 0; j < MAX_TURTLES; j++)
         {
-            int angelturtleXWorld = g_monsters.angelTurtles[j].x - g_game.cameraX;
+            int angelturtleScreenX = g_monsters.angelTurtles[j].x - g_game.cameraX;
             if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive && tinofire[i].active)
             {
-                if (IsColliding(angelturtleXWorld, g_monsters.angelTurtles[j].y + 20, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
-                    tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height))
+                if (IsColliding(angelturtleScreenX, g_monsters.angelTurtles[j].y + 20, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
+                    tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
                     g_monsters.angelTurtles[j].vy = -15;
@@ -146,11 +147,11 @@ void CheckCollision_tinofire()
             }
         }
 
-        int bowserXWorld = g_monsters.bowser.x - g_game.cameraX;
+        int bowserScreenX = g_monsters.bowser.x - g_game.cameraX;
         if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive && tinofire[i].active)
         {
-            if (IsColliding(bowserXWorld, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
-                tinofireXWorld, tinofire[i].y, tinofire[i].width, tinofire[i].height) && !g_monsters.bowser.ignoreTinoFire)
+            if (IsColliding(bowserScreenX, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
+                tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height) && !g_monsters.bowser.ignoreTinoFire)
             {
                 PlaySoundBuffer(kick_Sound);
                 OnMonsterHit(g_monsters.bowser.x, g_monsters.bowser.y);
@@ -176,59 +177,68 @@ void OnMonsterHit(int x, int y)
 }
 void TinoAttack()
 {
+    // 마리오가 바라보는 방향 앞 50px 범위가 바이트 히트박스
+    const int biteX      = (g_player.mario.direction == DIR_LEFT)
+                         ? g_player.mario.x - TINO_BITE_WIDTH
+                         : g_player.mario.x + g_player.mario.width;
+    const int biteY      = g_player.mario.y + TINO_BITE_Y_OFFSET;
+    const int biteWidth  = TINO_BITE_WIDTH;
+    const int biteHeight = TINO_BITE_HEIGHT;
+
     for (int j = 0; j < MAX_MONSTERS; j++)
     {
-        int monsterXWorld = g_monsters.monsters[j].x - g_game.cameraX;
-        if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive) // 여러 조건 같이 확인
+        int monsterScreenX = g_monsters.monsters[j].x - g_game.cameraX;
+        if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive)
         {
-            if (IsColliding(monsterXWorld, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
-                (g_player.mario.direction == 0) ? g_player.mario.x - 50 :g_player.mario.x, g_player.mario.y - 15, 50, 100))
+            if (IsColliding(monsterScreenX, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
+                biteX, biteY, biteWidth, biteHeight))
             {
                 PlaySoundBuffer(kick_Sound);
-                g_monsters.monsters[j].vy = -15;
-                g_monsters.monsters[j].isDead = true;
+                g_monsters.monsters[j].isDead    = true;
                 g_monsters.monsters[j].isFalling = true;
+                g_monsters.monsters[j].vy        = TINO_BITE_KNOCKBACK_VY;
             }
         }
     }
 
     for (int j = 0; j < MAX_TURTLES; j++)
     {
-        int turtleXWorld = g_monsters.turtles[j].x - g_game.cameraX;
+        int turtleScreenX = g_monsters.turtles[j].x - g_game.cameraX;
         if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive)
         {
-            if (IsColliding(turtleXWorld, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
-                (g_player.mario.direction == 0) ? g_player.mario.x - 50 : g_player.mario.x, g_player.mario.y - 15, 50, 100))
+            if (IsColliding(turtleScreenX, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
+                biteX, biteY, biteWidth, biteHeight))
             {
                 PlaySoundBuffer(kick_Sound);
-                g_monsters.turtles[j].vy = -15;
-                g_monsters.turtles[j].isDead = true;
+                g_monsters.turtles[j].isDead    = true;
                 g_monsters.turtles[j].isFalling = true;
+                g_monsters.turtles[j].vy        = TINO_BITE_KNOCKBACK_VY;
             }
         }
     }
+
     for (int j = 0; j < MAX_TURTLES; j++)
     {
-        int turtleXWorld = g_monsters.angelTurtles[j].x - g_game.cameraX;
+        int turtleScreenX = g_monsters.angelTurtles[j].x - g_game.cameraX;
         if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive)
         {
-            if (IsColliding(turtleXWorld, g_monsters.angelTurtles[j].y, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
-                (g_player.mario.direction == 0) ? g_player.mario.x - 50 : g_player.mario.x, g_player.mario.y - 15, 50, 100))
+            if (IsColliding(turtleScreenX, g_monsters.angelTurtles[j].y, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
+                biteX, biteY, biteWidth, biteHeight))
             {
                 PlaySoundBuffer(kick_Sound);
-                g_monsters.angelTurtles[j].vy = -15;
-                g_monsters.angelTurtles[j].isDead = true;
+                g_monsters.angelTurtles[j].isDead    = true;
                 g_monsters.angelTurtles[j].isFalling = true;
+                g_monsters.angelTurtles[j].vy        = TINO_BITE_KNOCKBACK_VY;
                 break;
             }
         }
     }
 
-    int bowserXWorld = g_monsters.bowser.x - g_game.cameraX;
+    int bowserScreenX = g_monsters.bowser.x - g_game.cameraX;
     if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive)
     {
-        if (IsColliding(bowserXWorld, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
-            (g_player.mario.direction == 0) ? g_player.mario.x - 50 : g_player.mario.x, g_player.mario.y - 15, 50, 100) && !g_monsters.bowser.ignoreTinoBite)
+        if (IsColliding(bowserScreenX, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
+            biteX, biteY, biteWidth, biteHeight) && !g_monsters.bowser.ignoreTinoBite)
         {
             PlaySoundBuffer(kick_Sound);
             g_monsters.bowser.hp -= 10;
@@ -333,7 +343,7 @@ void SpawnFireball(int x, int y)
     }
     fireball[fireball_count].x = x;
     fireball[fireball_count].y = y;
-    fireball[fireball_count].vx = (g_player.mario.direction == 0) ? -7 : 7;
+    fireball[fireball_count].vx = (g_player.mario.direction == DIR_LEFT) ? -7 : 7;
     fireball[fireball_count].vy = 0;
     fireball[fireball_count].width = 10;
     fireball[fireball_count].height = 10;
@@ -350,7 +360,7 @@ void SpawnTinoFire(int x, int y)
     }
     tinofire[tinofire_count].x = x;
     tinofire[tinofire_count].y = y;
-    tinofire[tinofire_count].vx = (g_player.mario.direction == 0) ? -7 : 7;
+    tinofire[tinofire_count].vx = (g_player.mario.direction == DIR_LEFT) ? -7 : 7;
     tinofire[tinofire_count].vy = 0;
     tinofire[tinofire_count].motion = 0;
     tinofire[tinofire_count].motion_fade = 0;

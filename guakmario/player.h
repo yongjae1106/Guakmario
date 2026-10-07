@@ -1,14 +1,15 @@
 #pragma once
 #include "data.h"
+#include "config.h"
 
 struct Player
 {
     int x = 100, y = 300;
     int vx = 0, vy = 0;
-    int life = 5;
+    int life = PLAYER_INITIAL_LIFE;
     int coin = 0;
     int width = 40, height = 40;
-    int direction = 1;
+    Direction direction = DIR_RIGHT;
     int walk_motion = 0;
     int motion_timer = 0;
     int tino_cooldown_z = 0;
@@ -35,7 +36,7 @@ extern PlayerContext g_player;
 
 // 렌더러가 필요한 데이터만 담는 뷰 — Player 내부 구현(god/vx/vy 등)을 노출하지 않음
 struct MarioRenderData {
-    int x, y, width, height, direction;
+    int x, y, width, height; Direction direction;
     MarioForm form;
     bool isWalking, isJumping, isFlying, isDead;
     bool star, fire_motion, tino_motion, tino_fire_motion;

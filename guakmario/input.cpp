@@ -4,6 +4,7 @@
 #include "item.h"
 #include "monster.h"
 #include "sound.h"
+#include "config.h"
 
 void HandleGameKeyDown(WPARAM wParam)
 {
@@ -20,7 +21,7 @@ void HandleGameKeyDown(WPARAM wParam)
                 PlaySoundBuffer(jump_big_Sound);
             else
                 PlaySoundBuffer(jump_small_Sound);
-            g_player.mario.vy = -19;
+            g_player.mario.vy = PLAYER_JUMP_VY;
             g_player.mario.isJumping = true;
         }
         break;
@@ -32,11 +33,10 @@ void HandleGameKeyDown(WPARAM wParam)
             if (g_player.mario.tino_cooldown_space > 0) break;
             g_monsters.bowser.ignoreTinoBite = false;
             g_player.mario.tino_motion = true;
-            g_player.mario.motion_timer = 30;
-            TinoAttack();
+            g_player.mario.motion_timer = TINO_BITE_MOTION_FRAMES;
             g_player.mario.god = true;
             if (!g_player.mario.supergod) g_game.godstart = GetTickCount();
-            g_player.mario.tino_cooldown_space = 15;
+            g_player.mario.tino_cooldown_space = TINO_BITE_COOLDOWN;
         }
         break;
     }
@@ -64,7 +64,7 @@ void HandleGameKeyUp(WPARAM wParam)
                 PlaySoundBuffer(fireball_Sound);
                 SpawnFireball(g_player.mario.x + g_game.cameraX, g_player.mario.y);
                 g_player.mario.fire_motion = true;
-                g_player.mario.motion_timer = 5;
+                g_player.mario.motion_timer = FLOWER_FIRE_MOTION_FRAMES;
                 flower_delay_bool = false;
             }
         }
@@ -85,9 +85,9 @@ void HandleGameChar(WPARAM wParam)
             g_monsters.bowser.ignoreTinoFire = false;
             PlaySoundBuffer(bowserfire_Sound);
             g_player.mario.tino_fire_motion = true;
-            g_player.mario.motion_timer = 10;
+            g_player.mario.motion_timer = TINO_FIRE_MOTION_FRAMES;
             SpawnTinoFire(g_player.mario.x + g_game.cameraX, g_player.mario.y);
-            g_player.mario.tino_cooldown_z = 5;
+            g_player.mario.tino_cooldown_z = TINO_FIRE_COOLDOWN;
         }
         break;
     }

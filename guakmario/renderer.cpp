@@ -61,7 +61,7 @@ void Draw()
     DrawFireTraps();
 
     const MarioRenderData mario = BuildMarioRenderData();
-    const bool flipX = (mario.direction == 0);
+    const bool flipX = (mario.direction == DIR_LEFT);
 
     // mario
     if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_BIG && mario.form == FORM_SMALL)
@@ -451,7 +451,7 @@ static void Draw_mario(const MarioRenderData& mario)
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
-    const bool flipX = (mario.direction == 0);
+    const bool flipX = (mario.direction == DIR_LEFT);
 
     if (mario.form == FORM_SMALL && !mario.star) // small mario
     {
@@ -938,7 +938,7 @@ static void Draw_fireball()
         if (!tinofire[i].active) continue;
         int screenX = tinofire[i].x - g_game.cameraX;
         int screenY = tinofire[i].y;
-        if (tinofire[i].direction == 0)
+        if (tinofire[i].direction == DIR_LEFT)
         {
             if (tinofire[i].motion < 3)
             {
@@ -949,7 +949,7 @@ static void Draw_fireball()
                 graphics.DrawImage(g_images.tino_mario_fire_2, screenX, screenY, TILE_SIZE * 2, TILE_SIZE * 2);
             }
         }
-        else if (tinofire[i].direction == 1)
+        else if (tinofire[i].direction == DIR_RIGHT)
         {
             if (tinofire[i].motion < 3)
             {
@@ -1052,7 +1052,7 @@ static void Draw_Monsters()
         int screenX = g_monsters.monsters[i].x - g_game.cameraX;
         int screenY = g_monsters.monsters[i].y;
 
-        if (!g_monsters.monsters[i].isAlive)
+        if (!g_monsters.monsters[i].isAlive || g_monsters.monsters[i].isDead)
         {
             if (g_game.stage == 1)
                 graphics.DrawImage(g_images.monster1_dead, screenX, screenY, TILE_SIZE, TILE_SIZE);
@@ -1061,11 +1061,16 @@ static void Draw_Monsters()
             else if (g_game.stage == 3)
                 graphics.DrawImage(g_images.monster3_dead, screenX, screenY, TILE_SIZE, TILE_SIZE);
 
-            DWORD now = GetTickCount();
-            if (g_monsters.monsters[i].deadStart == 0)
-                g_monsters.monsters[i].deadStart = now;
-            if (now - g_monsters.monsters[i].deadStart >= 300)
-                g_monsters.monsters[i].active = false;
+            // 밟기 사망(isAlive=false): 300ms 후 숨김
+            // 날아가기 사망(isDead=true, isAlive=true): UpdateMonsters에서 화면 밖 감지 후 숨김
+            if (!g_monsters.monsters[i].isAlive)
+            {
+                DWORD now = GetTickCount();
+                if (g_monsters.monsters[i].deadStart == 0)
+                    g_monsters.monsters[i].deadStart = now;
+                if (now - g_monsters.monsters[i].deadStart >= 300)
+                    g_monsters.monsters[i].active = false;
+            }
 
             continue;
         }
@@ -1095,13 +1100,13 @@ static void Draw_Turtles()
         {
         case NORMAL:
         {
-            if(g_monsters.turtles[i].direction == 0)
+            if(g_monsters.turtles[i].direction == DIR_LEFT)
             {
                 graphics.DrawImage((g_game.stage == 3)
                     ? ((g_game.frameMotion % 2 == 0) ? g_images.brown_turtle_1 : g_images.brown_turtle_2)
                     : ((g_game.frameMotion % 2 == 0) ? g_images.turtle_1 : g_images.turtle_2), drawX, drawY - TILE_SIZE, TILE_SIZE, TILE_SIZE * 2);
             }
-            else if (g_monsters.turtles[i].direction == 1)
+            else if (g_monsters.turtles[i].direction == DIR_RIGHT)
             {
                 graphics.DrawImage((g_game.stage == 3) 
                     ? ((g_game.frameMotion % 2 == 0) ? g_images.brown_turtle_R_1 : g_images.brown_turtle_R_2) 

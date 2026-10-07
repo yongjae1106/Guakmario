@@ -30,7 +30,7 @@ struct Shot
     int motion;
     int motion_fade;
     int duration;
-    int direction;
+    Direction direction;
     bool active;
     bool fade;
 };

@@ -53,7 +53,7 @@ static void InitTurtlesFromData(const int* tileX, const int* tileY, int count)
         g_monsters.turtles[i].vx        = -1;
         g_monsters.turtles[i].width     = 20;
         g_monsters.turtles[i].height    = 20;
-        g_monsters.turtles[i].direction = 0;
+        g_monsters.turtles[i].direction = DIR_LEFT;
         g_monsters.turtles[i].isAlive   = true;
         g_monsters.turtles[i].active    = true;
         g_monsters.turtles[i].turtleState = NORMAL;
@@ -112,7 +112,7 @@ void InitBowser()
     g_monsters.bowser.jumpTimer = 0;
 
     g_monsters.bowser.startX = g_monsters.bowser.x;
-    g_monsters.bowser.direction = 1;
+    g_monsters.bowser.moveSign = 1;
     g_monsters.bowser.moveDistance = 0;
     g_monsters.bowser.maxDistance = 10 * TILE_SIZE;  // 6칸
     g_monsters.bowser.jumpTimer = 0;
@@ -142,6 +142,8 @@ void UpdateMonsters()
             g_monsters.monsters[i].vy += 1;
             if (g_monsters.monsters[i].vy > 10) g_monsters.monsters[i].vy = 10;
             g_monsters.monsters[i].y += g_monsters.monsters[i].vy;
+            if (g_monsters.monsters[i].isDead && g_monsters.monsters[i].y > SCREEN_HEIGHT + 100)
+                g_monsters.monsters[i].isAlive = false;  // 화면 밖 낙하 완료 → 정리
             continue;
         }
         
@@ -251,8 +253,6 @@ void CheckMarioMonsterCollision()
         int monsterRight = monsterLeft + g_monsters.monsters[i].width;
         int monsterTop = g_monsters.monsters[i].y;
         int monsterBottom = monsterTop + g_monsters.monsters[i].height;
-        int monsterXWorld = g_monsters.monsters[i].x - g_game.cameraX; // 화면 기준의 좌표 (g_game.cameraX 보정)
-
         // 밟기 판정
         if (marioBottom >= monsterTop && marioTop < monsterTop &&
             marioRight > monsterLeft && marioLeft < monsterRight &&
@@ -323,7 +323,7 @@ void UpdateTurtles()
             g_monsters.turtles[i].y += g_monsters.turtles[i].vy;
             continue;
         }
-        g_monsters.turtles[i].direction = g_monsters.turtles[i].vx > 0 ? 1 : 0;
+        g_monsters.turtles[i].direction = g_monsters.turtles[i].vx > 0 ? DIR_RIGHT : DIR_LEFT;
 
         // 낭떠러지 앞에서 방향전환
         if(g_game.stage > 1 && g_monsters.turtles[i].turtleState == NORMAL)
@@ -630,13 +630,13 @@ void UpdateBowser()
 
     // === 이동 ===
     int moveSpeed = 2;
-    g_monsters.bowser.x += moveSpeed * g_monsters.bowser.direction;
+    g_monsters.bowser.x += moveSpeed * g_monsters.bowser.moveSign;
     g_monsters.bowser.moveDistance += moveSpeed;
 
     if (g_monsters.bowser.moveDistance >= g_monsters.bowser.maxDistance)
     {
         // 방향 전환
-        g_monsters.bowser.direction *= -1;
+        g_monsters.bowser.moveSign *= -1;
         g_monsters.bowser.moveDistance = 0;
     }
 

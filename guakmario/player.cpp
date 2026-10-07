@@ -9,6 +9,7 @@
 #include "game.h"
 #include "map.h"
 #include "collision.h"
+#include "config.h"
 
 using namespace Gdiplus;
 
@@ -16,18 +17,18 @@ void movePlayer()
 {
     if (g_player.keyState[VK_LEFT] && !g_player.keyState[VK_RIGHT])
     {
-        g_player.mario.vx = -5;
-        g_player.mario.direction = 0;
+        g_player.mario.vx = -PLAYER_WALK_SPEED;
+        g_player.mario.direction = DIR_LEFT;
     }
     else if (g_player.keyState[VK_RIGHT] && !g_player.keyState[VK_LEFT])
     {
-        g_player.mario.vx = 5;
-        g_player.mario.direction = 1;
+        g_player.mario.vx = PLAYER_WALK_SPEED;
+        g_player.mario.direction = DIR_RIGHT;
     }
     else if (g_player.keyState[VK_LEFT] && g_player.keyState[VK_RIGHT])
     {
         // 둘 다 눌린 경우 마지막 방향 유지
-        g_player.mario.vx = (g_player.mario.direction == 0 ? -5 : 5);
+        g_player.mario.vx = (g_player.mario.direction == DIR_LEFT ? -PLAYER_WALK_SPEED : PLAYER_WALK_SPEED);
     }
     else 
     {
@@ -88,7 +89,7 @@ void UpdatePlayer()
     // 중력 적용
     g_player.mario.isFlying = true;
     g_player.mario.vy += 1;
-    if (g_player.mario.vy > 15) g_player.mario.vy = 15;
+    if (g_player.mario.vy > PLAYER_GRAVITY_MAX) g_player.mario.vy = PLAYER_GRAVITY_MAX;
     g_player.mario.y += g_player.mario.vy;
 
     // y축 충돌 다시 계산
@@ -247,7 +248,7 @@ void UpdatePlayer()
     if (g_game.cameraX > MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH)
         g_game.cameraX = MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH;
 
-    if (g_player.mario.y > 800)
+    if (g_player.mario.y > PLAYER_FALL_DEATH_Y)
     {
         dead();
     }
@@ -256,7 +257,7 @@ void UpdateDeadMotion()
 {
     g_player.mario.y += g_player.mario.vy;
     g_player.mario.vy += 1;
-    if (g_player.mario.vy > 15) g_player.mario.vy = 15;
+    if (g_player.mario.vy > PLAYER_GRAVITY_MAX) g_player.mario.vy = PLAYER_GRAVITY_MAX;
 }
 
 
@@ -270,7 +271,7 @@ void dead()
     g_game.deadStartTime = GetTickCount();
 
     g_player.mario.life--;
-    g_game.stage_time = 400;
+    g_game.stage_time = STAGE_TIME_LIMIT;
 
 }
 void resurrection()
@@ -292,7 +293,7 @@ void ResetMario(int life, int coin)
     g_player.mario.coin = coin;
     g_player.mario.width = 40;
     g_player.mario.height = 40;
-    g_player.mario.direction = 1;
+    g_player.mario.direction = DIR_RIGHT;
 }
 
 MarioRenderData BuildMarioRenderData()

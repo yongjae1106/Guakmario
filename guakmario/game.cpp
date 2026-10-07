@@ -7,6 +7,7 @@
 #include "player.h"
 #include "collision.h"
 #include "game.h"
+#include "config.h"
 #include <mmsystem.h>
 #pragma comment(lib, "winmm.lib")
 
@@ -16,7 +17,7 @@ static void handle_transform(MarioForm targetForm, void (*primary_fn)(), void (*
 {
     g_player.mario.god = true;
     DWORD now = GetTickCount();
-    if (now - g_game.transformStartTime >= 700)
+    if (now - g_game.transformStartTime >= TRANSFORM_DURATION_MS)
     {
         if (g_player.mario.form != targetForm)
             primary_fn();
@@ -49,7 +50,7 @@ void UpdateGame()
         DWORD now = GetTickCount();
         g_player.mario.vx = 1;
         g_player.mario.x += g_player.mario.vx;
-        if (now - g_game.victoryStart >= 5000)
+        if (now - g_game.victoryStart >= VICTORY_NEXT_STAGE_MS)
         {
             g_game.stage++;
             LoadStage();
@@ -59,7 +60,7 @@ void UpdateGame()
     // 최종 승리 모션
     else if (g_game.gameState == GAME_CLEAR)
     {
-        if (GetTickCount() - g_game.clearStart >= 0 && GetTickCount() - g_game.clearStart <= 5000)
+        if (GetTickCount() - g_game.clearStart >= 0 && GetTickCount() - g_game.clearStart <= CLEAR_WALK_MS)
         {
             g_player.mario.vx = 1;
             g_player.mario.x += g_player.mario.vx;
@@ -70,7 +71,7 @@ void UpdateGame()
             g_player.mario.isWalking = false;
             g_player.mario.vx = 0;
         }
-        if (GetTickCount() - g_game.clearStart >= 10000)
+        if (GetTickCount() - g_game.clearStart >= CLEAR_RESET_MS)
         {
             g_game.stage = 1;
             g_game.gameClearText = false;
@@ -92,7 +93,7 @@ void UpdateGame()
                 g_player.mario.vy -= 14;
                 motion1 = true;
             }
-            if (now - g_game.deadStartTime >= 2000)
+            if (now - g_game.deadStartTime >= DEAD_ANIMATION_MS)
             {
                 if (g_player.mario.life <= 0)
                 {
@@ -108,7 +109,7 @@ void UpdateGame()
             }
             return;
         }
-        if (now - g_game.deadStartTime >= 3000)
+        if (now - g_game.deadStartTime >= DEATH_REVIVE_DELAY_MS)
         {
             g_game.gameState = GAME_RUNNING;  // 다시 정상 진행
             resurrection();
@@ -128,7 +129,7 @@ void UpdateGame()
         UpdateStarMode(g_game.starStartTime);
     }
 
-    if (g_player.mario.coin > 99)
+    if (g_player.mario.coin > COIN_1UP_THRESHOLD)
     {
         PlaySoundBuffer(up_Sound);
         g_player.mario.life++;
@@ -136,6 +137,7 @@ void UpdateGame()
     }
 
     UpdateMario_motion();
+    if (g_player.mario.tino_motion) TinoAttack();  // 바이트 모션 동안 매 프레임 히트박스 적용
     UpdatePlayer();
     UpdateAllItems();
     UpdateAllMonsters();
@@ -236,5 +238,5 @@ void LoadStage()
 
     g_player.mario.x = 100;
     g_player.mario.y = 300;
-    g_game.stage_time = 400;
+    g_game.stage_time = STAGE_TIME_LIMIT;
 }

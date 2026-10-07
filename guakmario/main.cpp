@@ -16,6 +16,13 @@
 
 using namespace Gdiplus;
 
+// 타이머 ID
+constexpr UINT TIMER_GAME  = 1;   // 게임 업데이트 (물리, 충돌) — 15ms
+constexpr UINT TIMER_WALK  = 2;   // 걷기 애니메이션              — 60ms
+constexpr UINT TIMER_BLOCK = 3;   // 블록/별 애니메이션           — 120ms
+constexpr UINT TIMER_TIME  = 4;   // 스테이지 타임 카운트다운     — 500ms
+constexpr UINT TIMER_COOL  = 5;   // 스킬 쿨타임                  — 1000ms
+
 // 윈도우 핸들
 HWND hWnd;
 
@@ -27,11 +34,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
         case WM_CREATE:
         {
-            SetTimer(hWnd, 1, 15, NULL);            // 1번타이머 기본(카메라)타이머
-            SetTimer(hWnd, 2, 60, NULL);            // 2번타이머 모션 타이머
-            SetTimer(hWnd, 3, 120, NULL);           // 3번타이머 블럭 모션 타이머
-            SetTimer(hWnd, 4, 500, NULL);           // 4번타이머 시간초 타이머
-            SetTimer(hWnd, 5, 1000, NULL);          // 5번타이머 쿨타임 타이머
+            SetTimer(hWnd, TIMER_GAME,  15,   NULL);    // 게임 업데이트 (물리, 충돌)
+            SetTimer(hWnd, TIMER_WALK,  60,   NULL);    // 걷기 애니메이션
+            SetTimer(hWnd, TIMER_BLOCK, 120,  NULL);    // 블록/별 애니메이션
+            SetTimer(hWnd, TIMER_TIME,  500,  NULL);    // 스테이지 타임 카운트다운
+            SetTimer(hWnd, TIMER_COOL,  1000, NULL);    // 스킬 쿨타임
             break;
         }
         case WM_KEYDOWN:
@@ -129,12 +136,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             switch (wParam)
             {
-            case(1):
+            case TIMER_GAME:
             {
                 UpdateGame();
                 break;
             }
-            case(2):
+            case TIMER_WALK:
             {
                 if (g_player.mario.isWalking)
                 {
@@ -149,7 +156,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 break;
             }
-            case(3):
+            case TIMER_BLOCK:
             {
                 if (g_game.frameMotion < 6)
                 {
@@ -169,13 +176,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 break;
             }
-            case(4):
+            case TIMER_TIME:
             {
                 if (g_game.gameState == GAME_OVER || g_game.gameState == GAME_VICTORY || g_game.gameState == GAME_CLEAR) break;
                 TickTimer();
                 break;
             }
-            case(5):
+            case TIMER_COOL:
             {
                 TickCooldowns();
             }
@@ -305,10 +312,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_DESTROY:
         {
             RemoveFontResourceEx(L"SuperMarioBrosNES.ttf", FR_PRIVATE, 0);
-            KillTimer(hWnd, 1);
-            KillTimer(hWnd, 2);
-            KillTimer(hWnd, 3);
-            KillTimer(hWnd, 4);
+            KillTimer(hWnd, TIMER_GAME);
+            KillTimer(hWnd, TIMER_WALK);
+            KillTimer(hWnd, TIMER_BLOCK);
+            KillTimer(hWnd, TIMER_TIME);
             GdiplusShutdown(gdiplusToken);
             PostQuitMessage(0);
             break;
@@ -324,6 +331,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     wc.hInstance = hInstance;
     wc.lpszClassName = L"MarioClass";
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);					// 메뉴이름
 
     RegisterClass(&wc);

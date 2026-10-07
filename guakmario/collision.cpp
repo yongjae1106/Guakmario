@@ -51,7 +51,6 @@ void CheckClearCollision()
         }
     }
 }
-
 // 코인먹기 함수
 void CheckCoinCollision()
 {

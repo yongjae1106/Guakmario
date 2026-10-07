@@ -11,7 +11,8 @@
 #define MAP_WIDTH 200
 #define MAP_HEIGHT 15
 
-enum MarioForm { FORM_SMALL, FORM_BIG, FORM_FLOWER, FORM_TINO };
+enum MarioForm  { FORM_SMALL, FORM_BIG, FORM_FLOWER, FORM_TINO };
+enum Direction  { DIR_LEFT = 0, DIR_RIGHT = 1 };
 
 enum TileType
 {

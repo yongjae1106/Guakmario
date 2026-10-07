@@ -27,7 +27,7 @@ typedef enum { NORMAL, SHELL, SPINNING } TurtleState;
 
 struct Turtle : Entity
 {
-    int direction = 0;      // 0: left  1: right
+    Direction direction = DIR_LEFT;
     bool damage = false;
 
     TurtleState turtleState = NORMAL;
@@ -62,7 +62,7 @@ struct Bowser : Entity
     int jumpInterval = 0;
 
     int startX = 0;            // 시작 위치 x 좌표
-    int direction = 0;         // 이동 방향 (-1: 왼쪽, 1: 오른쪽)
+    int moveSign = 1;          // 이동 배율: 1 = 오른쪽, -1 = 왼쪽 (속도에 곱해서 사용)
     int moveDistance = 0;      // 이동한 거리 누적
     int maxDistance = 0;
 
