@@ -202,27 +202,41 @@ void ResetItems()
         tinofire[i].fade = false;
     }
 }
+struct StageData {
+    const char*       bgm;
+    void            (*initMap)();
+    int           (*mapData)[MAP_WIDTH];
+    void            (*extraInit)();
+};
+
+static void InitStage3Extras() { InitFireTraps(); InitBowser(); }
+
+static const StageData stages[] = {
+    { nullptr,                                     nullptr,  nullptr, nullptr           }, // [0] 미사용
+    { "resource\\sound\\bgm\\GroundTheme.wav",     InitMap,  map1,   nullptr            },
+    { "resource\\sound\\bgm\\GroundTheme.wav",     InitMap2, map2,   InitAngelTurtles   },
+    { "resource\\sound\\bgm\\CastleTheme.wav",     InitMap3, map3,   InitStage3Extras   },
+};
+
 void LoadStage()
 {
-    SetStage_BGM();
+    int s = g_game.stage;
+    const StageData& sd = stages[s];
+
+    PlayBGM(sd.bgm);
     ResetItems();
     ResetTraps();
     g_player.mario.god = false;
     g_player.mario.star = false;
 
-    static void (*initMap[])() = { nullptr, InitMap, InitMap2, InitMap3 };
-    static int (*mapData[])[MAP_WIDTH] = { nullptr, map1, map2, map3 };
-    int s = g_game.stage;
-
     ResetMonsters();
     g_game.cameraX = 0;
-    initMap[s]();
-    currentMap = mapData[s];
+    sd.initMap();
+    currentMap = sd.mapData;
 
     InitMonsters(s);
     InitTurtles(s);
-    if (s == 2) InitAngelTurtles();
-    if (s == 3) { InitFireTraps(); InitBowser(); }
+    if (sd.extraInit) sd.extraInit();
 
     g_player.mario.x = 100;
     g_player.mario.y = 300;

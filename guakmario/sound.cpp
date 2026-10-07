@@ -178,12 +178,14 @@ void PlayBGM(const char* filename)
 }
 void SetStage_BGM()
 {
-    if (g_game.stage == 1)
-        PlayBGM("resource\\sound\\bgm\\GroundTheme.wav");
-    else if (g_game.stage == 2)
-        PlayBGM("resource\\sound\\bgm\\GroundTheme.wav");
-    else if (g_game.stage == 3)
-        PlayBGM("resource\\sound\\bgm\\CastleTheme.wav");
+    static const char* bgm[] = {
+        nullptr,
+        "resource\\sound\\bgm\\GroundTheme.wav",
+        "resource\\sound\\bgm\\GroundTheme.wav",
+        "resource\\sound\\bgm\\CastleTheme.wav",
+    };
+    int s = g_game.stage;
+    if (s >= 1 && s <= 3) PlayBGM(bgm[s]);
 }
 void sound_load()
 {
