@@ -35,6 +35,18 @@ struct PlayerContext {
 };
 extern PlayerContext g_player;
 
+// 렌더러가 필요한 데이터만 담는 뷰 — Player 내부 구현(god/vx/vy 등)을 노출하지 않음
+struct MarioRenderData {
+    int x, y, width, height, direction;
+    MarioForm form;
+    bool isWalking, isJumping, isFlying, isDead;
+    bool star, fire_motion, tino_motion, tino_fire_motion;
+    int walk_motion, motion_timer;
+    int life, coin;
+    int tino_cooldown_z, tino_cooldown_space;
+};
+MarioRenderData BuildMarioRenderData();
+
 void movePlayer();
 void UpdatePlayer();
 void UpdateMario_motion();

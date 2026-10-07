@@ -295,3 +295,16 @@ void ResetMario(int life, int coin)
     g_player.mario.direction = 1;
 }
 
+MarioRenderData BuildMarioRenderData()
+{
+    const Player& m = g_player.mario;
+    return {
+        m.x, m.y, m.width, m.height, m.direction,
+        m.form,
+        m.isWalking, m.isJumping, m.isFlying, m.isDead,
+        m.star, m.fire_motion, m.tino_motion, m.tino_fire_motion,
+        m.walk_motion, m.motion_timer,
+        m.life, m.coin,
+        m.tino_cooldown_z, m.tino_cooldown_space
+    };
+}
