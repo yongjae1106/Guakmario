@@ -64,7 +64,7 @@ void Draw()
     const bool flipX = (mario.direction == 0);
 
     // mario
-    if (g_game.gameState == GAME_TRANSFORMING && mario.form == FORM_SMALL)
+    if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_BIG && mario.form == FORM_SMALL)
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -75,7 +75,7 @@ void Draw()
             DrawSprite(graphics, g_images.mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_TRANSFORMING && mario.form == FORM_BIG)
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_BIG && mario.form == FORM_BIG)
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -86,7 +86,7 @@ void Draw()
             DrawSprite(graphics, g_images.mario_stop, mario.x, mario.y, mario.width, TILE_SIZE, flipX);
         }
     }
-    else if (g_game.gameState == GAME_FLOWER_TRANS && mario.form == FORM_SMALL)    // small mario >> flower
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_SMALL)    // small mario >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -97,7 +97,7 @@ void Draw()
             DrawSprite(graphics, g_images.mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_FLOWER_TRANS && mario.form == FORM_BIG)     // big mario >> flower
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_BIG)     // big mario >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -108,7 +108,7 @@ void Draw()
             DrawSprite(graphics, g_images.big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_FLOWER_TRANS && mario.form == FORM_TINO)     // tino >> flower
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_TINO)     // tino >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -119,7 +119,7 @@ void Draw()
             DrawSprite(graphics, g_images.flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_FLOWER_TRANS && mario.form == FORM_FLOWER)     // flower >> big mario
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_FLOWER)     // flower >> big mario
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -131,7 +131,7 @@ void Draw()
         }
     }
     // tino
-    else if (g_game.gameState == GAME_TINO_TRANS && mario.form == FORM_SMALL)    // small mario >> tino
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_SMALL)    // small mario >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -142,7 +142,7 @@ void Draw()
             DrawSprite(graphics, g_images.mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_TINO_TRANS && mario.form == FORM_BIG)     // big mario >> tino
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_BIG)     // big mario >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -153,7 +153,7 @@ void Draw()
             DrawSprite(graphics, g_images.big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_TINO_TRANS && mario.form == FORM_FLOWER)     // flower >> tino
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_FLOWER)     // flower >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {
@@ -164,7 +164,7 @@ void Draw()
             DrawSprite(graphics, g_images.flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
         }
     }
-    else if (g_game.gameState == GAME_TINO_TRANS && mario.form == FORM_TINO)     // tino >> big mario
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_TINO)     // tino >> big mario
     {
         if ((GetTickCount() / 100) % 2 == 0)
         {

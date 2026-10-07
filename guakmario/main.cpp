@@ -211,7 +211,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     {
                         g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                     }
-                    g_game.gameState = GAME_TINO_TRANS;
+                    g_game.transformTarget = FORM_TINO;
+                    g_game.gameState = GAME_TRANSFORMING;
                     g_game.transformStartTime = GetTickCount();
                 }
                 break;
@@ -225,7 +226,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     {
                         g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                     }
-                    g_game.gameState = GAME_FLOWER_TRANS;
+                    g_game.transformTarget = FORM_FLOWER;
+                    g_game.gameState = GAME_TRANSFORMING;
                     g_game.transformStartTime = GetTickCount();
                 }
                 break;
@@ -236,6 +238,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     PlaySoundBuffer(powerup_Sound);
                     g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
+                    g_game.transformTarget = FORM_BIG;
                     g_game.gameState = GAME_TRANSFORMING;
                     g_game.transformStartTime = GetTickCount();
                 }

@@ -32,6 +32,7 @@ void CheckCollision_mushroom()
             if (g_player.mario.form == FORM_SMALL && g_game.gameState == GAME_RUNNING)
             {
                 g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
+                g_game.transformTarget = FORM_BIG;
                 g_game.gameState = GAME_TRANSFORMING;
                 g_game.transformStartTime = GetTickCount();
             }
@@ -76,7 +77,8 @@ void CheckCollision_flower()
                 {
                     g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                 }
-                g_game.gameState = GAME_FLOWER_TRANS;
+                g_game.transformTarget = FORM_FLOWER;
+                g_game.gameState = GAME_TRANSFORMING;
                 g_game.transformStartTime = GetTickCount();
             }
             // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
@@ -103,7 +105,8 @@ void CheckCollision_tino()
                 {
                     g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
                 }
-                g_game.gameState = GAME_TINO_TRANS;
+                g_game.transformTarget = FORM_TINO;
+                g_game.gameState = GAME_TRANSFORMING;
                 g_game.transformStartTime = GetTickCount();
             }
             // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)

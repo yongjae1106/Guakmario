@@ -4,9 +4,7 @@
 enum GameState
 {
     GAME_RUNNING,
-    GAME_TRANSFORMING,
-    GAME_FLOWER_TRANS,
-    GAME_TINO_TRANS,
+    GAME_TRANSFORMING,  // 변신 중 (어떤 폼으로인지는 transformTarget 참조)
     GAME_VICTORY,
     GAME_CLEAR,
     GAME_OVER
@@ -19,6 +17,7 @@ struct GameContext {
     DWORD godstart           = 0;
     DWORD victoryStart       = 0;
     DWORD clearStart         = 0;
+    MarioForm transformTarget    = FORM_SMALL;   // GAME_TRANSFORMING 시 목표 폼
     bool  gameStart          = false;
     int   title_select       = 0;
     double cameraX           = 0;

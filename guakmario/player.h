@@ -1,8 +1,6 @@
 #pragma once
 #include "data.h"
 
-enum MarioForm { FORM_SMALL, FORM_BIG, FORM_FLOWER, FORM_TINO };
-
 struct Player
 {
     int x = 100, y = 300;

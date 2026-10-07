@@ -34,18 +34,14 @@ void UpdateGame()
     // 변신 모션 (mushroom / flower / tino)
     if (g_game.gameState == GAME_TRANSFORMING)
     {
-        handle_transform(FORM_BIG,    TransformToBig,    TransformToSmall);
+        switch (g_game.transformTarget)
+        {
+        case FORM_BIG:    handle_transform(FORM_BIG,    TransformToBig,    TransformToSmall); break;
+        case FORM_FLOWER: handle_transform(FORM_FLOWER, TransformToFlower, TransformToBig);   break;
+        case FORM_TINO:   handle_transform(FORM_TINO,   TransformToTino,   TransformToBig);   break;
+        default: break;
+        }
         return; // 게임 상태 업데이트 생략해서 "멈춘 듯한" 연출
-    }
-    else if (g_game.gameState == GAME_FLOWER_TRANS)
-    {
-        handle_transform(FORM_FLOWER, TransformToFlower, TransformToBig);
-        return;
-    }
-    else if (g_game.gameState == GAME_TINO_TRANS)
-    {
-        handle_transform(FORM_TINO,   TransformToTino,   TransformToBig);
-        return;
     }
     // 승리 모션
     else if (g_game.gameState == GAME_VICTORY)

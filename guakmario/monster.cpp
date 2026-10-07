@@ -798,6 +798,7 @@ void damage_mario()
         // 작은 마리오로 변신
         PlaySoundBuffer(powerdown_Sound);
         g_player.mario.y += TILE_SIZE + 1;       // 위치 낮추기
+        g_game.transformTarget = FORM_BIG;
         g_game.gameState = GAME_TRANSFORMING;
         g_game.transformStartTime = GetTickCount();
         // 반동 점프 방지를 위해 vy 유지 또는 0으로
@@ -805,14 +806,16 @@ void damage_mario()
     else if (g_player.mario.form == FORM_FLOWER)
     {
         PlaySoundBuffer(powerdown_Sound);
-        g_game.gameState = GAME_FLOWER_TRANS;
+        g_game.transformTarget = FORM_FLOWER;
+        g_game.gameState = GAME_TRANSFORMING;
         g_game.transformStartTime = GetTickCount();
         // 반동 점프 방지를 위해 vy 유지 또는 0으로
     }
     else if (g_player.mario.form == FORM_TINO)
     {
         PlaySoundBuffer(powerdown_Sound);
-        g_game.gameState = GAME_TINO_TRANS;
+        g_game.transformTarget = FORM_TINO;
+        g_game.gameState = GAME_TRANSFORMING;
         g_game.transformStartTime = GetTickCount();
         // 반동 점프 방지를 위해 vy 유지 또는 0으로
     }
