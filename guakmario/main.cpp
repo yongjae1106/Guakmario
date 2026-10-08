@@ -20,7 +20,7 @@ using namespace Gdiplus;
 constexpr UINT TIMER_GAME  = 1;   // 게임 업데이트 (물리, 충돌) — 15ms
 constexpr UINT TIMER_WALK  = 2;   // 걷기 애니메이션              — 60ms
 constexpr UINT TIMER_BLOCK = 3;   // 블록/별 애니메이션           — 120ms
-constexpr UINT TIMER_TIME  = 4;   // 스테이지 타임 카운트다운     — 500ms
+constexpr UINT TIMER_TIME  = 4;   // 스테이지 타임 카운트다운     — 1000ms
 constexpr UINT TIMER_COOL  = 5;   // 스킬 쿨타임                  — 1000ms
 
 // 윈도우 핸들
@@ -37,7 +37,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SetTimer(hWnd, TIMER_GAME,  15,   NULL);    // 게임 업데이트 (물리, 충돌)
             SetTimer(hWnd, TIMER_WALK,  60,   NULL);    // 걷기 애니메이션
             SetTimer(hWnd, TIMER_BLOCK, 120,  NULL);    // 블록/별 애니메이션
-            SetTimer(hWnd, TIMER_TIME,  500,  NULL);    // 스테이지 타임 카운트다운
+            SetTimer(hWnd, TIMER_TIME,  1000,  NULL);    // 스테이지 타임 카운트다운
             SetTimer(hWnd, TIMER_COOL,  1000, NULL);    // 스킬 쿨타임
             break;
         }
