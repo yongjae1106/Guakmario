@@ -137,7 +137,7 @@ void UpdatePlayer()
             int itemX = blockX * TILE_SIZE;
             int itemY = top * TILE_SIZE;
             currentMap[top][blockX] = TILE_USED_BLOCK;
-            SpawnItem(itemX, itemY);
+            SpawnItem_mushroom(itemX, itemY);
         }
         else if (currentMap[top][blockX] == TILE_BOX_STAR)
         {

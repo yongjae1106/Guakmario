@@ -216,29 +216,9 @@ void UpdateMonsters()
             g_monsters.monsters[i].isFalling = false;
         }
 
-        // 마리오 밟기 판정
-        int marioLeft = g_player.mario.x + g_game.cameraX;
-        int marioRight = marioLeft + g_player.mario.width;
-        int marioBottom = g_player.mario.y + g_player.mario.height;
-
-        int monsterLeft = g_monsters.monsters[i].x;
-        int monsterRight = monsterLeft + g_monsters.monsters[i].width;
-        int monsterTop = g_monsters.monsters[i].y;
-
-        if (g_player.mario.vy > 0 &&
-            marioBottom >= monsterTop &&
-            marioBottom <= monsterTop + 10 &&
-            marioRight > monsterLeft &&
-            marioLeft < monsterRight)
-        {
-
-            PlaySoundBuffer(stomp_Sound);
-            g_monsters.monsters[i].isAlive = false;
-            g_player.mario.vy = -10;  // 마리오 튀어오르기
-        }
     }
 }
-void CheckMarioMonsterCollision()
+void HandleMarioMonsterCollision()
 {
     for (int i = 0; i < g_monsters.monsterCount; i++)
     {
@@ -454,7 +434,7 @@ void UpdateTurtles()
         }
     }
 }
-void CheckMarioTurtleCollision()
+void HandleMarioTurtleCollision()
 {
     for (int i = 0; i < g_monsters.turtleCount; i++)
     {
@@ -582,7 +562,7 @@ void UpdateAngelTurtles()
         }
     }
 }
-void CheckMarioAngelTurtleCollision()
+void HandleMarioAngelTurtleCollision()
 {
     for (int i = 0; i < g_monsters.angelTurtleCount; i++)
     {
@@ -744,7 +724,7 @@ void UpdateFireballs()
 
 // 마리오 보서 충돌처리
 
-void CheckMarioBowserCollision()
+void HandleMarioBowserCollision()
 {
     if (!g_monsters.bowser.isAlive) return;
 
@@ -768,7 +748,7 @@ void CheckMarioBowserCollision()
         }
     }
 }
-void CheckMarioFireballCollision() 
+void HandleMarioFireballCollision()
 {
     if (g_player.mario.star || g_player.mario.isDead || g_player.mario.god) return;
 
@@ -836,12 +816,12 @@ void UpdateAllMonsters()
     UpdateFireTraps();
 }
 
-void CheckAllMonsterCollisions()
+void HandleAllMonsterCollisions()
 {
-    CheckMarioMonsterCollision();
-    CheckMarioTurtleCollision();
-    CheckMarioAngelTurtleCollision();
+    HandleMarioMonsterCollision();
+    HandleMarioTurtleCollision();
+    HandleMarioAngelTurtleCollision();
     CheckMarioHazardCollision();
-    CheckMarioBowserCollision();
-    CheckMarioFireballCollision();
+    HandleMarioBowserCollision();
+    HandleMarioFireballCollision();
 }

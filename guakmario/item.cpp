@@ -16,7 +16,7 @@ Shot tinofire[MAX_SHOT];
 Shot_Effect tinofire_effect[MAX_SHOT];
 
 // 마리오와 버섯 충돌 처리 함수
-void CheckCollision_mushroom()
+void HandleMushroomPickup()
 {
     for (int i = 0; i < MAX_ITEMS; i++)
     {
@@ -41,7 +41,7 @@ void CheckCollision_mushroom()
         }
     }
 }
-void CheckCollision_up_mushroom()
+void HandleUpMushroomPickup()
 {
     for (int i = 0; i < MAX_ITEMS; i++)
     {
@@ -58,7 +58,7 @@ void CheckCollision_up_mushroom()
         }
     }
 }
-void CheckCollision_flower()
+void HandleFlowerPickup()
 {
     for (int i = 0; i < MAX_ITEMS; i++)
     {
@@ -86,7 +86,7 @@ void CheckCollision_flower()
         }
     }
 }
-void CheckCollision_tino()
+void HandleTinoPickup()
 {
     for (int i = 0; i < MAX_ITEMS; i++)
     {
@@ -114,7 +114,7 @@ void CheckCollision_tino()
         }
     }
 }
-void CheckCollision_star()
+void HandleStarPickup()
 {
     for (int i = 0; i < MAX_ITEMS; i++)
     {
@@ -140,7 +140,7 @@ void CheckCollision_star()
 
 
 // 버섯 움직임
-void UpdateItems()
+void UpdateItems_mushroom()
 {
     for (int i = 0; i < MAX_ITEMS; i++)
     {
@@ -372,7 +372,7 @@ void UpdateItems_tino()
         if (!tino[i].active) continue;
     }
 }
-void SpawnItem(int x, int y)
+void SpawnItem_mushroom(int x, int y)
 {
     for (int i = 0; i < MAX_ITEMS; i++)
     {
@@ -444,18 +444,18 @@ void SpawnItem_tino(int x, int y)
 
 void UpdateAllItems()
 {
-    UpdateItems();
+    UpdateItems_mushroom();
     UpdateItems_up_mushroom();
     UpdateItems_star();
     UpdateItems_flower();
     UpdateItems_tino();
 }
 
-void CheckItemCollisions()
+void HandleItemCollisions()
 {
-    CheckCollision_mushroom();
-    CheckCollision_up_mushroom();
-    CheckCollision_star();
-    CheckCollision_flower();
-    CheckCollision_tino();
+    HandleMushroomPickup();
+    HandleUpMushroomPickup();
+    HandleStarPickup();
+    HandleFlowerPickup();
+    HandleTinoPickup();
 }

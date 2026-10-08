@@ -143,10 +143,10 @@ void UpdateGame()
     UpdateAllMonsters();
     UpdateAllShots();
 
-    CheckItemCollisions();
+    HandleItemCollisions();
     CheckCoinCollision();
-    CheckAllMonsterCollisions();
-    CheckShotCollisions();
+    HandleAllMonsterCollisions();
+    HandleShotCollisions();
     CheckFlagCollision();
     if (g_game.stage == 3) CheckClearCollision();
 }

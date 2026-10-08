@@ -101,20 +101,20 @@ void InitAngelTurtles();
 void InitBowser();
 
 void UpdateMonsters();
-void CheckMarioMonsterCollision();
+void HandleMarioMonsterCollision();
 
 void UpdateTurtles();
-void CheckMarioTurtleCollision();
+void HandleMarioTurtleCollision();
 
 void UpdateAngelTurtles();
-void CheckMarioAngelTurtleCollision();
+void HandleMarioAngelTurtleCollision();
 
 void UpdateBowser();
 void UpdateFireballs();
-void CheckMarioBowserCollision();
-void CheckMarioFireballCollision();
+void HandleMarioBowserCollision();
+void HandleMarioFireballCollision();
 
 void damage_mario();
 
 void UpdateAllMonsters();
-void CheckAllMonsterCollisions();
+void HandleAllMonsterCollisions();

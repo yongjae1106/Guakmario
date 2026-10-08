@@ -10,7 +10,7 @@
 #include "monster.h"
 #include "config.h"
 
-void CheckCollision_fireball()
+void HandleFireballHit()
 {
     for (int i = 0; i < MAX_SHOT; i++)
     {
@@ -84,7 +84,7 @@ void CheckCollision_fireball()
         }
     }
 }
-void CheckCollision_tinofire()
+void HandleTinoFireHit()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -378,8 +378,8 @@ void UpdateAllShots()
     UpdateShot_tinofire();
     UpdateShot_tinofire_effect();
 }
-void CheckShotCollisions()
+void HandleShotCollisions()
 {
-    CheckCollision_fireball();
-    CheckCollision_tinofire();
+    HandleFireballHit();
+    HandleTinoFireHit();
 }

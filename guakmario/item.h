@@ -44,7 +44,7 @@ extern Shot fireball[MAX_SHOT];
 extern Shot tinofire[MAX_SHOT];
 extern Shot_Effect tinofire_effect[MAX_SHOT];
 
-void UpdateItems();
+void UpdateItems_mushroom();
 void UpdateItems_up_mushroom();
 void UpdateItems_star();
 void UpdateItems_flower();
@@ -59,7 +59,7 @@ void TransformToSmall();
 void TransformToFlower();
 void TransformToTino();
 
-void SpawnItem(int x, int y);
+void SpawnItem_mushroom(int x, int y);
 void SpawnItem_up_mushroom(int x, int y);
 void SpawnItem_star(int x, int y);
 void SpawnItem_flower(int x, int y);
@@ -67,13 +67,13 @@ void SpawnItem_tino(int x, int y);
 void SpawnFireball(int x, int y);
 void SpawnTinoFire(int x, int y);
 
-void CheckCollision_mushroom();
-void CheckCollision_up_mushroom();
-void CheckCollision_star();
-void CheckCollision_flower();
-void CheckCollision_tino();
-void CheckCollision_fireball();
-void CheckCollision_tinofire();
+void HandleMushroomPickup();
+void HandleUpMushroomPickup();
+void HandleStarPickup();
+void HandleFlowerPickup();
+void HandleTinoPickup();
+void HandleFireballHit();
+void HandleTinoFireHit();
 
 void TinoAttack();
 
@@ -82,5 +82,5 @@ void UpdateStarMode(DWORD _starstart);
 
 void UpdateAllItems();
 void UpdateAllShots();
-void CheckItemCollisions();
-void CheckShotCollisions();
+void HandleItemCollisions();
+void HandleShotCollisions();
