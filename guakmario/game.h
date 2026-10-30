@@ -19,7 +19,9 @@ struct GameContext {
     DWORD clearStart         = 0;
     MarioForm transformTarget    = FORM_SMALL;   // GAME_TRANSFORMING 시 목표 폼
     bool  gameStart          = false;
+    bool  showMultiScreen    = false;
     int   title_select       = 0;
+    int   multi_select       = 0;   // 멀티 화면 선택 (0=START, 1=EXIT)
     double cameraX           = 0;
     int   worldMarioX        = 0;
     int   stage              = 1;

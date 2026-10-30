@@ -45,8 +45,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             switch (wParam)
             {
+            case VK_ESCAPE:
+            {
+                g_game.showMultiScreen = false;
+                break;
+            }
+            case VK_LEFT:
+            {
+                if (g_game.showMultiScreen)
+                {
+                    g_game.multi_select = 0;
+                }
+                break;
+            }
+            case VK_RIGHT:
+            {
+                if (g_game.showMultiScreen)
+                {
+                    g_game.multi_select = 1;
+                }
+                break;
+            }
             case VK_UP:
             {
+                if (g_game.showMultiScreen) break;
                 if (g_game.title_select > 0)
                 {
                     g_game.title_select--;
@@ -55,6 +77,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case VK_DOWN:
             {
+                if (g_game.showMultiScreen) break;
                 if (g_game.title_select < 2)
                 {
                     g_game.title_select++;
@@ -63,6 +86,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case VK_RETURN:
             {
+                if (g_game.showMultiScreen)
+                {
+                    if (g_game.multi_select == 0)
+                    {
+                        // 게임 시작 처리
+                    }
+                    else
+                    {
+                        g_game.showMultiScreen = false;
+                    }
+                    break;
+                }
                 if (g_game.title_select == 0)
                 {
                     mario_DC = CreateCompatibleDC(g_memDC);
@@ -73,7 +108,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 else if (g_game.title_select == 1)
                 {
-                    // MULTI GAME — 추후 구현
+                    g_game.showMultiScreen = true;
+                    g_game.multi_select = 0;
                 }
                 else if (g_game.title_select == 2)
                 {
@@ -98,18 +134,39 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);    // 타이틀
 
-            // 커서 (0=PLAYER GAME, 1=MULTI GAME, 2=EXIT GAME)
-            if (g_game.title_select == 0)
+            if (g_game.showMultiScreen)
             {
-                graphics.DrawImage(g_images.title_cursor, 220, 380, 25, 25);
+                graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+                // 커서 먼저 (GDI+)
+                if (g_game.multi_select == 0)
+                {
+                    graphics.DrawImage(g_images.title_cursor, 250, 478, 25, 25);
+                }
+                else
+                {
+                    graphics.DrawImage(g_images.title_cursor, 400, 478, 25, 25);
+                }
+
+                // START / EXIT 텍스트 (GDI — GDI+ 이후에)
+                TextOut(g_memDC, 280,  480, L"START", 5);
+                TextOut(g_memDC, 430, 480, L"EXIT",  4);
             }
-            else if (g_game.title_select == 1)
+            else
             {
-                graphics.DrawImage(g_images.title_cursor, 220, 420, 25, 25);
-            }
-            else if (g_game.title_select == 2)
-            {
-                graphics.DrawImage(g_images.title_cursor, 220, 460, 25, 25);
+                // 커서 (0=PLAYER GAME, 1=MULTI GAME, 2=EXIT GAME)
+                if (g_game.title_select == 0)
+                {
+                    graphics.DrawImage(g_images.title_cursor, 220, 380, 25, 25);
+                }
+                else if (g_game.title_select == 1)
+                {
+                    graphics.DrawImage(g_images.title_cursor, 220, 420, 25, 25);
+                }
+                else if (g_game.title_select == 2)
+                {
+                    graphics.DrawImage(g_images.title_cursor, 220, 460, 25, 25);
+                }
             }
 
             Draw_information();
