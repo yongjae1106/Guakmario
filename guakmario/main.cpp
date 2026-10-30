@@ -47,17 +47,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case VK_UP:
             {
-                if (g_game.title_select == 1)
+                if (g_game.title_select > 0)
                 {
-                    g_game.title_select = 0;
+                    g_game.title_select--;
                 }
                 break;
             }
             case VK_DOWN:
             {
-                if (g_game.title_select == 0)
+                if (g_game.title_select < 2)
                 {
-                    g_game.title_select = 1;
+                    g_game.title_select++;
                 }
                 break;
             }
@@ -72,6 +72,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     g_game.gameStart = true;
                 }
                 else if (g_game.title_select == 1)
+                {
+                    // MULTI GAME — 추후 구현
+                }
+                else if (g_game.title_select == 2)
                 {
                     exit(1);
                 }
@@ -94,7 +98,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);    // 타이틀
 
-            // 커서
+            // 커서 (0=PLAYER GAME, 1=MULTI GAME, 2=EXIT GAME)
             if (g_game.title_select == 0)
             {
                 graphics.DrawImage(g_images.title_cursor, 220, 380, 25, 25);
@@ -102,6 +106,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             else if (g_game.title_select == 1)
             {
                 graphics.DrawImage(g_images.title_cursor, 220, 420, 25, 25);
+            }
+            else if (g_game.title_select == 2)
+            {
+                graphics.DrawImage(g_images.title_cursor, 220, 460, 25, 25);
             }
 
             Draw_information();
