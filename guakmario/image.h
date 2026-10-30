@@ -188,6 +188,7 @@ struct ImageSet {
     Image* screen_coin_x = nullptr;
 
     Image* title_screen = nullptr;
+    Image* title_screen_multi = nullptr;
     Image* title_cursor = nullptr;
     Image* title_dead = nullptr;
 

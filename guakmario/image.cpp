@@ -453,6 +453,11 @@ void image_load()
         MessageBox(NULL, L"title_screen 이미지 로드 실패!", L"Error", MB_OK);
         exit(1);
     }
+    g_images.title_screen_multi = new Image(L"resource\\title\\title_screen_multi.png");
+    if (g_images.title_screen_multi->GetLastStatus() != Ok) {
+        MessageBox(NULL, L"title_screen_multi 이미지 로드 실패!", L"Error", MB_OK);
+        exit(1);
+    }
     g_images.title_cursor = new Image(L"resource\\title\\title_cursor.png");
     if (g_images.title_cursor->GetLastStatus() != Ok) {
         MessageBox(NULL, L"title_cursor 이미지 로드 실패!", L"Error", MB_OK);
