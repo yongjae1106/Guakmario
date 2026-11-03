@@ -1,6 +1,7 @@
 ﻿// 마리오 스타일 WinAPI 엔진 (카메라 포함, Y 고정)
 #define _CRT_SECURE_NO_WARNINGS
 #include <tchar.h>
+#include "network.h"
 #include "data.h"
 #include "map.h"
 #include "renderer.h"
@@ -47,7 +48,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case VK_ESCAPE:
             {
-                g_game.showMultiScreen = false;
+                if (g_game.showMultiScreen)
+                {
+                    g_game.showMultiScreen = false;
+                    g_game.showMultiSelect = true;  // 선택 화면으로 돌아가기
+                }
+                else
+                {
+                    g_game.showMultiSelect = false;
+                }
                 break;
             }
             case VK_LEFT:
@@ -68,6 +77,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case VK_UP:
             {
+                if (g_game.showMultiSelect)
+                {
+                    g_game.multi_select = 0;
+                    break;
+                }
                 if (g_game.showMultiScreen) break;
                 if (g_game.title_select > 0)
                 {
@@ -77,6 +91,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case VK_DOWN:
             {
+                if (g_game.showMultiSelect)
+                {
+                    g_game.multi_select = 1;
+                    break;
+                }
                 if (g_game.showMultiScreen) break;
                 if (g_game.title_select < 2)
                 {
@@ -86,6 +105,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case VK_RETURN:
             {
+                if (g_game.showMultiSelect)
+                {
+                    if (g_game.multi_select == 0)
+                    {
+                        // 방 만들기 → 호스트 로비
+                        NetFetchLocalIp();
+                        g_game.showMultiSelect = false;
+                        g_game.showMultiScreen = true;
+                        g_game.multi_select = 0;
+                    }
+                    else
+                    {
+                        // 방 참가 → TODO: IP 입력 화면
+                        g_game.showMultiSelect = false;
+                    }
+                    break;
+                }
                 if (g_game.showMultiScreen)
                 {
                     if (g_game.multi_select == 0)
@@ -95,6 +131,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     else
                     {
                         g_game.showMultiScreen = false;
+                        g_game.showMultiSelect = true;  // 선택 화면으로 돌아가기
                     }
                     break;
                 }
@@ -108,7 +145,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 else if (g_game.title_select == 1)
                 {
-                    g_game.showMultiScreen = true;
+                    g_game.showMultiSelect = true;
                     g_game.multi_select = 0;
                 }
                 else if (g_game.title_select == 2)
@@ -134,7 +171,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);    // 타이틀
 
-            if (g_game.showMultiScreen)
+            if (g_game.showMultiSelect)
+            {
+                graphics.DrawImage(g_images.title_screen_multi_sel, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+                SetTextColor(g_memDC, RGB(0, 0, 0));
+                TextOut(g_memDC, 200, 300, L"CREATE ROOM", 11);
+                TextOut(g_memDC, 200, 340, L"JOIN ROOM",   9);
+                if (g_game.multi_select == 0)
+                    graphics.DrawImage(g_images.title_cursor, 170, 295, 25, 25);
+                else
+                    graphics.DrawImage(g_images.title_cursor, 170, 335, 25, 25);
+                SetTextColor(g_memDC, RGB(255, 255, 255));
+            }
+            else if (g_game.showMultiScreen)
             {
                 graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -147,6 +196,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     graphics.DrawImage(g_images.title_cursor, 400, 478, 25, 25);
                 }
+
+                // PLAYER 1 : IP (첫 번째 줄)
+                TCHAR player1Line[64];
+                SetTextColor(g_memDC, RGB(0, 0, 0));
+                _stprintf_s(player1Line, L"PLAYER 1");
+                TextOut(g_memDC, 230, 240, player1Line, lstrlen(player1Line));
+                _stprintf_s(player1Line, L"%S", g_net.localIp);
+                TextOut(g_memDC, 230, 260, player1Line, lstrlen(player1Line));
+                _stprintf_s(player1Line, L"PLAYER 2");
+                TextOut(g_memDC, 230, 320, player1Line, lstrlen(player1Line));
+                _stprintf_s(player1Line, L"PLAYER 3");
+                TextOut(g_memDC, 230, 400, player1Line, lstrlen(player1Line));
+                SetTextColor(g_memDC, RGB(255, 255, 255));
 
                 // START / EXIT 텍스트 (GDI — GDI+ 이후에)
                 TextOut(g_memDC, 280,  480, L"START", 5);

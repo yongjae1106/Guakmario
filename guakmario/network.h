@@ -93,6 +93,7 @@ struct NetContext {
     SOCKET listenSock;          // 호스트 전용 listen 소켓
     SOCKET clientSockets[2];    // 호스트 전용 — 클라이언트 소켓 슬롯
     SOCKET hostSocket;          // 클라이언트 전용 — 호스트 연결 소켓
+    char   localIp[16];         // 로컬 IP 문자열 (예: "192.168.0.5")
 };
 
 extern NetContext g_net;
@@ -104,6 +105,7 @@ extern int       g_sharedLives; // 공용 목숨 — 호스트가 관리, PKT_GA
 // ============================================================
 
 // 초기화 / 종료
+void NetFetchLocalIp();  // WSAStartup + IP 조회만 (소켓 미생성)
 void NetInit(bool isHost, const char* hostIp = nullptr);
 void NetShutdown();
 
