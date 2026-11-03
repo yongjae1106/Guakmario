@@ -69,8 +69,33 @@ void NetInit(bool isHost, const char* hostIp)
 
         bind(g_net.listenSock, (sockaddr*)&addr, sizeof(addr));
         listen(g_net.listenSock, 2);    // backlog 2 (클라이언트 최대 2명)
+
+        // listen 소켓만 non-blocking — NetPollAccept에서 매 프레임 폴링
+        u_long mode = 1;
+        ioctlsocket(g_net.listenSock, FIONBIO, &mode);
     }
     // 클라이언트 connect 처리는 11/16 예정
+}
+
+
+// ============================================================
+//  PKT_CONNECT_ACK 전송 헬퍼 (내부용)
+// ============================================================
+
+static void SendConnectAck(SOCKET s, int assignedId)
+{
+    uint8_t buf[sizeof(PacketHeader) + sizeof(ConnectAckData)];
+
+    auto* hdr  = (PacketHeader*)buf;
+    hdr->size     = (uint16_t)sizeof(buf);
+    hdr->type     = PKT_CONNECT_ACK;
+    hdr->playerId = 0;  // 호스트 송신
+
+    auto* ack     = (ConnectAckData*)(buf + sizeof(PacketHeader));
+    ack->assignedId  = (uint8_t)assignedId;
+    ack->sharedLives = g_sharedLives;
+
+    send(s, (const char*)buf, sizeof(buf), 0);
 }
 
 
@@ -83,9 +108,76 @@ void NetShutdown()
     // 11/16 예정
 }
 
+// ============================================================
+//  10/30 — accept 폴링 (호스트 전용, 로비 루프에서 매 프레임 호출)
+// ============================================================
+
 void NetPollAccept()
 {
-    // 10/30 예정
+    if (!g_net.isHost) return;
+    if (g_net.connectedCount >= 3) return;
+    if (g_net.listenSock == INVALID_SOCKET) return;
+
+    sockaddr_in clientAddr = {};
+    int addrLen = sizeof(clientAddr);
+    SOCKET s = accept(g_net.listenSock, (sockaddr*)&clientAddr, &addrLen);
+    if (s == INVALID_SOCKET)
+    {
+        if (WSAGetLastError() != WSAEWOULDBLOCK)
+            OutputDebugStringA("[NetPollAccept] accept 오류\n");
+        return;  // WSAEWOULDBLOCK → 접속 없음, 정상
+    }
+
+    // 빈 슬롯 찾기 (0 또는 1)
+    int slot = -1;
+    for (int i = 0; i < 2; i++)
+    {
+        if (g_net.clientSockets[i] == INVALID_SOCKET)
+        {
+            slot = i;
+            break;
+        }
+    }
+    if (slot == -1)
+    {
+        closesocket(s);  // 슬롯 없음 (예외 상황)
+        return;
+    }
+
+    g_net.clientSockets[slot] = s;
+    g_net.connectedCount++;
+
+    SendConnectAck(s, slot + 1);  // playerId 1 또는 2 부여
+
+    // TODO(11/2): CreateThread(RecvThread, s) 추가
+}
+
+// ============================================================
+//  10/31 — connectedCount == 3 감지 시 GAME_START 브로드캐스트
+// ============================================================
+
+void NetBroadcastGameStart()
+{
+    uint8_t buf[sizeof(PacketHeader) + sizeof(GameEventData)];
+
+    auto* hdr     = (PacketHeader*)buf;
+    hdr->size     = (uint16_t)sizeof(buf);
+    hdr->type     = PKT_GAME_EVENT;
+    hdr->playerId = 0;
+
+    auto* evt        = (GameEventData*)(buf + sizeof(PacketHeader));
+    evt->eventType   = EVT_GAME_START;
+    evt->param       = 0;
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (g_net.clientSockets[i] != INVALID_SOCKET)
+            send(g_net.clientSockets[i], (const char*)buf, sizeof(buf), 0);
+    }
+
+    // 더 이상 accept 받지 않음 — listen 소켓 닫기
+    closesocket(g_net.listenSock);
+    g_net.listenSock = INVALID_SOCKET;
 }
 
 void NetPollPackets()

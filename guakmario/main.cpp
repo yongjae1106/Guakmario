@@ -265,6 +265,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case TIMER_GAME:
             {
+                if (g_game.showMultiScreen && g_net.isHost)
+                {
+                    NetPollAccept();
+                    if (g_net.connectedCount == 3)
+                    {
+                        NetBroadcastGameStart();
+                        // TODO: 게임 시작 화면 전환
+                    }
+                }
+
                 UpdateGame();
                 break;
             }

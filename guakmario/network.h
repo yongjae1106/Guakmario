@@ -111,6 +111,7 @@ void NetShutdown();
 
 // 로비: accept 폴링 (호스트 전용, GAME_LOBBY 루프에서 매 프레임 호출)
 void NetPollAccept();
+void NetBroadcastGameStart();  // connectedCount == 3 → GAME_START 브로드캐스트 + listen 소켓 닫기
 
 // 수신 큐 소비 (메인 스레드, UpdateGame() 첫 줄에서 호출)
 void NetPollPackets();
