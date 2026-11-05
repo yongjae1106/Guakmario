@@ -1,4 +1,7 @@
 #include "network.h"
+#include "config.h"
+#include "player.h"
+#include "game.h"
 #include <queue>
 
 // ============================================================
@@ -8,7 +11,6 @@
 NetContext g_net       = {};
 int        g_sharedLives = 3;
 
-static constexpr int NET_PORT = 9000;
 
 // ============================================================
 //  수신 큐 / 크리티컬 섹션 (A-4, A-5에서 사용)
@@ -128,7 +130,30 @@ static void SendConnectAck(SOCKET s, int assignedId)
 
 void NetShutdown()
 {
-    // 11/16 예정
+    for (int i = 0; i < 2; i++)
+    {
+        if (g_net.clientSockets[i] != INVALID_SOCKET)
+        {
+            closesocket(g_net.clientSockets[i]);
+            g_net.clientSockets[i] = INVALID_SOCKET;
+        }
+    }
+    if (g_net.hostSocket != INVALID_SOCKET)
+    {
+        closesocket(g_net.hostSocket);
+        g_net.hostSocket = INVALID_SOCKET;
+    }
+    if (g_net.listenSock != INVALID_SOCKET)
+    {
+        closesocket(g_net.listenSock);
+        g_net.listenSock = INVALID_SOCKET;
+    }
+    if (g_recvCSInit)
+    {
+        DeleteCriticalSection(&g_recvCS);
+        g_recvCSInit = false;
+    }
+    WSACleanup();
 }
 
 // ============================================================
@@ -206,7 +231,131 @@ void NetBroadcastGameStart()
 
 void NetPollPackets()
 {
-    // 11/6 예정
+    std::vector<uint8_t> pkt;
+    while (PopRecvPacket(pkt))
+    {
+        if (pkt.size() < sizeof(PacketHeader)) continue;
+        const auto* hdr = (const PacketHeader*)pkt.data();
+
+        switch (hdr->type)
+        {
+        case PKT_PLAYER_STATE:
+        {
+            if (pkt.size() < sizeof(PacketHeader) + sizeof(PlayerStateData)) break;
+            int id = hdr->playerId;
+            if (id < 0 || id > 2 || id == g_net.myPlayerId) break;
+            const auto* ps = (const PlayerStateData*)(pkt.data() + sizeof(PacketHeader));
+            Player& p  = g_allPlayers[id].mario;
+            p.x           = ps->x;
+            p.y           = ps->y;
+            p.vx          = ps->vx;
+            p.vy          = ps->vy;
+            p.form        = (MarioForm)ps->form;
+            p.walk_motion = ps->walkMotion;
+            p.coin        = ps->coin;
+            p.isJumping   = (ps->flags & FLAG_JUMPING)    != 0;
+            p.isFlying    = (ps->flags & FLAG_FLYING)     != 0;
+            p.isDead      = (ps->flags & FLAG_DEAD)       != 0;
+            p.star        = (ps->flags & FLAG_STAR)       != 0;
+            p.god         = (ps->flags & FLAG_INVINCIBLE) != 0;
+            break;
+        }
+        case PKT_GAME_EVENT:
+        {
+            if (pkt.size() < sizeof(PacketHeader) + sizeof(GameEventData)) break;
+            const auto* evt = (const GameEventData*)(pkt.data() + sizeof(PacketHeader));
+            switch (evt->eventType)
+            {
+            case EVT_DISCONNECT:
+            {
+                int pid = evt->param;
+                if (g_net.isHost && pid >= 1 && pid <= 2)
+                    g_net.clientSockets[pid - 1] = INVALID_SOCKET;
+                if (g_net.connectedCount > 0)
+                    g_net.connectedCount--;
+                break;
+            }
+            case EVT_LIVES_CHANGED:
+                g_sharedLives = evt->param;
+                break;
+            case EVT_GAME_START:
+                g_game.gameStart = true;
+                break;
+            case EVT_GAME_OVER:
+                g_game.gameState = GAME_OVER;
+                break;
+            case EVT_STAGE_CLEAR:
+                g_game.gameState = GAME_CLEAR;
+                break;
+            default:
+                break;
+            }
+            break;
+        }
+        case PKT_CONNECT_ACK:
+        {
+            if (g_net.isHost) break;
+            if (pkt.size() < sizeof(PacketHeader) + sizeof(ConnectAckData)) break;
+            const auto* ack = (const ConnectAckData*)(pkt.data() + sizeof(PacketHeader));
+            g_net.myPlayerId = ack->assignedId;
+            g_sharedLives    = ack->sharedLives;
+            g_localPlayerIdx = g_net.myPlayerId;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+}
+
+void NetFlushSend()
+{
+    if (g_net.myPlayerId < 0) return;
+
+    uint8_t buf[sizeof(PacketHeader) + sizeof(PlayerStateData)];
+    auto* hdr     = (PacketHeader*)buf;
+    hdr->size     = (uint16_t)sizeof(buf);
+    hdr->type     = PKT_PLAYER_STATE;
+    hdr->playerId = (uint8_t)g_net.myPlayerId;
+
+    const Player& me = g_allPlayers[g_net.myPlayerId].mario;
+    auto* ps         = (PlayerStateData*)(buf + sizeof(PacketHeader));
+    ps->x          = (int16_t)me.x;
+    ps->y          = (int16_t)me.y;
+    ps->vx         = (int16_t)me.vx;
+    ps->vy         = (int16_t)me.vy;
+    ps->form       = (uint8_t)me.form;
+    ps->walkMotion = (uint8_t)me.walk_motion;
+    ps->coin       = (int16_t)me.coin;
+    ps->flags      = 0;
+    if (me.isJumping) ps->flags |= FLAG_JUMPING;
+    if (me.isFlying)  ps->flags |= FLAG_FLYING;
+    if (me.isDead)    ps->flags |= FLAG_DEAD;
+    if (me.star)      ps->flags |= FLAG_STAR;
+    if (me.god)       ps->flags |= FLAG_INVINCIBLE;
+
+    auto sendAll = [](SOCKET s, const uint8_t* data, int len)
+    {
+        int sent = 0;
+        while (sent < len)
+        {
+            int r = send(s, (const char*)data + sent, len - sent, 0);
+            if (r <= 0) return;
+            sent += r;
+        }
+    };
+
+    if (g_net.isHost)
+    {
+        for (int i = 0; i < 2; i++)
+            if (g_net.clientSockets[i] != INVALID_SOCKET)
+                sendAll(g_net.clientSockets[i], buf, (int)sizeof(buf));
+    }
+    else
+    {
+        if (g_net.hostSocket != INVALID_SOCKET)
+            sendAll(g_net.hostSocket, buf, (int)sizeof(buf));
+    }
 }
 
 void SendToAll(const void* data, int size)

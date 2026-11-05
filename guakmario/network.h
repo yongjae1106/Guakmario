@@ -116,6 +116,9 @@ void NetBroadcastGameStart();  // connectedCount == 3 → GAME_START 브로드�
 // 수신 큐 소비 (메인 스레드, UpdateGame() 첫 줄에서 호출)
 void NetPollPackets();
 
+// 자신의 플레이어 상태 직렬화 → 송신 (UpdateGame() 마지막에 호출)
+void NetFlushSend();
+
 // 송신
 void SendToAll(const void* data, int size);             // 호스트 전용
 void SendToHost(const void* data, int size);            // 클라이언트 전용

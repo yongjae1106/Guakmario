@@ -1,4 +1,5 @@
-﻿#include <tchar.h>
+﻿#include "network.h"  // winsock2.h → windows.h 순서 보장 (반드시 최상단)
+#include <tchar.h>
 #include "data.h"
 #include "map.h"
 #include "monster.h"
@@ -32,6 +33,8 @@ static void handle_transform(MarioForm targetForm, void (*primary_fn)(), void (*
 
 void UpdateGame()
 {
+    if (g_game.isMulti && !g_game.isRenderTest) NetPollPackets();
+
     // 변신 모션 (mushroom / flower / tino)
     if (g_game.gameState == GAME_TRANSFORMING)
     {
@@ -149,6 +152,8 @@ void UpdateGame()
     HandleShotCollisions();
     CheckFlagCollision();
     if (g_game.stage == 3) CheckClearCollision();
+
+    if (g_game.isMulti && !g_game.isRenderTest) NetFlushSend();
 }
 
 void TickTimer()
@@ -258,3 +263,4 @@ void LoadStage()
         g_allPlayers[g_localPlayerIdx].mario.charType = charTypes[g_localPlayerIdx];
     }
 }
+

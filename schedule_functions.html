@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>담당별 함수 목록</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; padding: 24px; }
+  h1 { font-size: 1.5rem; color: #e6edf3; margin-bottom: 4px; }
+  .subtitle { color: #8b949e; font-size: 0.88rem; margin-bottom: 28px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  .col-header { padding: 10px 16px 10px; border-radius: 8px 8px 0 0; font-size: 1rem; font-weight: 700; letter-spacing: 0.3px; border-bottom: 2px solid; }
+  .col-a { background: #0d1f38; color: #58a6ff; border-color: #58a6ff; }
+  .col-b { background: #0d2616; color: #3fb950; border-color: #3fb950; }
+  .col-c { background: #1e1230; color: #d2a8ff; border-color: #d2a8ff; }
+  .col-sub { font-size: 0.75rem; font-weight: 400; opacity: 0.75; margin-top: 2px; }
+
+  .section-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 7px 14px 6px; background: #161b22; color: #8b949e; border-bottom: 1px solid #21262d; border-top: 1px solid #21262d; }
+
+  table { width: 100%; border-collapse: collapse; }
+  tr:last-child td { border-bottom: none; }
+
+  td { padding: 7px 14px; font-size: 0.78rem; border-bottom: 1px solid #161b22; vertical-align: top; background: #0d1117; }
+  td.fname { font-family: 'Consolas', monospace; font-size: 0.77rem; white-space: nowrap; }
+  td.fdesc { color: #8b949e; font-size: 0.75rem; line-height: 1.4; }
+
+  .a td.fname { color: #79c0ff; }
+  .b td.fname { color: #7ee787; }
+  .c td.fname { color: #d2a8ff; }
+
+  /* 완료 행 */
+  .done td { opacity: 0.65; }
+  .done td.fname { color: #3fb950 !important; }
+
+  .kind { display: inline-block; font-size: 0.65rem; padding: 1px 6px; border-radius: 3px; font-weight: 700; margin-right: 4px; vertical-align: middle; white-space: nowrap; }
+  .kind.fn     { background: #1c2333; color: #8b949e; }
+  .kind.struct { background: #1a2d1a; color: #3fb950; }
+  .kind.global { background: #2d1f00; color: #ffa657; }
+  .kind.enum   { background: #21103a; color: #d2a8ff; }
+  .kind.done   { background: #1a3a1a; color: #3fb950; }
+  .kind.stub   { background: #2d2000; color: #ffa657; }
+
+  .col-wrapper { border: 1px solid #21262d; border-radius: 8px; overflow: hidden; }
+
+  .shared-box { margin-top: 24px; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .shared-header { background: #161b22; padding: 10px 16px; font-size: 0.88rem; font-weight: 700; color: #f0883e; border-bottom: 1px solid #30363d; }
+  .shared-header span { font-size: 0.75rem; font-weight: 400; color: #8b949e; margin-left: 8px; }
+  .shared-table { width: 100%; border-collapse: collapse; }
+  .shared-table th { background: #0d1117; color: #8b949e; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 14px; border-bottom: 1px solid #21262d; text-align: left; }
+  .shared-table td { padding: 7px 14px; font-size: 0.78rem; border-bottom: 1px solid #161b22; background: #0d1117; }
+  .shared-table td.sname { font-family: 'Consolas', monospace; color: #f0883e; }
+  .shared-table td.sfile { font-family: 'Consolas', monospace; color: #8b949e; font-size: 0.74rem; }
+  .shared-table td.sdesc { color: #8b949e; font-size: 0.75rem; }
+  .shared-table tr:last-child td { border-bottom: none; }
+  .shared-table tr.done td { opacity: 0.65; }
+  .shared-table tr.done td.sname { color: #3fb950; }
+
+  hr { border: none; border-top: 1px solid #21262d; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<h1>담당별 함수 목록</h1>
+<div class="subtitle">실제 코드 기준 — A: Network Core &nbsp;|&nbsp; B: Game State &nbsp;|&nbsp; C: UI / Renderer &nbsp;&nbsp; <span style="color:#3fb950;font-size:0.8rem;">■ 완료</span> &nbsp;<span style="color:#ffa657;font-size:0.8rem;">■ stub/미구현</span></div>
+
+<div class="grid">
+
+  <!-- ========== A ========== -->
+  <div class="col-wrapper">
+    <div class="col-header col-a">
+      A — Network Core
+      <div class="col-sub">network.h / network.cpp</div>
+    </div>
+
+    <div class="section-label">초기화 / 종료</div>
+    <table>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>NetFetchLocalIp()</td><td class="fdesc">WSAStartup + 로컬 IP 조회 → g_net.localIp 설정</td></tr>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>NetInit(bool isHost, const char* hostIp)</td><td class="fdesc">소켓 생성. 호스트: listen+bind+non-blocking. 클라이언트: connect는 TODO(11/16)</td></tr>
+      <tr class="a"><td class="fname"><span class="kind stub">stub</span>NetShutdown()</td><td class="fdesc">소켓 닫기, 스레드 종료, WSACleanup — TODO(11/16)</td></tr>
+    </table>
+
+    <div class="section-label">연결 수락 (호스트)</div>
+    <table>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>NetPollAccept()</td><td class="fdesc">non-blocking accept. 빈 슬롯 등록 + SendConnectAck. RecvThread 생성 TODO(11/2)</td></tr>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>SendConnectAck(SOCKET s, int assignedId)</td><td class="fdesc">내부용(static). playerId 부여 + g_sharedLives 포함 ACK 전송</td></tr>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>NetBroadcastGameStart()</td><td class="fdesc">EVT_GAME_START 브로드캐스트 + listenSock 닫기</td></tr>
+      <tr class="a"><td class="fname"><span class="kind fn">fn</span>HandleConnectAck(const ConnectAckData&amp;)</td><td class="fdesc">클라이언트측: g_net.myPlayerId 설정 + g_localPlayerIdx 동기화</td></tr>
+    </table>
+
+    <div class="section-label">수신 스레드 & 큐 — TODO(11/2~11/4)</div>
+    <table>
+      <tr class="a"><td class="fname"><span class="kind fn">fn</span>RecvThread(LPVOID param)</td><td class="fdesc">연결당 1개. blocking recv 루프. 패킷 완성 시 PushRecvPacket 호출</td></tr>
+      <tr class="a"><td class="fname"><span class="kind fn">fn</span>RecvPacketFull(SOCKET, vector&lt;uint8_t&gt;&amp;)</td><td class="fdesc">헤더 size 기준 분할 수신 처리. 완성 패킷 반환</td></tr>
+      <tr class="a"><td class="fname"><span class="kind stub">stub</span>PushRecvPacket(vector&lt;uint8_t&gt; pkt)</td><td class="fdesc">RecvThread에서 호출. CRITICAL_SECTION 보호. 선언만 완료</td></tr>
+      <tr class="a"><td class="fname"><span class="kind stub">stub</span>PopRecvPacket(vector&lt;uint8_t&gt;&amp; out)</td><td class="fdesc">메인 스레드에서 호출. 비어있으면 false 반환. 선언만 완료</td></tr>
+    </table>
+
+    <div class="section-label">게임 루프 훅 — TODO(11/6~11/11)</div>
+    <table>
+      <tr class="a"><td class="fname"><span class="kind stub">stub</span>NetPollPackets()</td><td class="fdesc">UpdateGame() 첫 줄. 큐 소비 → 패킷 타입별 분기 처리</td></tr>
+      <tr class="a"><td class="fname"><span class="kind fn">fn</span>NetFlushSend()</td><td class="fdesc">UpdateGame() 마지막 줄. 자신의 PlayerState 패킷 전송. 추가 필요</td></tr>
+    </table>
+
+    <div class="section-label">송신 — TODO(11/11)</div>
+    <table>
+      <tr class="a"><td class="fname"><span class="kind stub">stub</span>SendToAll(const void*, int)</td><td class="fdesc">호스트 전용. clientSockets[0], [1] 전송. 분할 전송 루프 필요</td></tr>
+      <tr class="a"><td class="fname"><span class="kind stub">stub</span>SendToHost(const void*, int)</td><td class="fdesc">클라이언트 전용. hostSocket으로 전송</td></tr>
+      <tr class="a"><td class="fname"><span class="kind stub">stub</span>SendToOne(int playerId, const void*, int)</td><td class="fdesc">특정 슬롯에게만 전송</td></tr>
+    </table>
+
+    <div class="section-label">오류 처리</div>
+    <table>
+      <tr class="a"><td class="fname"><span class="kind fn">fn</span>DisconnectSlot(int slotIdx)</td><td class="fdesc">소켓 닫기, 슬롯 해제, connectedCount 감소, EVT_DISCONNECT 큐 삽입</td></tr>
+    </table>
+
+    <div class="section-label">전역 상태</div>
+    <table>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>g_net</td><td class="fdesc">NetContext: isHost, myPlayerId, connectedCount, listenSock, clientSockets[2], hostSocket, localIp[16]</td></tr>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>g_sharedLives</td><td class="fdesc">int. network.h에 선언. 기본값 3</td></tr>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>PacketType</td><td class="fdesc">PKT_PLAYER_STATE=1, ITEM_SPAWN=3, ITEM_PICKUP=4, MONSTER_STATE=5, GAME_EVENT=6, CONNECT_ACK=7, PING=8</td></tr>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>GameEventType</td><td class="fdesc">EVT_STAGE_CLEAR=1, GAME_OVER=2, GAME_START=3, LIVES_CHANGED=4, DISCONNECT=5, PLAYER_ARRIVED=6</td></tr>
+      <tr class="a done"><td class="fname"><span class="kind done">완료</span>PlayerStateFlags</td><td class="fdesc">FLAG_JUMPING=1, FLYING=2, DEAD=4, STAR=8, TRANSFORMING=16, INVINCIBLE=32</td></tr>
+    </table>
+  </div>
+
+  <!-- ========== B ========== -->
+  <div class="col-wrapper">
+    <div class="col-header col-b">
+      B — Game State
+      <div class="col-sub">player.h / player.cpp / game.cpp / monster.cpp</div>
+    </div>
+
+    <div class="section-label">플레이어 배열 (B-1) ✅ 완료</div>
+    <table>
+      <tr class="b done"><td class="fname"><span class="kind done">완료</span>g_allPlayers[3]</td><td class="fdesc">PlayerContext 배열. player.h에 선언. [0]=나, [1][2]=원격</td></tr>
+      <tr class="b done"><td class="fname"><span class="kind done">완료</span>g_localPlayerIdx</td><td class="fdesc">로컬 입력 대상 인덱스. 멀티 시작 시 g_net.myPlayerId로 맞춰야 함</td></tr>
+      <tr class="b done"><td class="fname"><span class="kind done">완료</span>#define g_player</td><td class="fdesc">g_allPlayers[g_localPlayerIdx] 호환 매크로</td></tr>
+      <tr class="b done"><td class="fname"><span class="kind done">완료</span>BuildMarioRenderData()</td><td class="fdesc">로컬 플레이어(g_localPlayerIdx) 렌더 데이터 반환</td></tr>
+      <tr class="b done"><td class="fname"><span class="kind done">완료</span>BuildMarioRenderDataFor(int idx)</td><td class="fdesc">특정 슬롯 플레이어 렌더 데이터 반환. 멀티 렌더링에서 사용</td></tr>
+    </table>
+
+    <div class="section-label">myPlayerId 연동 (B-1a)</div>
+    <table>
+      <tr class="b"><td class="fname"><span class="kind fn">fn</span>g_localPlayerIdx = g_net.myPlayerId</td><td class="fdesc">EVT_GAME_START 수신 시 또는 게임 시작 시 처리. game.cpp 또는 main.cpp에 추가</td></tr>
+    </table>
+
+    <div class="section-label">원격 상태 반영 (B-2)</div>
+    <table>
+      <tr class="b"><td class="fname"><span class="kind fn">fn</span>ApplyRemotePlayerState(int id, const PlayerStateData&amp;)</td><td class="fdesc">PKT_PLAYER_STATE 수신 시 g_allPlayers[id].mario 덮어쓰기. g_net.myPlayerId는 무시</td></tr>
+    </table>
+
+    <div class="section-label">호스트 권위 — 아이템 (B-3)</div>
+    <table>
+      <tr class="b"><td class="fname"><span class="kind fn">fn</span>HandleItemPickupRequest(int playerId, int itemId)</td><td class="fdesc">호스트 전용. 유효성 확인 후 ConfirmItemPickup 호출</td></tr>
+      <tr class="b"><td class="fname"><span class="kind fn">fn</span>ConfirmItemPickup(int playerId, int itemId)</td><td class="fdesc">아이템 제거 + 플레이어 폼 업그레이드 + SendToAll 브로드캐스트</td></tr>
+    </table>
+
+    <div class="section-label">변신 처리 멀티 전환 (B-4)</div>
+    <table>
+      <tr class="b"><td class="fname"><span class="kind fn">fn</span>SetPlayerTransforming(int playerIdx, bool on)</td><td class="fdesc">isMulti 시 위치 고정 + FLAG_TRANSFORMING|FLAG_INVINCIBLE 비트 세팅. 전체 게임 정지 없음</td></tr>
+    </table>
+
+    <div class="section-label">게임 이벤트 브로드캐스트 (B-5)</div>
+    <table>
+      <tr class="b"><td class="fname"><span class="kind fn">fn</span>BroadcastGameEvent(GameEventType, int param)</td><td class="fdesc">호스트 전용. PKT_GAME_EVENT를 SendToAll</td></tr>
+      <tr class="b"><td class="fname"><span class="kind fn">fn</span>HandleGameEvent(const GameEventData&amp;)</td><td class="fdesc">수신측. EVT_STAGE_CLEAR / GAME_OVER / LIVES_CHANGED 분기 처리</td></tr>
+      <tr class="b"><td class="fname"><span class="kind global">내부</span>arrivedCount</td><td class="fdesc">호스트 내부 카운터. == 3이면 BroadcastGameEvent(EVT_STAGE_CLEAR)</td></tr>
+    </table>
+
+    <div class="section-label">몬스터 동기화 (B-6)</div>
+    <table>
+      <tr class="b"><td class="fname"><span class="kind fn">fn</span>BroadcastMonsterState()</td><td class="fdesc">호스트 전용. 5프레임마다 1회 몬스터 배열 스냅샷 SendToAll</td></tr>
+      <tr class="b"><td class="fname"><span class="kind fn">fn</span>ApplyMonsterState(const MonsterStateData&amp;)</td><td class="fdesc">클라이언트. 수신 후 로컬 몬스터 배열 덮어쓰기</td></tr>
+    </table>
+  </div>
+
+  <!-- ========== C ========== -->
+  <div class="col-wrapper">
+    <div class="col-header col-c">
+      C — UI / Renderer
+      <div class="col-sub">renderer.cpp / game.cpp (UI)</div>
+    </div>
+
+    <div class="section-label">로비 화면 (C-1) — 일부 완료</div>
+    <table>
+      <tr class="c done"><td class="fname"><span class="kind done">완료</span>showMultiSelect / showMultiScreen 분기</td><td class="fdesc">방 선택 화면 / 로비 대기 화면 분기 이미 구현됨</td></tr>
+      <tr class="c"><td class="fname"><span class="kind fn">fn</span>DrawLobbyScreen()</td><td class="fdesc">g_net.connectedCount/3 표시. 호스트: IP + 대기 중. 클라이언트: 연결 중 표시</td></tr>
+    </table>
+
+    <div class="section-label">3인 렌더링 (C-2)</div>
+    <table>
+      <tr class="c"><td class="fname"><span class="kind fn">fn</span>DrawAllPlayers()</td><td class="fdesc">g_game.isMulti일 때 g_allPlayers[0..2] 순회. BuildMarioRenderDataFor(i) 활용</td></tr>
+    </table>
+
+    <div class="section-label">상태 패킷 송신 (C-5)</div>
+    <table>
+      <tr class="c"><td class="fname"><span class="kind fn">fn</span>PackPlayerStatePacket(PlayerStateData&amp; out)</td><td class="fdesc">g_allPlayers[g_localPlayerIdx].mario → PlayerStateData 직렬화</td></tr>
+      <tr class="c"><td class="fname"><span class="kind fn">fn</span>SendItemPickupRequest(int itemId)</td><td class="fdesc">클라이언트 전용. PKT_ITEM_PICKUP → SendToHost</td></tr>
+      <tr class="c"><td class="fname"><span class="kind fn">fn</span>SendArrivedEvent()</td><td class="fdesc">클리어 조건 도달 시 PKT_GAME_EVENT(EVT_PLAYER_ARRIVED) → SendToHost</td></tr>
+    </table>
+
+    <div class="section-label">HUD 확장 (C-3)</div>
+    <table>
+      <tr class="c"><td class="fname"><span class="kind fn">fn</span>DrawSharedHUD()</td><td class="fdesc">g_sharedLives(network.h) + g_allPlayers[i].mario.coin 3인 표시. 기존 개인 목숨 HUD 대체</td></tr>
+      <tr class="c"><td class="fname"><span class="kind fn">fn</span>UpdateSharedLivesHUD(int newLives)</td><td class="fdesc">EVT_LIVES_CHANGED 수신 시 g_sharedLives 갱신 + HUD 업데이트</td></tr>
+    </table>
+
+    <div class="section-label">이벤트 수신 & 화면 처리 (C-4)</div>
+    <table>
+      <tr class="c"><td class="fname"><span class="kind fn">fn</span>HandleStageClearEffect()</td><td class="fdesc">입력 잠금 + 클리어 연출 → GAME_VICTORY 전환</td></tr>
+      <tr class="c"><td class="fname"><span class="kind fn">fn</span>HandleGameOverScreen()</td><td class="fdesc">게임오버 화면 표시 → GAME_OVER 전환</td></tr>
+    </table>
+  </div>
+
+</div>
+
+<!-- 공유 구조체 / 전역 -->
+<div class="shared-box" style="margin-top: 24px;">
+  <div class="shared-header">공유 구조체 & 전역 — network.h <span>(✅ 모두 확정 완료 — MonsterStateData만 미확정)</span></div>
+  <table class="shared-table">
+    <tr>
+      <th style="width:22%">이름</th>
+      <th style="width:16%">파일</th>
+      <th style="width:10%">담당</th>
+      <th>설명</th>
+    </tr>
+    <tr class="done">
+      <td class="sname">PacketHeader</td>
+      <td class="sfile">network.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">A 완료</td>
+      <td class="sdesc">size(uint16), type(uint8), playerId(uint8) — 4바이트 공통 헤더</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">PacketType</td>
+      <td class="sfile">network.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">A 완료</td>
+      <td class="sdesc">PKT_PLAYER_STATE=1 / ITEM_SPAWN=3 / ITEM_PICKUP=4 / MONSTER_STATE=5 / GAME_EVENT=6 / CONNECT_ACK=7 / PING=8</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">PlayerStateFlags</td>
+      <td class="sfile">network.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">A 완료</td>
+      <td class="sdesc">JUMPING=1 / FLYING=2 / DEAD=4 / STAR=8 / TRANSFORMING=16 / INVINCIBLE=32</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">GameEventType</td>
+      <td class="sfile">network.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">A 완료</td>
+      <td class="sdesc">EVT_STAGE_CLEAR=1 / GAME_OVER=2 / GAME_START=3 / LIVES_CHANGED=4 / DISCONNECT=5 / PLAYER_ARRIVED=6</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">NetContext g_net</td>
+      <td class="sfile">network.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">A 완료</td>
+      <td class="sdesc">isHost, myPlayerId, connectedCount, listenSock, clientSockets[2], hostSocket, localIp[16]</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">PlayerStateData</td>
+      <td class="sfile">network.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">A 완료</td>
+      <td class="sdesc">x,y,vx,vy(int16) / form,flags,walkMotion(uint8) / coin(int16) — life 없음</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">GameEventData</td>
+      <td class="sfile">network.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">A 완료</td>
+      <td class="sdesc">eventType(uint8), param(uint8)</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">ConnectAckData</td>
+      <td class="sfile">network.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">A 완료</td>
+      <td class="sdesc">assignedId(uint8), sharedLives(int32)</td>
+    </tr>
+    <tr>
+      <td class="sname">MonsterStateData</td>
+      <td class="sfile">network.h</td>
+      <td style="color:#ffa657;font-size:0.78rem;font-weight:700;">B 초안</td>
+      <td class="sdesc">미확정 — B 담당자가 MonsterContext 필드 초안 작성 후 11/14 합의</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">PlayerContext g_allPlayers[3]</td>
+      <td class="sfile">player.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">B 완료</td>
+      <td class="sdesc">[0]=나, [1][2]=원격. #define g_player = g_allPlayers[g_localPlayerIdx]</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">g_localPlayerIdx</td>
+      <td class="sfile">player.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">B 완료</td>
+      <td class="sdesc">0~2. 멀티 시작 시 g_net.myPlayerId로 동기화 필요</td>
+    </tr>
+    <tr class="done">
+      <td class="sname">g_sharedLives</td>
+      <td class="sfile">network.h ✅</td>
+      <td style="color:#3fb950;font-size:0.78rem;font-weight:700;">A 완료</td>
+      <td class="sdesc">공용 목숨. 기본값 3. 호스트만 감소 처리 후 EVT_LIVES_CHANGED 브로드캐스트</td>
+    </tr>
+  </table>
+</div>
+
+<div style="margin-top: 14px; font-size: 0.78rem; color: #8b949e; text-align: right;">
+  최종 제출: 2026-12-09 &nbsp;|&nbsp; MonsterStateData 합의 데드라인: 2026-11-14
+</div>
+
+</body>
+</html>

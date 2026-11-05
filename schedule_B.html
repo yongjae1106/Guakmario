@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B 담당 일정 - Game State</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; padding: 24px; }
+  h1 { font-size: 1.6rem; color: #3fb950; margin-bottom: 4px; }
+  .subtitle { color: #8b949e; font-size: 0.9rem; margin-bottom: 28px; }
+  .deadline { display: inline-block; background: #ff4444; color: #fff; padding: 3px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 700; margin-left: 10px; vertical-align: middle; }
+
+  .week-block { margin-bottom: 24px; }
+  .week-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .week-label { background: #1c2333; border: 1px solid #30363d; border-radius: 6px; padding: 4px 14px; font-size: 0.85rem; color: #3fb950; font-weight: 600; }
+  .date-range { color: #8b949e; font-size: 0.82rem; }
+
+  .task-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; border-left: 4px solid #3fb950; }
+  .task-card.done   { border-left-color: #3fb950; opacity: 0.8; }
+  .task-card.agree  { border-left-color: #f78166; }
+  .task-card.struct { border-left-color: #d2a8ff; }
+  .task-card.sync   { border-left-color: #58a6ff; }
+  .task-card.host   { border-left-color: #ffa657; }
+  .task-card.test   { border-left-color: #ff7b72; }
+  .task-card.event  { border-left-color: #f0883e; }
+  .task-card.final  { border-left-color: #f0883e; }
+
+  .task-id { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #8b949e; margin-bottom: 4px; }
+  .task-title { font-size: 1rem; font-weight: 600; color: #e6edf3; margin-bottom: 8px; }
+  .task-desc { font-size: 0.85rem; color: #8b949e; margin-bottom: 10px; line-height: 1.5; }
+
+  .done-badge { display: inline-block; background: #1a3a1a; color: #3fb950; border: 1px solid #3fb95055; padding: 1px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+  .todo-badge { display: inline-block; background: #2d1f00; color: #ffa657; border: 1px solid #ffa65755; padding: 1px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+
+  .func-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .func { background: #0d1117; border: 1px solid #3fb95055; color: #7ee787; padding: 2px 10px; border-radius: 20px; font-size: 0.78rem; font-family: 'Consolas', monospace; }
+  .func.blue   { border-color: #388bfd55; color: #79c0ff; }
+  .func.orange { border-color: #ffa65755; color: #ffa657; }
+  .func.purple { border-color: #d2a8ff55; color: #d2a8ff; }
+
+  .interface-box { background: #0d1117; border: 1px solid #3fb95033; border-radius: 6px; padding: 12px 16px; margin-top: 10px; }
+  .interface-box h4 { font-size: 0.8rem; color: #3fb950; margin-bottom: 6px; }
+  .interface-box code { font-size: 0.78rem; color: #7ee787; font-family: 'Consolas', monospace; line-height: 1.8; display: block; }
+
+  .tag-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .tag { font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+  .tag.mod   { background: #ffa65722; color: #ffa657; border: 1px solid #ffa65744; }
+  .tag.done  { background: #1a3a1a; color: #3fb950; border: 1px solid #3fb95055; }
+
+  .warn { background: #2d1f00; border: 1px solid #ffa65766; border-radius: 6px; padding: 8px 12px; font-size: 0.82rem; color: #ffa657; margin-top: 8px; }
+
+  hr { border: none; border-top: 1px solid #21262d; margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<h1>B 담당 일정 — Game State <span class="deadline">최종 제출 12/9</span></h1>
+<div class="subtitle">담당 파일: player.h / player.cpp / game.cpp / monster.cpp (item.cpp)</div>
+
+<hr>
+
+<!-- WEEK 1 -->
+<div class="week-block">
+  <div class="week-header">
+    <span class="week-label">1주차</span>
+    <span class="date-range">11/05 (수) ~ 11/09 (일)</span>
+  </div>
+
+  <div class="task-card done">
+    <div class="task-id">B-1 <span class="done-badge">완료</span></div>
+    <div class="task-title">g_allPlayers[3] 배열 확장</div>
+    <div class="tag-row">
+      <span class="tag done">완료: player.h</span>
+      <span class="tag done">완료: player.cpp</span>
+    </div>
+    <div class="task-desc">
+      <code>g_allPlayers[3]</code>, <code>g_localPlayerIdx</code> 이미 선언 및 구현 완료.<br>
+      <code>#define g_player g_allPlayers[g_localPlayerIdx]</code> 호환 매크로도 존재.<br>
+      <code>BuildMarioRenderDataFor(int idx)</code>도 이미 구현됨.
+    </div>
+    <div class="func-list">
+      <span class="func">extern PlayerContext g_allPlayers[3]</span>
+      <span class="func">extern int g_localPlayerIdx</span>
+      <span class="func">BuildMarioRenderData()</span>
+      <span class="func">BuildMarioRenderDataFor(int idx)</span>
+    </div>
+  </div>
+
+  <div class="task-card sync">
+    <div class="task-id">B-1a</div>
+    <div class="task-title">g_localPlayerIdx → g_net.myPlayerId 연동</div>
+    <div class="tag-row">
+      <span class="tag mod">수정: game.cpp 또는 main.cpp</span>
+    </div>
+    <div class="task-desc">
+      멀티 모드 게임 시작 시 <code>g_localPlayerIdx = g_net.myPlayerId</code> 로 맞추는 코드 추가.<br>
+      싱글 모드에서는 g_localPlayerIdx = 0 유지.<br>
+      <code>g_sharedLives</code>는 network.h에 선언됨 — data.h가 아님에 주의.
+    </div>
+    <div class="func-list">
+      <span class="func blue">g_net.myPlayerId (A 제공)</span>
+      <span class="func orange">g_sharedLives (network.h)</span>
+    </div>
+    <div class="interface-box">
+      <h4>게임 시작 시 처리</h4>
+      <code>
+        // EVT_GAME_START 수신 or 로컬 게임 시작 시<br>
+        if (g_game.isMulti)<br>
+        &nbsp;&nbsp;g_localPlayerIdx = g_net.myPlayerId;
+      </code>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK 2 -->
+<div class="week-block">
+  <div class="week-header">
+    <span class="week-label">2주차</span>
+    <span class="date-range">11/10 (월) ~ 11/14 (금)</span>
+  </div>
+
+  <div class="task-card sync">
+    <div class="task-id">B-2</div>
+    <div class="task-title">원격 플레이어 상태 수신 반영</div>
+    <div class="tag-row">
+      <span class="tag mod">수정: game.cpp</span>
+    </div>
+    <div class="task-desc">
+      NetPollPackets() 내에서 PKT_PLAYER_STATE 수신 시 g_allPlayers[hdr.playerId] 덮어쓰기.<br>
+      자신(g_net.myPlayerId == hdr.playerId) 패킷은 무시.<br>
+      원격 플레이어는 UpdatePlayer() 호출하지 않음.
+    </div>
+    <div class="func-list">
+      <span class="func">ApplyRemotePlayerState(int remoteId, const PlayerStateData&amp; data)</span>
+      <span class="func blue">PopRecvPacket() 소비 루프 (A 제공)</span>
+    </div>
+    <div class="interface-box">
+      <h4>수신 패킷 처리 흐름 (NetPollPackets 내)</h4>
+      <code>
+        std::vector&lt;uint8_t&gt; pkt;<br>
+        while (PopRecvPacket(pkt)) {<br>
+        &nbsp;&nbsp;auto* hdr = (PacketHeader*)pkt.data();<br>
+        &nbsp;&nbsp;if (hdr-&gt;type == PKT_PLAYER_STATE &amp;&amp;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;hdr-&gt;playerId != g_net.myPlayerId)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;ApplyRemotePlayerState(hdr-&gt;playerId, payload);<br>
+        }
+      </code>
+    </div>
+  </div>
+
+  <div class="task-card agree">
+    <div class="task-id">합의</div>
+    <div class="task-title">A, C와 MonsterStateData 필드 확정 (11/14)</div>
+    <div class="task-desc">
+      B가 MonsterContext 구조체 필드 초안 작성 → A(network.h에 추가), C(렌더링에 활용).
+      <strong>이 날 이후 임의 변경 금지.</strong>
+    </div>
+    <div class="func-list">
+      <span class="func purple">struct MonsterStateData — B 초안 작성</span>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK 3 -->
+<div class="week-block">
+  <div class="week-header">
+    <span class="week-label">3주차</span>
+    <span class="date-range">11/17 (월) ~ 11/21 (금)</span>
+  </div>
+
+  <div class="task-card host">
+    <div class="task-id">B-3</div>
+    <div class="task-title">호스트 권위 로직 — 아이템 획득</div>
+    <div class="tag-row">
+      <span class="tag mod">수정: game.cpp</span>
+    </div>
+    <div class="task-desc">
+      클라이언트 PKT_ITEM_PICKUP 요청 → 호스트 유효성 확인 → SendToAll 브로드캐스트.<br>
+      호스트 직접 충돌 감지도 동일하게 처리.
+    </div>
+    <div class="func-list">
+      <span class="func">HandleItemPickupRequest(int playerId, int itemId)</span>
+      <span class="func">ConfirmItemPickup(int playerId, int itemId)</span>
+    </div>
+  </div>
+
+  <div class="task-card host">
+    <div class="task-id">B-4</div>
+    <div class="task-title">변신 처리 멀티 전환</div>
+    <div class="tag-row">
+      <span class="tag mod">수정: player.cpp</span>
+    </div>
+    <div class="task-desc">
+      기존: 변신 시 GAME_TRANSFORMING으로 전체 게임 정지.<br>
+      멀티: 해당 플레이어만 위치 고정 + FLAG_TRANSFORMING | FLAG_INVINCIBLE 비트 세팅. 전체 정지 없음.<br>
+      isMulti 플래그로 싱글/멀티 분기.
+    </div>
+    <div class="func-list">
+      <span class="func">SetPlayerTransforming(int playerIdx, bool on)</span>
+      <span class="func orange">FLAG_TRANSFORMING | FLAG_INVINCIBLE (PlayerStateFlags)</span>
+    </div>
+    <div class="warn">주의: g_game.isMulti == true일 때만 위치 고정 처리. 싱글은 기존 GAME_TRANSFORMING 유지.</div>
+  </div>
+</div>
+
+<!-- WEEK 4 -->
+<div class="week-block">
+  <div class="week-header">
+    <span class="week-label">4주차</span>
+    <span class="date-range">11/24 (월) ~ 11/28 (금)</span>
+  </div>
+
+  <div class="task-card test">
+    <div class="task-id">통합 테스트</div>
+    <div class="task-title">로컬 3개 프로세스 — 상태 동기화 확인</div>
+    <div class="task-desc">
+      3개 프로세스에서 플레이어 이동이 서로에게 반영되는지 확인.<br>
+      아이템 획득 중복 처리 없는지 확인. A, C 담당자와 함께 진행.
+    </div>
+  </div>
+</div>
+
+<!-- WEEK 5 -->
+<div class="week-block">
+  <div class="week-header">
+    <span class="week-label">5주차</span>
+    <span class="date-range">12/01 (월) ~ 12/05 (금)</span>
+  </div>
+
+  <div class="task-card event">
+    <div class="task-id">B-5</div>
+    <div class="task-title">게임 이벤트 브로드캐스트 (호스트 전용)</div>
+    <div class="tag-row">
+      <span class="tag mod">수정: game.cpp</span>
+    </div>
+    <div class="task-desc">
+      스테이지 클리어, 게임오버, 목숨 변경 발생 시 PKT_GAME_EVENT를 SendToAll.<br>
+      3명 모두 도착(arrivedCount == 3) → EVT_STAGE_CLEAR. g_sharedLives == 0 → EVT_GAME_OVER.
+    </div>
+    <div class="func-list">
+      <span class="func">BroadcastGameEvent(GameEventType type, int param)</span>
+      <span class="func">HandleGameEvent(const GameEventData&amp; data)</span>
+      <span class="func orange">arrivedCount 도착 카운터 (호스트 내부)</span>
+    </div>
+    <div class="interface-box">
+      <h4>스테이지 클리어 흐름</h4>
+      <code>
+        // EVT_PLAYER_ARRIVED 수신 시 (호스트)<br>
+        arrivedCount++;<br>
+        if (arrivedCount == 3)<br>
+        &nbsp;&nbsp;BroadcastGameEvent(EVT_STAGE_CLEAR, 0);<br>
+        // 전체: 입력 잠금 + 클리어 연출
+      </code>
+    </div>
+  </div>
+
+  <div class="task-card event">
+    <div class="task-id">B-6</div>
+    <div class="task-title">몬스터 상태 브로드캐스트 (호스트 전용)</div>
+    <div class="tag-row">
+      <span class="tag mod">수정: monster.cpp</span>
+    </div>
+    <div class="task-desc">
+      트래픽 절감: 5프레임마다 1회 몬스터 배열 스냅샷 SendToAll.<br>
+      클라이언트는 수신 후 로컬 몬스터 배열 덮어쓰기.
+    </div>
+    <div class="func-list">
+      <span class="func">BroadcastMonsterState()</span>
+      <span class="func">ApplyMonsterState(const MonsterStateData&amp; data)</span>
+      <span class="func orange">frameCounter % 5 == 0 조건</span>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK 6 -->
+<div class="week-block">
+  <div class="week-header">
+    <span class="week-label">마감 주</span>
+    <span class="date-range">12/08 (월) ~ 12/09 (화)</span>
+  </div>
+
+  <div class="task-card final">
+    <div class="task-id">최종</div>
+    <div class="task-title">LAN 최종 테스트 & 제출</div>
+    <div class="task-desc">
+      다른 PC 3대 LAN 환경에서 전체 게임 플레이 테스트. 아이템/몬스터/클리어 동기화 최종 확인.
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<div style="margin-top: 16px;">
+  <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 8px; font-weight: 600;">A, C에 제공하는 인터페이스 (player.h 공개)</div>
+  <div class="interface-box">
+    <code>
+      // player.h — ✅ 이미 선언됨<br>
+      extern PlayerContext g_allPlayers[3];<br>
+      extern int           g_localPlayerIdx;<br>
+      #define g_player     g_allPlayers[g_localPlayerIdx]<br>
+      <br>
+      MarioRenderData BuildMarioRenderData();           // 로컬 플레이어용<br>
+      MarioRenderData BuildMarioRenderDataFor(int idx); // 특정 슬롯용 ✅ 구현됨<br>
+      <br>
+      // network.h — 패킷 페이로드 구조체 ✅ 이미 선언됨<br>
+      struct PlayerStateData  { x,y,vx,vy,form,flags,walkMotion,coin };<br>
+      struct GameEventData    { eventType, param };<br>
+      struct ConnectAckData   { assignedId, sharedLives };<br>
+      struct MonsterStateData { /* B 담당자 확정 후 */ };<br>
+      extern int g_sharedLives;  // network.h
+    </code>
+  </div>
+</div>
+
+</body>
+</html>
