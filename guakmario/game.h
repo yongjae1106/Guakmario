@@ -23,6 +23,9 @@ struct GameContext {
     bool  isRenderTest       = false;  // 렌더 테스트 모드 (네트워크 없이 3인 렌더 확인)
     bool  showMultiSelect    = false;  // 방 만들기/방 참가 선택 화면
     bool  showMultiScreen    = false;  // 호스트 로비 화면
+    bool  showIpInput        = false;  // JOIN: IP 입력 화면
+    char  ipInputBuf[16]     = {};     // 입력 중인 IP 문자열
+    int   ipInputLen         = 0;      // 현재 입력 길이
     int   title_select       = 0;
     int   multi_select       = 0;   // 선택 커서 (0=왼쪽, 1=오른쪽)
     double cameraX           = 0;

@@ -61,6 +61,26 @@ void NetFetchLocalIp()
 
 void NetInit(bool isHost, const char* hostIp)
 {
+    // 이전 소켓이 열려 있으면 먼저 정리 (재진입 대비)
+    if (g_net.listenSock != INVALID_SOCKET)
+    {
+        closesocket(g_net.listenSock);
+        g_net.listenSock = INVALID_SOCKET;
+    }
+    for (int i = 0; i < 2; i++)
+    {
+        if (g_net.clientSockets[i] != INVALID_SOCKET)
+        {
+            closesocket(g_net.clientSockets[i]);
+            g_net.clientSockets[i] = INVALID_SOCKET;
+        }
+    }
+    if (g_net.hostSocket != INVALID_SOCKET)
+    {
+        closesocket(g_net.hostSocket);
+        g_net.hostSocket = INVALID_SOCKET;
+    }
+
     g_net.isHost          = isHost;
     g_net.myPlayerId      = isHost ? 0 : -1;   // 클라이언트는 ACK 받은 후 설정
     g_net.connectedCount  = isHost ? 1 : 0;    // 호스트 자신 포함
