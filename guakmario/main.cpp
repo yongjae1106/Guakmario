@@ -79,7 +79,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 if (g_game.showMultiSelect)
                 {
-                    g_game.multi_select = 0;
+                    if (g_game.multi_select > 0) g_game.multi_select--;
                     break;
                 }
                 if (g_game.showMultiScreen) break;
@@ -93,7 +93,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 if (g_game.showMultiSelect)
                 {
-                    g_game.multi_select = 1;
+                    if (g_game.multi_select < 2) g_game.multi_select++;
                     break;
                 }
                 if (g_game.showMultiScreen) break;
@@ -115,10 +115,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         g_game.showMultiScreen = true;
                         g_game.multi_select = 0;
                     }
-                    else
+                    else if (g_game.multi_select == 1)
                     {
                         // 방 참가 → TODO: IP 입력 화면
                         g_game.showMultiSelect = false;
+                    }
+                    else if (g_game.multi_select == 2)
+                    {
+                        // 렌더 테스트 — 네트워크 없이 3인 렌더 확인
+                        g_game.isMulti       = true;
+                        g_game.isRenderTest  = true;
+                        g_game.showMultiSelect = false;
+                        g_localPlayerIdx     = 0;
+                        mario_DC = CreateCompatibleDC(g_memDC);
+                        LoadStage();
+                        g_game.gameStart = true;
                     }
                     break;
                 }
@@ -137,10 +148,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 if (g_game.title_select == 0)
                 {
+                    g_game.isMulti      = false;
+                    g_game.isRenderTest = false;
+                    g_localPlayerIdx    = 0;
                     mario_DC = CreateCompatibleDC(g_memDC);
-
                     LoadStage();
-
                     g_game.gameStart = true;
                 }
                 else if (g_game.title_select == 1)
@@ -177,10 +189,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 SetTextColor(g_memDC, RGB(0, 0, 0));
                 TextOut(g_memDC, 200, 300, L"CREATE ROOM", 11);
                 TextOut(g_memDC, 200, 340, L"JOIN ROOM",   9);
+                TextOut(g_memDC, 200, 380, L"RENDER TEST", 11);
                 if (g_game.multi_select == 0)
                     graphics.DrawImage(g_images.title_cursor, 170, 295, 25, 25);
-                else
+                else if (g_game.multi_select == 1)
                     graphics.DrawImage(g_images.title_cursor, 170, 335, 25, 25);
+                else
+                    graphics.DrawImage(g_images.title_cursor, 170, 375, 25, 25);
                 SetTextColor(g_memDC, RGB(255, 255, 255));
             }
             else if (g_game.showMultiScreen)
@@ -280,15 +295,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case TIMER_WALK:
             {
-                if (g_player.mario.isWalking)
+                int _wcount = g_game.isRenderTest ? 3 : 1;
+                for (int _wi = 0; _wi < _wcount; _wi++)
                 {
-                    if (g_player.mario.walk_motion < 2)
+                    Player& _wp = g_allPlayers[_wi].mario;
+                    if (_wp.isWalking)
                     {
-                        g_player.mario.walk_motion++;
-                    }
-                    else
-                    {
-                        g_player.mario.walk_motion = 0;
+                        if (_wp.walk_motion < 2) _wp.walk_motion++;
+                        else                     _wp.walk_motion = 0;
                     }
                 }
                 break;
@@ -334,6 +348,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         case WM_KEYDOWN:
         {
+            // 렌더 테스트: TAB 으로 조작 슬롯 전환
+            if (g_game.isRenderTest && wParam == VK_TAB)
+            {
+                // 이전 슬롯의 스크린 x를 월드 x로 복원 (카메라 핀 해제)
+                g_allPlayers[g_localPlayerIdx].mario.x += (int)g_game.cameraX;
+
+                g_localPlayerIdx = (g_localPlayerIdx + 1) % 3;
+
+                // 새 슬롯의 월드 x를 스크린 x로 변환 (카메라 적용)
+                g_allPlayers[g_localPlayerIdx].mario.x -= (int)g_game.cameraX;
+
+                InvalidateRect(hWnd, NULL, FALSE);
+                break;
+            }
             HandleGameKeyDown(wParam);
             break;
         }

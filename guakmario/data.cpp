@@ -3,7 +3,8 @@
 #include "game.h"
 #include "renderer.h"
 
-PlayerContext g_player;
+PlayerContext g_allPlayers[3];
+int           g_localPlayerIdx = 0;
 
 GameContext g_game;
 

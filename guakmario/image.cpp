@@ -11,6 +11,12 @@ ImageSet g_images;
 void image_load()
 {
     g_images.peach = new Image(L"resource\\peach\\peach.png");
+    g_images.mario_sprite_sheet = new Image(L"resource\\mario\\Mario_sprite.png");
+    if (g_images.mario_sprite_sheet->GetLastStatus() != Ok)
+    {
+        MessageBox(NULL, L"Mario_sprite.png 로드 실패!", L"Error", MB_OK);
+        exit(1);
+    }
     // stage_1
     g_images.stage_1_dirt = new Image(L"resource\\tile\\stage_1_dirt.png");
     if (g_images.stage_1_dirt->GetLastStatus() != Ok)
@@ -221,6 +227,16 @@ void image_load()
         MessageBox(NULL, L"big_mario_change 이미지 로드 실패!", L"Error", MB_OK);
         exit(1);
     }
+    g_images.big_luigi_change = new Image(L"resource\\mario\\big_luigi_change.png");
+    if (g_images.big_luigi_change->GetLastStatus() != Ok) {
+        MessageBox(NULL, L"big_luigi_change 이미지 로드 실패!", L"Error", MB_OK);
+        exit(1);
+    }
+    g_images.big_toad_change = new Image(L"resource\\mario\\big_toad_change.png");
+    if (g_images.big_toad_change->GetLastStatus() != Ok) {
+        MessageBox(NULL, L"big_toad_change 이미지 로드 실패!", L"Error", MB_OK);
+        exit(1);
+    }
 
     // tino mario
     g_images.tino_mario_stop = new Image(L"resource\\mario\\tino\\Tino_mario_stop.png");
@@ -241,6 +257,22 @@ void image_load()
     g_images.tino_mario_fire_fade_1 = new Image(L"resource\\mario\\tino\\Tino_mario_fire_fade_1.png");
     g_images.tino_mario_fire_fade_2 = new Image(L"resource\\mario\\tino\\Tino_mario_fire_fade_2.png");
     g_images.tino_mario_fire_fade_3 = new Image(L"resource\\mario\\tino\\Tino_mario_fire_fade_3.png");
+
+    // tino luigi attack
+    g_images.tino_luigi_attack_1 = new Image(L"resource\\mario\\Tino\\Tino_luigi_attack_1.png");
+    g_images.tino_luigi_attack_2 = new Image(L"resource\\mario\\Tino\\Tino_luigi_attack_2.png");
+    g_images.tino_luigi_attack_3 = new Image(L"resource\\mario\\Tino\\Tino_luigi_attack_3.png");
+    g_images.tino_luigi_attack_4 = new Image(L"resource\\mario\\Tino\\Tino_luigi_attack_4.png");
+    g_images.tino_luigi_attack_5 = new Image(L"resource\\mario\\Tino\\Tino_luigi_attack_5.png");
+    g_images.tino_luigi_attack_6 = new Image(L"resource\\mario\\Tino\\Tino_luigi_attack_6.png");
+
+    // tino toad attack
+    g_images.tino_toad_attack_1 = new Image(L"resource\\mario\\Tino\\Tino_toad_attack_1.png");
+    g_images.tino_toad_attack_2 = new Image(L"resource\\mario\\Tino\\Tino_toad_attack_2.png");
+    g_images.tino_toad_attack_3 = new Image(L"resource\\mario\\Tino\\Tino_toad_attack_3.png");
+    g_images.tino_toad_attack_4 = new Image(L"resource\\mario\\Tino\\Tino_toad_attack_4.png");
+    g_images.tino_toad_attack_5 = new Image(L"resource\\mario\\Tino\\Tino_toad_attack_5.png");
+    g_images.tino_toad_attack_6 = new Image(L"resource\\mario\\Tino\\Tino_toad_attack_6.png");
 
     // flower mario
     g_images.flower_mario_stop = new Image(L"resource\\mario\\flower\\flower_mario_stop.png");

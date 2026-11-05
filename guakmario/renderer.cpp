@@ -11,6 +11,8 @@
 
 using namespace Gdiplus;
 
+static void Draw_luigi(const MarioRenderData& p);
+static void Draw_toad(const MarioRenderData& p);
 static void Draw_spawn_item();
 static void Draw_map();
 static void Draw_castle_blank();
@@ -40,6 +42,239 @@ static void DrawSprite(Graphics& g, Image* img, int x, int y, int w, int h, bool
     }
 }
 
+// ─────────────────────────────────────────────
+//  스프라이트 시트 슬라이싱 헬퍼
+// ─────────────────────────────────────────────
+static void DrawSheetSprite(Graphics& g, Image* sheet,
+    int srcX, int srcY, int srcW, int srcH,
+    int dstX, int dstY, int dstW, int dstH,
+    bool flipX)
+{
+    Rect destRect(dstX, dstY, dstW, dstH);
+    if (flipX)
+    {
+        Matrix m(-1.0f, 0.0f, 0.0f, 1.0f, (REAL)(dstX + dstW), 0.0f);
+        g.SetTransform(&m);
+        Rect flippedDst(0, dstY, dstW, dstH);
+        g.DrawImage(sheet, flippedDst, srcX, srcY, srcW, srcH, UnitPixel);
+        g.ResetTransform();
+    }
+    else
+    {
+        g.DrawImage(sheet, destRect, srcX, srcY, srcW, srcH, UnitPixel);
+    }
+}
+
+// ─────────────────────────────────────────────
+//  Luigi 스프라이트 시트 좌표 (Mario_sprite.png)
+//  스캔 결과 기준 실제 좌표 사용
+// ─────────────────────────────────────────────
+namespace Luigi {
+    static const int FRAME_W  = 32;
+    static const int X_IDLE   = 1;
+    static const int X_WALK1  = 75;
+    static const int X_WALK2  = 108;
+    static const int X_WALK3  = 141;
+    static const int X_JUMP   = 215;
+    static const int X_DEAD   = 520;
+    static const int X_ATTACK = 627;  // Fire 행 전용: 불 발사 포즈 (col18)
+    static const int SY = 553;  // Small 행 y
+    static const int SH = 16;   // Small 프레임 세로
+    static const int BY = 583;  // Super/Big 행 y
+    static const int BH = 32;   // Super/Big 프레임 세로
+    static const int FY = 629;  // Fire(Flower) 행 y
+    static const int FH = 32;   // Fire 프레임 세로
+    static const int TY = 705;  // Tino 행 y (5번째 행)
+    static const int TH = 32;   // Tino 프레임 세로
+}
+
+// ─────────────────────────────────────────────
+//  Toad 스프라이트 시트 좌표 (Mario_sprite.png)
+// ─────────────────────────────────────────────
+namespace Toad {
+    static const int FRAME_W  = 32;
+    static const int X_IDLE   = 1;
+    static const int X_WALK1  = 75;
+    static const int X_WALK2  = 108;
+    static const int X_WALK3  = 141;
+    static const int X_JUMP   = 215;
+    static const int X_DEAD   = 520;
+    static const int X_ATTACK = 627;  // Fire 행 전용: 불 발사 포즈 (col18)
+    static const int SY = 1082; // Small 행 y
+    static const int SH = 16;   // Small 프레임 세로
+    static const int BY = 1112; // Super/Big 행 y
+    static const int BH = 32;   // Super/Big 프레임 세로
+    static const int FY = 1158; // Fire(Flower) 행 y
+    static const int FH = 32;   // Fire 프레임 세로
+    static const int TY = 1334; // Tino 행 y (7번째 행)
+    static const int TH = 32;   // Tino 프레임 세로
+}
+
+static void Draw_luigi(const MarioRenderData& p)
+{
+    Image* sheet = g_images.mario_sprite_sheet;
+    if (!sheet) return;
+    Graphics g(g_memDC);
+    g.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    const bool flip = (p.direction == DIR_LEFT);
+
+    // tino_motion: 별도 attack 이미지 사용 (mario와 동일한 방식)
+    if (p.form == FORM_TINO && p.tino_motion)
+    {
+        Image* const attackImgs[6] = {
+            g_images.tino_luigi_attack_6, g_images.tino_luigi_attack_5,
+            g_images.tino_luigi_attack_4, g_images.tino_luigi_attack_3,
+            g_images.tino_luigi_attack_2, g_images.tino_luigi_attack_1
+        };
+        int fi = p.motion_timer / 5;
+        if (fi < 0) fi = 0;
+        if (fi > 5) fi = 5;
+        DrawSprite(g, attackImgs[fi], p.x - 25, p.y - 15, 100, 100, flip);
+        return;
+    }
+    if (p.form == FORM_TINO && p.tino_fire_motion)
+    {
+        DrawSprite(g, g_images.tino_luigi_attack_2, p.x - 25, p.y - 15, 100, 100, flip);
+        return;
+    }
+
+    // 행(srcY, srcH) 선택
+    int srcY, srcH;
+    if (p.form == FORM_SMALL)
+    {
+        srcY = Luigi::SY;
+        srcH = Luigi::SH;
+    }
+    else if (p.form == FORM_FLOWER)
+    {
+        srcY = Luigi::FY;
+        srcH = Luigi::FH;
+    }
+    else if (p.form == FORM_TINO)
+    {
+        srcY = Luigi::TY;
+        srcH = Luigi::TH;
+    }
+    else  // FORM_BIG
+    {
+        srcY = Luigi::BY;
+        srcH = Luigi::BH;
+    }
+
+    // 열(srcX) 선택
+    // 소스 셀은 32px 너비지만 실제 캐릭터 콘텐츠는 중앙 16px에 위치
+    // → srcW=16(내용 영역), srcH 그대로 → dstW×dstH 균등 스케일
+    static const int CONTENT_W  = 16;  // 실제 콘텐츠 너비
+    static const int CONTENT_OX = 8;   // 셀 좌측에서 콘텐츠 시작 오프셋
+
+    int srcX;
+    if (p.isDead)
+        srcX = Luigi::X_DEAD   + CONTENT_OX;
+    else if (p.form == FORM_FLOWER && p.fire_motion)
+        srcX = Luigi::X_ATTACK + CONTENT_OX;
+    else if (p.isJumping)
+        srcX = Luigi::X_JUMP   + CONTENT_OX;
+    else if (p.isWalking)
+    {
+        // 각 프레임 콘텐츠 중심 기준 offset → 목적지에서 중심이 고정됨
+        // Walk1: center=15→off=7, Walk2: center=16→off=8, Walk3: center=16→off=8
+        const int walkX[3]  = { Luigi::X_WALK1, Luigi::X_WALK2, Luigi::X_WALK3 };
+        const int walkOX[3] = { 7, 8, 8 };
+        int wi = p.walk_motion % 3;
+        srcX = walkX[wi] + walkOX[wi];
+    }
+    else
+        srcX = Luigi::X_IDLE   + CONTENT_OX;
+
+    const int dstW = p.width;
+    const int dstH = p.height;
+
+    DrawSheetSprite(g, sheet,
+        srcX, srcY, CONTENT_W, srcH,
+        p.x, p.y, dstW, dstH,
+        flip);
+}
+
+static void Draw_toad(const MarioRenderData& p)
+{
+    Image* sheet = g_images.mario_sprite_sheet;
+    if (!sheet) return;
+    Graphics g(g_memDC);
+    g.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    const bool flip = (p.direction == DIR_LEFT);
+
+    // tino_motion: 별도 attack 이미지 사용 (mario와 동일한 방식)
+    if (p.form == FORM_TINO && p.tino_motion)
+    {
+        Image* const attackImgs[6] = {
+            g_images.tino_toad_attack_6, g_images.tino_toad_attack_5,
+            g_images.tino_toad_attack_4, g_images.tino_toad_attack_3,
+            g_images.tino_toad_attack_2, g_images.tino_toad_attack_1
+        };
+        int fi = p.motion_timer / 5;
+        if (fi < 0) fi = 0;
+        if (fi > 5) fi = 5;
+        DrawSprite(g, attackImgs[fi], p.x - 25, p.y - 15, 100, 100, flip);
+        return;
+    }
+    if (p.form == FORM_TINO && p.tino_fire_motion)
+    {
+        DrawSprite(g, g_images.tino_toad_attack_2, p.x - 25, p.y - 15, 100, 100, flip);
+        return;
+    }
+
+    int srcY, srcH;
+    if (p.form == FORM_SMALL)
+    {
+        srcY = Toad::SY;
+        srcH = Toad::SH;
+    }
+    else if (p.form == FORM_FLOWER)
+    {
+        srcY = Toad::FY;
+        srcH = Toad::FH;
+    }
+    else if (p.form == FORM_TINO)
+    {
+        srcY = Toad::TY;
+        srcH = Toad::TH;
+    }
+    else
+    {
+        srcY = Toad::BY;
+        srcH = Toad::BH;
+    }
+
+    static const int CONTENT_W  = 16;
+    static const int CONTENT_OX = 8;
+
+    int srcX;
+    if (p.isDead)
+        srcX = Toad::X_DEAD   + CONTENT_OX;
+    else if (p.form == FORM_FLOWER && p.fire_motion)
+        srcX = Toad::X_ATTACK + CONTENT_OX;
+    else if (p.isJumping)
+        srcX = Toad::X_JUMP   + CONTENT_OX;
+    else if (p.isWalking)
+    {
+        // Toad Walk1: center=15→off=7, Walk2: center=15→off=7, Walk3: center=16→off=8
+        const int walkX[3]  = { Toad::X_WALK1, Toad::X_WALK2, Toad::X_WALK3 };
+        const int walkOX[3] = { 7, 7, 8 };
+        int wi = p.walk_motion % 3;
+        srcX = walkX[wi] + walkOX[wi];
+    }
+    else
+        srcX = Toad::X_IDLE   + CONTENT_OX;
+
+    const int dstW = p.width;
+    const int dstH = p.height;
+
+    DrawSheetSprite(g, sheet,
+        srcX, srcY, CONTENT_W, srcH,
+        p.x, p.y, dstW, dstH,
+        flip);
+}
+
 void Draw()
 {
     RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -63,117 +298,96 @@ void Draw()
     const MarioRenderData mario = BuildMarioRenderData();
     const bool flipX = (mario.direction == DIR_LEFT);
 
+    // 캐릭터별 change 이미지 선택
+    auto getChangeImg = [&](bool flower) -> Image* {
+        if (mario.charType == CHAR_LUIGI) return g_images.big_luigi_change;
+        if (mario.charType == CHAR_TOAD)  return g_images.big_toad_change;
+        return flower ? g_images.flower_mario_change : g_images.big_mario_change;
+    };
+    // 캐릭터별 small idle 그리기
+    auto drawSmallIdle = [&](int x, int y) {
+        MarioRenderData tmp = mario; tmp.form = FORM_SMALL;
+        tmp.isWalking = false; tmp.isJumping = false;
+        tmp.x = x; tmp.y = y;
+        if      (mario.charType == CHAR_LUIGI) { tmp.height = 40; Draw_luigi(tmp); }
+        else if (mario.charType == CHAR_TOAD)  { tmp.height = 40; Draw_toad(tmp); }
+        else DrawSprite(graphics, g_images.mario_stop, x, y, mario.width, mario.height, flipX);
+    };
+    // 모든 폼 idle 렌더 헬퍼 (변신 애니메이션용)
+    auto drawIdle = [&](MarioForm form, int x, int y, int w, int h) {
+        MarioRenderData tmp = mario;
+        tmp.form = form; tmp.x = x; tmp.y = y; tmp.width = w; tmp.height = h;
+        tmp.isWalking = false; tmp.isJumping = false;
+        tmp.tino_motion = false; tmp.tino_fire_motion = false; tmp.fire_motion = false;
+        switch (mario.charType) {
+            case CHAR_LUIGI: Draw_luigi(tmp); break;
+            case CHAR_TOAD:  Draw_toad(tmp);  break;
+            default:         Draw_mario(tmp); break;
+        }
+    };
+
+    const bool isAltChar = (mario.charType == CHAR_LUIGI || mario.charType == CHAR_TOAD);
+
     // mario
     if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_BIG && mario.form == FORM_SMALL)
     {
         if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.big_mario_change, mario.x, mario.y, mario.width, TILE_SIZE * 2, flipX);
-        }
+            DrawSprite(graphics, getChangeImg(false), mario.x, mario.y,
+                mario.width, TILE_SIZE * 2, flipX);
         else
-        {
-            DrawSprite(graphics, g_images.mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
-        }
+            drawSmallIdle(mario.x, mario.y + TILE_SIZE);
     }
     else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_BIG && mario.form == FORM_BIG)
     {
         if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.big_mario_change, mario.x, mario.y - TILE_SIZE, mario.width, mario.height, flipX);
-        }
+            DrawSprite(graphics, getChangeImg(false), mario.x, mario.y - TILE_SIZE, mario.width, mario.height, flipX);
         else
-        {
-            DrawSprite(graphics, g_images.mario_stop, mario.x, mario.y, mario.width, TILE_SIZE, flipX);
-        }
+            drawSmallIdle(mario.x, mario.y);
     }
-    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_SMALL)    // small mario >> flower
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_SMALL)    // small >> flower
     {
         if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.flower_mario_change, mario.x, mario.y, mario.width, TILE_SIZE * 2, flipX);
-        }
+            drawIdle(FORM_FLOWER, mario.x, mario.y,            mario.width, TILE_SIZE * 2);
         else
-        {
-            DrawSprite(graphics, g_images.mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
-        }
+            drawIdle(FORM_SMALL,  mario.x, mario.y + TILE_SIZE, mario.width, mario.height);
     }
-    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_BIG)     // big mario >> flower
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_BIG)     // big >> flower
     {
-        if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
-        else
-        {
-            DrawSprite(graphics, g_images.big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
+        const bool tick = (GetTickCount() / 100) % 2 == 0;
+        drawIdle(tick ? FORM_FLOWER : FORM_BIG, mario.x, mario.y, mario.width, mario.height);
     }
-    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_TINO)     // tino >> flower
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_TINO)    // tino >> flower
     {
-        if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.tino_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
-        else
-        {
-            DrawSprite(graphics, g_images.flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
+        const bool tick = (GetTickCount() / 100) % 2 == 0;
+        drawIdle(tick ? FORM_FLOWER : FORM_TINO, mario.x, mario.y, mario.width, mario.height);
     }
-    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_FLOWER)     // flower >> big mario
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_FLOWER && mario.form == FORM_FLOWER)  // flower >> big
     {
-        if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
-        else
-        {
-            DrawSprite(graphics, g_images.big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
+        const bool tick = (GetTickCount() / 100) % 2 == 0;
+        drawIdle(tick ? FORM_BIG : FORM_FLOWER, mario.x, mario.y, mario.width, mario.height);
     }
     // tino
-    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_SMALL)    // small mario >> tino
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_SMALL)    // small >> tino
     {
         if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.tino_mario_stop, mario.x, mario.y, mario.width, TILE_SIZE * 2, flipX);
-        }
+            drawIdle(FORM_TINO,  mario.x, mario.y,             mario.width, TILE_SIZE * 2);
         else
-        {
-            DrawSprite(graphics, g_images.mario_stop, mario.x, mario.y + TILE_SIZE, mario.width, mario.height, flipX);
-        }
+            drawIdle(FORM_SMALL, mario.x, mario.y + TILE_SIZE, mario.width, mario.height);
     }
-    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_BIG)     // big mario >> tino
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_BIG)      // big >> tino
     {
-        if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.tino_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
-        else
-        {
-            DrawSprite(graphics, g_images.big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
+        const bool tick = (GetTickCount() / 100) % 2 == 0;
+        drawIdle(tick ? FORM_TINO : FORM_BIG, mario.x, mario.y, mario.width, mario.height);
     }
-    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_FLOWER)     // flower >> tino
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_FLOWER)   // flower >> tino
     {
-        if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.tino_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
-        else
-        {
-            DrawSprite(graphics, g_images.flower_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
+        const bool tick = (GetTickCount() / 100) % 2 == 0;
+        drawIdle(tick ? FORM_TINO : FORM_FLOWER, mario.x, mario.y, mario.width, mario.height);
     }
-    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_TINO)     // tino >> big mario
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_TINO && mario.form == FORM_TINO)     // tino >> big
     {
-        if ((GetTickCount() / 100) % 2 == 0)
-        {
-            DrawSprite(graphics, g_images.tino_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
-        else
-        {
-            DrawSprite(graphics, g_images.big_mario_stop, mario.x, mario.y, mario.width, mario.height, flipX);
-        }
+        const bool tick = (GetTickCount() / 100) % 2 == 0;
+        drawIdle(tick ? FORM_BIG : FORM_TINO, mario.x, mario.y, mario.width, mario.height);
     }
     // gameover
     else if (g_game.gameState == GAME_OVER && !mario.isDead)
@@ -190,12 +404,48 @@ void Draw()
     }
     else
     {
-        if(!mario.isDead)Draw_mario(mario);
+        if (!mario.isDead)
+        {
+            switch (mario.charType)
+            {
+            case CHAR_LUIGI: Draw_luigi(mario); break;
+            case CHAR_TOAD:  Draw_toad(mario);  break;
+            default:         Draw_mario(mario);  break;
+            }
+        }
     }
 
     if (mario.isDead)
     {
-        DrawSprite(graphics, g_images.mario_dead, mario.x, mario.y, mario.width, TILE_SIZE, flipX);
+        if (mario.charType == CHAR_MARIO)
+            DrawSprite(graphics, g_images.mario_dead, mario.x, mario.y, mario.width, TILE_SIZE, flipX);
+        else
+        {
+            // Luigi/Toad dead 프레임도 스프라이트 시트에서
+            MarioRenderData tmp = mario;
+            tmp.isDead = true;
+            if (mario.charType == CHAR_LUIGI) Draw_luigi(tmp);
+            else                              Draw_toad(tmp);
+        }
+    }
+
+    // 렌더 테스트 모드: 나머지 2개 슬롯도 같이 그림 (월드 좌표 → 스크린 좌표 변환)
+    if (g_game.isRenderTest)
+    {
+        for (int _ri = 0; _ri < 3; _ri++)
+        {
+            if (_ri == g_localPlayerIdx) continue;
+            MarioRenderData rm = BuildMarioRenderDataFor(_ri);
+            rm.x -= (int)g_game.cameraX;  // 월드 좌표 → 스크린 좌표
+            switch (rm.charType)
+            {
+            case CHAR_LUIGI: Draw_luigi(rm); break;
+            case CHAR_TOAD:  Draw_toad(rm);  break;
+            default:
+                if (!rm.isDead) Draw_mario(rm);
+                break;
+            }
+        }
     }
 
     Draw_castle_blank();
@@ -1019,10 +1269,17 @@ void Draw_information()
     }
     if (g_game.gameClearText)
     {
-        TextOut(g_memDC, 240, 160, clear_text_1, lstrlen(clear_text_1));         
-        TextOut(g_memDC, 200, 240, clear_text_2, lstrlen(clear_text_2));        
+        TextOut(g_memDC, 240, 160, clear_text_1, lstrlen(clear_text_1));
+        TextOut(g_memDC, 200, 240, clear_text_2, lstrlen(clear_text_2));
     }
 
+    // 렌더 테스트 HUD
+    if (g_game.isRenderTest)
+    {
+        TCHAR rtxt[32];
+        _stprintf_s(rtxt, _T("[TAB] CTRL: P%d"), g_localPlayerIdx + 1);
+        TextOut(g_memDC, 300, 80, rtxt, lstrlen(rtxt));
+    }
 }
 
 static void Draw_background()

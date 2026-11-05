@@ -239,4 +239,22 @@ void LoadStage()
     g_player.mario.x = 100;
     g_player.mario.y = 300;
     g_game.stage_time = STAGE_TIME_LIMIT;
+
+    // 렌더 테스트 모드: 나머지 2개 슬롯을 화면 내 다른 위치에 배치
+    if (g_game.isRenderTest)
+    {
+        static const CharacterType charTypes[3] = { CHAR_MARIO, CHAR_LUIGI, CHAR_TOAD };
+        for (int i = 0; i < 3; i++)
+        {
+            if (i == g_localPlayerIdx) continue;
+            g_allPlayers[i].mario = {};
+            g_allPlayers[i].mario.x        = 100 + i * 200;
+            g_allPlayers[i].mario.y        = 300;
+            g_allPlayers[i].mario.width    = 40;
+            g_allPlayers[i].mario.height   = 40;
+            g_allPlayers[i].mario.charType = charTypes[i];
+        }
+        // 로컬 플레이어도 슬롯에 맞는 캐릭터 타입 설정
+        g_allPlayers[g_localPlayerIdx].mario.charType = charTypes[g_localPlayerIdx];
+    }
 }

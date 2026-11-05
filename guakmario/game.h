@@ -19,6 +19,8 @@ struct GameContext {
     DWORD clearStart         = 0;
     MarioForm transformTarget    = FORM_SMALL;   // GAME_TRANSFORMING 시 목표 폼
     bool  gameStart          = false;
+    bool  isMulti            = false;  // 멀티플레이어 모드 여부
+    bool  isRenderTest       = false;  // 렌더 테스트 모드 (네트워크 없이 3인 렌더 확인)
     bool  showMultiSelect    = false;  // 방 만들기/방 참가 선택 화면
     bool  showMultiScreen    = false;  // 호스트 로비 화면
     int   title_select       = 0;
