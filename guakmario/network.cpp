@@ -10,6 +10,22 @@ int        g_sharedLives = 3;
 
 static constexpr int NET_PORT = 9000;
 
+// ============================================================
+//  수신 큐 / 크리티컬 섹션 (A-4, A-5에서 사용)
+// ============================================================
+
+static std::queue<std::vector<uint8_t>> g_recvQueue;
+static CRITICAL_SECTION                 g_recvCS;
+static bool                             g_recvCSInit = false;
+
+struct RecvThreadParam {
+    SOCKET sock;
+    int    playerId;  // 1 or 2
+};
+
+static bool RecvPacketFull(SOCKET sock, std::vector<uint8_t>& out);
+static DWORD WINAPI RecvThread(LPVOID param);
+
 
 // ============================================================
 //  10/29 — WSAStartup + listen 소켓 생성 + bind + listen
@@ -208,10 +224,6 @@ void SendToOne(int playerId, const void* data, int size)
     // 11/11 예정
 }
 
-static std::queue<std::vector<uint8_t>> g_recvQueue;
-static CRITICAL_SECTION                 g_recvCS;
-static bool                             g_recvCSInit = false;
-
 // ============================================================
 //  A-4 — 수신 큐 (11/5)
 // ============================================================
@@ -240,11 +252,6 @@ bool PopRecvPacket(std::vector<uint8_t>& out)
 // ============================================================
 //  A-5 — RecvThread (11/5)
 // ============================================================
-
-struct RecvThreadParam {
-    SOCKET sock;
-    int    playerId;  // 1 or 2
-};
 
 // 헤더 size 필드 기준 패킷 전체 수신 (blocking)
 static bool RecvPacketFull(SOCKET sock, std::vector<uint8_t>& out)
