@@ -51,6 +51,13 @@ void NetInit(bool isHost, const char* hostIp)
     g_net.clientSockets[1] = INVALID_SOCKET;
     g_net.hostSocket      = INVALID_SOCKET;
 
+    // 수신 큐 크리티컬 섹션 초기화 (최초 1회)
+    if (!g_recvCSInit)
+    {
+        InitializeCriticalSection(&g_recvCS);
+        g_recvCSInit = true;
+    }
+
     // localIp가 아직 없으면 조회
     if (g_net.localIp[0] == '\0')
         NetFetchLocalIp();
@@ -149,7 +156,8 @@ void NetPollAccept()
 
     SendConnectAck(s, slot + 1);  // playerId 1 또는 2 부여
 
-    // TODO(11/2): CreateThread(RecvThread, s) 추가
+    auto* tp = new RecvThreadParam{ s, slot + 1 };
+    CreateThread(nullptr, 0, RecvThread, tp, 0, nullptr);
 }
 
 // ============================================================
@@ -202,14 +210,97 @@ void SendToOne(int playerId, const void* data, int size)
 
 static std::queue<std::vector<uint8_t>> g_recvQueue;
 static CRITICAL_SECTION                 g_recvCS;
+static bool                             g_recvCSInit = false;
+
+// ============================================================
+//  A-4 — 수신 큐 (11/5)
+// ============================================================
 
 void PushRecvPacket(std::vector<uint8_t> pkt)
 {
-    // 11/4 예정
+    EnterCriticalSection(&g_recvCS);
+    g_recvQueue.push(std::move(pkt));
+    LeaveCriticalSection(&g_recvCS);
 }
 
 bool PopRecvPacket(std::vector<uint8_t>& out)
 {
-    // 11/4 예정
-    return false;
+    EnterCriticalSection(&g_recvCS);
+    if (g_recvQueue.empty())
+    {
+        LeaveCriticalSection(&g_recvCS);
+        return false;
+    }
+    out = std::move(g_recvQueue.front());
+    g_recvQueue.pop();
+    LeaveCriticalSection(&g_recvCS);
+    return true;
+}
+
+// ============================================================
+//  A-5 — RecvThread (11/5)
+// ============================================================
+
+struct RecvThreadParam {
+    SOCKET sock;
+    int    playerId;  // 1 or 2
+};
+
+// 헤더 size 필드 기준 패킷 전체 수신 (blocking)
+static bool RecvPacketFull(SOCKET sock, std::vector<uint8_t>& out)
+{
+    // 1단계: 헤더 수신
+    PacketHeader hdr;
+    int received = 0;
+    while (received < (int)sizeof(hdr))
+    {
+        int r = recv(sock, (char*)&hdr + received, (int)sizeof(hdr) - received, 0);
+        if (r <= 0) return false;
+        received += r;
+    }
+
+    // 비정상 패킷 크기 → 연결 끊기
+    if (hdr.size < (uint16_t)sizeof(hdr) || hdr.size > 4096)
+        return false;
+
+    // 2단계: 나머지 페이로드 수신
+    out.resize(hdr.size);
+    memcpy(out.data(), &hdr, sizeof(hdr));
+    received = (int)sizeof(hdr);
+    while (received < (int)hdr.size)
+    {
+        int r = recv(sock, (char*)out.data() + received, (int)hdr.size - received, 0);
+        if (r <= 0) return false;
+        received += r;
+    }
+    return true;
+}
+
+static DWORD WINAPI RecvThread(LPVOID param)
+{
+    RecvThreadParam* p = (RecvThreadParam*)param;
+    SOCKET sock     = p->sock;
+    int    playerId = p->playerId;
+    delete p;
+
+    std::vector<uint8_t> pkt;
+    while (RecvPacketFull(sock, pkt))
+    {
+        PushRecvPacket(pkt);
+    }
+
+    // 연결 끊김 → EVT_DISCONNECT 큐 삽입
+    uint8_t buf[sizeof(PacketHeader) + sizeof(GameEventData)] = {};
+    auto* hdr        = (PacketHeader*)buf;
+    hdr->size        = (uint16_t)sizeof(buf);
+    hdr->type        = PKT_GAME_EVENT;
+    hdr->playerId    = (uint8_t)playerId;
+    auto* evt        = (GameEventData*)(buf + sizeof(PacketHeader));
+    evt->eventType   = EVT_DISCONNECT;
+    evt->param       = (uint8_t)playerId;
+
+    PushRecvPacket(std::vector<uint8_t>(buf, buf + sizeof(buf)));
+
+    closesocket(sock);
+    return 0;
 }
