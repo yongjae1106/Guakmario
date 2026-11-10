@@ -19,6 +19,7 @@ int        g_sharedLives = 3;
 static std::queue<std::vector<uint8_t>> g_recvQueue;
 static CRITICAL_SECTION                 g_recvCS;
 static bool                             g_recvCSInit = false;
+static std::vector<HANDLE>              g_recvThreads;  // 메인 스레드에서만 접근
 
 struct RecvThreadParam {
     SOCKET sock;
@@ -28,6 +29,39 @@ struct RecvThreadParam {
 static bool RecvPacketFull(SOCKET sock, std::vector<uint8_t>& out);
 static DWORD WINAPI RecvThread(LPVOID param);
 static void SendFull(SOCKET sock, const void* data, int size);
+
+// 소켓을 닫아 blocking recv를 깨운 뒤 RecvThread 종료를 기다리고 수신 큐를 비움
+static void CloseNetResources()
+{
+    for (int i = 0; i < 2; i++)
+    {
+        if (g_net.clientSockets[i] != INVALID_SOCKET)
+        {
+            closesocket(g_net.clientSockets[i]);
+            g_net.clientSockets[i] = INVALID_SOCKET;
+        }
+    }
+    if (g_net.hostSocket != INVALID_SOCKET)
+    {
+        closesocket(g_net.hostSocket);
+        g_net.hostSocket = INVALID_SOCKET;
+    }
+    if (g_net.listenSock != INVALID_SOCKET)
+    {
+        closesocket(g_net.listenSock);
+        g_net.listenSock = INVALID_SOCKET;
+    }
+
+    for (HANDLE thread : g_recvThreads)
+    {
+        WaitForSingleObject(thread, INFINITE);  // RecvThread 종료 대기
+        CloseHandle(thread);
+    }
+    g_recvThreads.clear();
+
+    // 스레드가 모두 끝난 뒤라 잠금 불필요 — 이전 방의 패킷 제거
+    std::queue<std::vector<uint8_t>>().swap(g_recvQueue);
+}
 
 
 // ============================================================
@@ -62,25 +96,9 @@ void NetFetchLocalIp()
 
 void NetInit(bool isHost, const char* hostIp)
 {
-    // 이전 소켓이 열려 있으면 먼저 정리 (재진입 대비)
-    if (g_net.listenSock != INVALID_SOCKET)
-    {
-        closesocket(g_net.listenSock);
-        g_net.listenSock = INVALID_SOCKET;
-    }
-    for (int i = 0; i < 2; i++)
-    {
-        if (g_net.clientSockets[i] != INVALID_SOCKET)
-        {
-            closesocket(g_net.clientSockets[i]);
-            g_net.clientSockets[i] = INVALID_SOCKET;
-        }
-    }
-    if (g_net.hostSocket != INVALID_SOCKET)
-    {
-        closesocket(g_net.hostSocket);
-        g_net.hostSocket = INVALID_SOCKET;
-    }
+    // 이전 방의 소켓과 스레드가 남아 있으면 먼저 정리 (재진입 대비)
+    if (g_recvCSInit)
+        CloseNetResources();
 
     g_net.isHost          = isHost;
     g_net.myPlayerId      = isHost ? 0 : -1;   // 클라이언트는 ACK 받은 후 설정
@@ -151,30 +169,15 @@ static void SendConnectAck(int assignedId)
 
 void NetShutdown()
 {
-    for (int i = 0; i < 2; i++)
-    {
-        if (g_net.clientSockets[i] != INVALID_SOCKET)
-        {
-            closesocket(g_net.clientSockets[i]);
-            g_net.clientSockets[i] = INVALID_SOCKET;
-        }
-    }
-    if (g_net.hostSocket != INVALID_SOCKET)
-    {
-        closesocket(g_net.hostSocket);
-        g_net.hostSocket = INVALID_SOCKET;
-    }
-    if (g_net.listenSock != INVALID_SOCKET)
-    {
-        closesocket(g_net.listenSock);
-        g_net.listenSock = INVALID_SOCKET;
-    }
-    if (g_recvCSInit)
-    {
-        DeleteCriticalSection(&g_recvCS);
-        g_recvCSInit = false;
-    }
+    if (!g_recvCSInit) return;  // NetInit 전이거나 이미 종료됨
+
+    CloseNetResources();
+
+    DeleteCriticalSection(&g_recvCS);
+    g_recvCSInit = false;
+
     WSACleanup();
+    g_net.localIp[0] = '\0';  // 다음 NetInit에서 IP 재조회 + WSAStartup 호출
 }
 
 // ============================================================
@@ -223,7 +226,9 @@ void NetPollAccept()
     SendConnectAck(slot + 1);  // playerId 1 또는 2 부여
 
     auto* tp = new RecvThreadParam{ s, slot + 1 };
-    CreateThread(nullptr, 0, RecvThread, tp, 0, nullptr);
+    HANDLE thread = CreateThread(nullptr, 0, RecvThread, tp, 0, nullptr);
+    if (thread != nullptr) g_recvThreads.push_back(thread);
+    else                   delete tp;
 }
 
 // ============================================================
@@ -313,8 +318,11 @@ void NetPollPackets()
             case EVT_DISCONNECT:
             {
                 int pid = evt->param;
-                if (g_net.isHost && pid >= 1 && pid <= 2)
+                if (g_net.isHost && pid >= 1 && pid <= 2 && g_net.clientSockets[pid - 1] != INVALID_SOCKET)
+                {
+                    closesocket(g_net.clientSockets[pid - 1]);  // 소켓은 메인 스레드가 닫음
                     g_net.clientSockets[pid - 1] = INVALID_SOCKET;
+                }
                 if (g_net.connectedCount > 0)
                     g_net.connectedCount--;
                 break;
@@ -525,6 +533,5 @@ static DWORD WINAPI RecvThread(LPVOID param)
 
     PushRecvPacket(std::vector<uint8_t>(buf, buf + sizeof(buf)));
 
-    closesocket(sock);
     return 0;
 }

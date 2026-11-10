@@ -88,23 +88,32 @@ static void PrintPlayerState(const PacketHeader& hdr, const PlayerStateData& ps)
 {
     static PlayerStateData last[3] = {};
     static bool  seen[3] = {};
-    static DWORD lastPrint = 0;
-    static unsigned long total = 0;
+    static DWORD lastPrint[3] = {};     // 플레이어별로 따로 제한해 서로 출력을 가리지 않게 함
+    static unsigned long total[3] = {};
 
-    total++;
-    if (hdr.playerId > 2) return;
+    static const char* const kLabels[3] = { "P0 HOST ", "P1 LUIGI", "P2 TOAD " };
+    static const WORD        kColors[3] = { 14, 10, 11 };  // 노랑, 초록, 하늘색
+    static const WORD        kDefaultColor = 7;
 
-    const bool changed = !seen[hdr.playerId] || memcmp(&last[hdr.playerId], &ps, sizeof(ps)) != 0;
+    const int id = hdr.playerId;
+    if (id > 2) return;
+    total[id]++;
+
+    const bool changed = !seen[id] || memcmp(&last[id], &ps, sizeof(ps)) != 0;
     const DWORD now = GetTickCount();
-    if (!changed || now - lastPrint < 200) return;
+    if (!changed || now - lastPrint[id] < 200) return;
 
-    printf("[STATE] from=%u worldX=%d y=%d vx=%d vy=%d life=%u form=%u char=%u size=%ux%u walk=%u timer=%u cool=%u/%u coin=%d flags=0x%04X (total=%lu)\n",
-        hdr.playerId, ps.worldX, ps.y, ps.vx, ps.vy, ps.life, ps.form, ps.charType, ps.width, ps.height,
-        ps.walkMotion, ps.motionTimer, ps.tinoCooldownZ, ps.tinoCooldownSpace, ps.coin, ps.flags, total);
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(console, kColors[id]);
+    printf("[%s] x=%5d y=%4d vx=%3d vy=%3d life=%u form=%u char=%u size=%ux%u walk=%u timer=%u cool=%u/%u coin=%d flags=0x%04X (total=%lu)\n",
+        kLabels[id], ps.worldX, ps.y, ps.vx, ps.vy, ps.life, ps.form, ps.charType, ps.width, ps.height,
+        ps.walkMotion, ps.motionTimer, ps.tinoCooldownZ, ps.tinoCooldownSpace, ps.coin, ps.flags, total[id]);
+    fflush(stdout);
+    SetConsoleTextAttribute(console, kDefaultColor);
 
-    last[hdr.playerId] = ps;
-    seen[hdr.playerId] = true;
-    lastPrint = now;
+    last[id] = ps;
+    seen[id] = true;
+    lastPrint[id] = now;
 }
 
 int main(int argc, char* argv[])
