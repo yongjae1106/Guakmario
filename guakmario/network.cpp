@@ -27,6 +27,7 @@ struct RecvThreadParam {
 
 static bool RecvPacketFull(SOCKET sock, std::vector<uint8_t>& out);
 static DWORD WINAPI RecvThread(LPVOID param);
+static void SendFull(SOCKET sock, const void* data, int size);
 
 
 // ============================================================
@@ -127,7 +128,7 @@ void NetInit(bool isHost, const char* hostIp)
 //  PKT_CONNECT_ACK 전송 헬퍼 (내부용)
 // ============================================================
 
-static void SendConnectAck(SOCKET s, int assignedId)
+static void SendConnectAck(int assignedId)
 {
     uint8_t buf[sizeof(PacketHeader) + sizeof(ConnectAckData)];
 
@@ -140,7 +141,7 @@ static void SendConnectAck(SOCKET s, int assignedId)
     ack->assignedId  = (uint8_t)assignedId;
     ack->sharedLives = g_sharedLives;
 
-    send(s, (const char*)buf, sizeof(buf), 0);
+    SendToOne(assignedId, buf, (int)sizeof(buf));
 }
 
 
@@ -219,7 +220,7 @@ void NetPollAccept()
     g_net.clientSockets[slot] = s;
     g_net.connectedCount++;
 
-    SendConnectAck(s, slot + 1);  // playerId 1 또는 2 부여
+    SendConnectAck(slot + 1);  // playerId 1 또는 2 부여
 
     auto* tp = new RecvThreadParam{ s, slot + 1 };
     CreateThread(nullptr, 0, RecvThread, tp, 0, nullptr);
@@ -242,11 +243,7 @@ void NetBroadcastGameStart()
     evt->eventType   = EVT_GAME_START;
     evt->param       = 0;
 
-    for (int i = 0; i < 2; i++)
-    {
-        if (g_net.clientSockets[i] != INVALID_SOCKET)
-            send(g_net.clientSockets[i], (const char*)buf, sizeof(buf), 0);
-    }
+    SendToAll(buf, (int)sizeof(buf));
 
     // 더 이상 accept 받지 않음 — listen 소켓 닫기
     closesocket(g_net.listenSock);
@@ -268,6 +265,14 @@ void NetPollPackets()
             if (pkt.size() < sizeof(PacketHeader) + sizeof(PlayerStateData)) break;
             int id = hdr->playerId;
             if (id < 0 || id > 2 || id == g_net.myPlayerId) break;
+
+            // 호스트: 보낸 사람을 제외한 나머지 클라이언트에게 중계 (헤더의 playerId 유지)
+            if (g_net.isHost)
+            {
+                for (int target = 1; target <= 2; target++)
+                    if (target != id) SendToOne(target, pkt.data(), (int)pkt.size());
+            }
+
             const auto* ps = (const PlayerStateData*)(pkt.data() + sizeof(PacketHeader));
             Player& p  = g_allPlayers[id].mario;
             p.x                   = ps->worldX;  // 다른 플레이어는 월드 좌표로 보관
@@ -389,43 +394,51 @@ void NetFlushSend()
     if (me.supergod)         ps->flags |= FLAG_SUPERGOD;
     if (g_game.gameState == GAME_TRANSFORMING) ps->flags |= FLAG_TRANSFORMING;
 
-    auto sendAll = [](SOCKET s, const uint8_t* data, int len)
-    {
-        int sent = 0;
-        while (sent < len)
-        {
-            int r = send(s, (const char*)data + sent, len - sent, 0);
-            if (r <= 0) return;
-            sent += r;
-        }
-    };
+    if (g_net.isHost) SendToAll(buf, (int)sizeof(buf));
+    else              SendToHost(buf, (int)sizeof(buf));
+}
 
-    if (g_net.isHost)
+// ============================================================
+//  A-6 — 송신 함수
+// ============================================================
+
+// send가 일부만 보낼 수 있으므로 전부 보낼 때까지 반복
+// 송신 실패는 RecvThread의 EVT_DISCONNECT 경로에서 처리
+static void SendFull(SOCKET sock, const void* data, int size)
+{
+    if (sock == INVALID_SOCKET || data == nullptr || size <= 0) return;
+
+    const char* p = (const char*)data;
+    int sent = 0;
+    while (sent < size)
     {
-        for (int i = 0; i < 2; i++)
-            if (g_net.clientSockets[i] != INVALID_SOCKET)
-                sendAll(g_net.clientSockets[i], buf, (int)sizeof(buf));
-    }
-    else
-    {
-        if (g_net.hostSocket != INVALID_SOCKET)
-            sendAll(g_net.hostSocket, buf, (int)sizeof(buf));
+        int r = send(sock, p + sent, size - sent, 0);
+        if (r <= 0) return;
+        sent += r;
     }
 }
 
 void SendToAll(const void* data, int size)
 {
-    // 11/11 예정
+    if (!g_net.isHost) return;
+
+    for (int i = 0; i < 2; i++)
+        SendFull(g_net.clientSockets[i], data, size);
 }
 
 void SendToHost(const void* data, int size)
 {
-    // 11/11 예정
+    if (g_net.isHost) return;
+
+    SendFull(g_net.hostSocket, data, size);
 }
 
 void SendToOne(int playerId, const void* data, int size)
 {
-    // 11/11 예정
+    if (!g_net.isHost) return;
+    if (playerId < 1 || playerId > 2) return;  // 클라이언트 슬롯은 playerId 1, 2
+
+    SendFull(g_net.clientSockets[playerId - 1], data, size);
 }
 
 // ============================================================
