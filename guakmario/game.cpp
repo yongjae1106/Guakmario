@@ -245,8 +245,8 @@ void LoadStage()
     g_player.mario.y = 300;
     g_game.stage_time = STAGE_TIME_LIMIT;
 
-    // 렌더 테스트 모드: 나머지 2개 슬롯을 화면 내 다른 위치에 배치
-    if (g_game.isRenderTest)
+    // 멀티/렌더 테스트 모드: 나머지 2개 슬롯을 화면 내 다른 위치에 배치
+    if (g_game.isMulti)
     {
         static const CharacterType charTypes[3] = { CHAR_MARIO, CHAR_LUIGI, CHAR_TOAD };
         for (int i = 0; i < 3; i++)

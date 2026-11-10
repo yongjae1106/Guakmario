@@ -429,8 +429,8 @@ void Draw()
         }
     }
 
-    // 렌더 테스트 모드: 나머지 2개 슬롯도 같이 그림 (월드 좌표 → 스크린 좌표 변환)
-    if (g_game.isRenderTest)
+    // 멀티/렌더 테스트 모드: 나머지 2개 슬롯도 같이 그림 (월드 좌표 → 스크린 좌표 변환)
+    if (g_game.isMulti)
     {
         for (int _ri = 0; _ri < 3; _ri++)
         {

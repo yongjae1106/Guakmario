@@ -196,6 +196,10 @@ void NetPollAccept()
         return;  // WSAEWOULDBLOCK → 접속 없음, 정상
     }
 
+    // accept 소켓은 listen 소켓의 non-blocking 속성을 상속 → RecvThread용으로 blocking 전환
+    u_long blockingMode = 0;
+    ioctlsocket(s, FIONBIO, &blockingMode);
+
     // 빈 슬롯 찾기 (0 또는 1)
     int slot = -1;
     for (int i = 0; i < 2; i++)
@@ -266,18 +270,33 @@ void NetPollPackets()
             if (id < 0 || id > 2 || id == g_net.myPlayerId) break;
             const auto* ps = (const PlayerStateData*)(pkt.data() + sizeof(PacketHeader));
             Player& p  = g_allPlayers[id].mario;
-            p.x           = ps->x;
-            p.y           = ps->y;
-            p.vx          = ps->vx;
-            p.vy          = ps->vy;
-            p.form        = (MarioForm)ps->form;
-            p.walk_motion = ps->walkMotion;
-            p.coin        = ps->coin;
-            p.isJumping   = (ps->flags & FLAG_JUMPING)    != 0;
-            p.isFlying    = (ps->flags & FLAG_FLYING)     != 0;
-            p.isDead      = (ps->flags & FLAG_DEAD)       != 0;
-            p.star        = (ps->flags & FLAG_STAR)       != 0;
-            p.god         = (ps->flags & FLAG_INVINCIBLE) != 0;
+            p.x                   = ps->worldX;  // 다른 플레이어는 월드 좌표로 보관
+            p.y                   = ps->y;
+            p.vx                  = ps->vx;
+            p.vy                  = ps->vy;
+            p.coin                = ps->coin;
+            p.life                = ps->life;
+            p.form                = (MarioForm)ps->form;
+            p.charType            = (CharacterType)ps->charType;
+            p.width               = ps->width;
+            p.height              = ps->height;
+            p.walk_motion         = ps->walkMotion;
+            p.motion_timer        = ps->motionTimer;
+            p.tino_cooldown_z     = ps->tinoCooldownZ;
+            p.tino_cooldown_space = ps->tinoCooldownSpace;
+            p.direction           = (ps->flags & FLAG_FACING_RIGHT) ? DIR_RIGHT : DIR_LEFT;
+            p.isJumping           = (ps->flags & FLAG_JUMPING)          != 0;
+            p.isFlying            = (ps->flags & FLAG_FLYING)           != 0;
+            p.isWalking           = (ps->flags & FLAG_WALKING)          != 0;
+            p.isDead              = (ps->flags & FLAG_DEAD)             != 0;
+            p.gameover            = (ps->flags & FLAG_GAMEOVER)         != 0;
+            p.star                = (ps->flags & FLAG_STAR)             != 0;
+            p.god                 = (ps->flags & FLAG_INVINCIBLE)       != 0;
+            p.supergod            = (ps->flags & FLAG_SUPERGOD)         != 0;
+            p.fire_motion         = (ps->flags & FLAG_FIRE_MOTION)      != 0;
+            p.tino_motion         = (ps->flags & FLAG_TINO_MOTION)      != 0;
+            p.tino_fire_motion    = (ps->flags & FLAG_TINO_FIRE_MOTION) != 0;
+            // transformTarget, FLAG_TRANSFORMING은 Player에 저장할 곳이 없어 렌더 통합 시 처리
             break;
         }
         case PKT_GAME_EVENT:
@@ -340,19 +359,35 @@ void NetFlushSend()
 
     const Player& me = g_allPlayers[g_net.myPlayerId].mario;
     auto* ps         = (PlayerStateData*)(buf + sizeof(PacketHeader));
-    ps->x          = (int16_t)me.x;
-    ps->y          = (int16_t)me.y;
-    ps->vx         = (int16_t)me.vx;
-    ps->vy         = (int16_t)me.vy;
-    ps->form       = (uint8_t)me.form;
-    ps->walkMotion = (uint8_t)me.walk_motion;
-    ps->coin       = (int16_t)me.coin;
-    ps->flags      = 0;
-    if (me.isJumping) ps->flags |= FLAG_JUMPING;
-    if (me.isFlying)  ps->flags |= FLAG_FLYING;
-    if (me.isDead)    ps->flags |= FLAG_DEAD;
-    if (me.star)      ps->flags |= FLAG_STAR;
-    if (me.god)       ps->flags |= FLAG_INVINCIBLE;
+    ps->worldX            = (int16_t)(me.x + (int)g_game.cameraX);  // 로컬 x는 화면 좌표
+    ps->y                 = (int16_t)me.y;
+    ps->vx                = (int16_t)me.vx;
+    ps->vy                = (int16_t)me.vy;
+    ps->coin              = (int16_t)me.coin;
+    ps->life              = (uint8_t)me.life;
+    ps->form              = (uint8_t)me.form;
+    ps->charType          = (uint8_t)me.charType;
+    ps->transformTarget   = (uint8_t)g_game.transformTarget;
+    ps->width             = (uint8_t)me.width;
+    ps->height            = (uint8_t)me.height;
+    ps->walkMotion        = (uint8_t)me.walk_motion;
+    ps->motionTimer       = (uint16_t)me.motion_timer;
+    ps->tinoCooldownZ     = (uint8_t)me.tino_cooldown_z;
+    ps->tinoCooldownSpace = (uint8_t)me.tino_cooldown_space;
+    ps->flags             = 0;
+    if (me.isJumping)        ps->flags |= FLAG_JUMPING;
+    if (me.isFlying)         ps->flags |= FLAG_FLYING;
+    if (me.isDead)           ps->flags |= FLAG_DEAD;
+    if (me.star)             ps->flags |= FLAG_STAR;
+    if (me.god)              ps->flags |= FLAG_INVINCIBLE;
+    if (me.isWalking)        ps->flags |= FLAG_WALKING;
+    if (me.direction == DIR_RIGHT) ps->flags |= FLAG_FACING_RIGHT;
+    if (me.fire_motion)      ps->flags |= FLAG_FIRE_MOTION;
+    if (me.tino_motion)      ps->flags |= FLAG_TINO_MOTION;
+    if (me.tino_fire_motion) ps->flags |= FLAG_TINO_FIRE_MOTION;
+    if (me.gameover)         ps->flags |= FLAG_GAMEOVER;
+    if (me.supergod)         ps->flags |= FLAG_SUPERGOD;
+    if (g_game.gameState == GAME_TRANSFORMING) ps->flags |= FLAG_TRANSFORMING;
 
     auto sendAll = [](SOCKET s, const uint8_t* data, int len)
     {

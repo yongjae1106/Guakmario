@@ -42,6 +42,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SetTimer(hWnd, TIMER_COOL,  1000, NULL);    // 스킬 쿨타임
             break;
         }
+        case WM_TIMER:
+        {
+            // 호스트 로비: 접속 수락 + 끊김 처리 (접속 현황 갱신)
+            if (wParam == TIMER_GAME && g_game.showMultiScreen && g_net.isHost)
+            {
+                NetPollAccept();
+                NetPollPackets();
+                InvalidateRect(hWnd, NULL, FALSE);
+            }
+            break;
+        }
         case WM_KEYDOWN:
         {
             switch (wParam)
@@ -164,7 +175,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     if (g_game.multi_select == 0)
                     {
-                        // 게임 시작 처리
+                        // 3인(호스트 + 클라이언트 2명) 접속 완료 시에만 시작
+                        if (g_net.connectedCount == 3)
+                        {
+                            NetBroadcastGameStart();
+                            g_game.isMulti         = true;
+                            g_game.isRenderTest    = false;
+                            g_game.showMultiScreen = false;
+                            g_localPlayerIdx       = 0;
+                            mario_DC = CreateCompatibleDC(g_memDC);
+                            LoadStage();
+                            g_game.gameStart = true;
+                        }
                     }
                     else
                     {
@@ -289,6 +311,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 TextOut(g_memDC, 230, 320, player1Line, lstrlen(player1Line));
                 _stprintf_s(player1Line, L"PLAYER 3");
                 TextOut(g_memDC, 230, 400, player1Line, lstrlen(player1Line));
+
+                // 클라이언트 슬롯 접속 현황
+                for (int i = 0; i < 2; i++)
+                {
+                    const TCHAR* status = (g_net.clientSockets[i] != INVALID_SOCKET) ? L"CONNECTED" : L"WAITING";
+                    TextOut(g_memDC, 230, 340 + i * 80, status, lstrlen(status));
+                }
                 SetTextColor(g_memDC, RGB(255, 255, 255));
 
                 // START / EXIT 텍스트 (GDI — GDI+ 이후에)
@@ -346,16 +375,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case TIMER_GAME:
             {
-                if (g_game.showMultiScreen && g_net.isHost)
-                {
-                    NetPollAccept();
-                    if (g_net.connectedCount == 3)
-                    {
-                        NetBroadcastGameStart();
-                        // TODO: 게임 시작 화면 전환
-                    }
-                }
-
                 UpdateGame();
                 break;
             }
