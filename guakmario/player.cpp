@@ -301,7 +301,21 @@ MarioRenderData BuildMarioRenderData()
     const Player& m = g_player.mario;
     return {
         m.x, m.y, m.width, m.height, m.direction,
-        m.form,
+        m.form, m.charType,
+        m.isWalking, m.isJumping, m.isFlying, m.isDead,
+        m.star, m.fire_motion, m.tino_motion, m.tino_fire_motion,
+        m.walk_motion, m.motion_timer,
+        m.life, m.coin,
+        m.tino_cooldown_z, m.tino_cooldown_space
+    };
+}
+
+MarioRenderData BuildMarioRenderDataFor(int idx)
+{
+    const Player& m = g_allPlayers[idx].mario;
+    return {
+        m.x, m.y, m.width, m.height, m.direction,
+        m.form, m.charType,
         m.isWalking, m.isJumping, m.isFlying, m.isDead,
         m.star, m.fire_motion, m.tino_motion, m.tino_fire_motion,
         m.walk_motion, m.motion_timer,

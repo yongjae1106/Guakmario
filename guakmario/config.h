@@ -30,6 +30,9 @@
 // --- 파이어플라워 (스페이스) ---
 #define FLOWER_FIRE_MOTION_FRAMES 5     // 파이어볼 발사 모션 프레임
 
+// --- 네트워크 ---
+#define NET_PORT                9000    // 호스트 listen 포트
+
 // --- 타이밍 (밀리초) ---
 #define TRANSFORM_DURATION_MS   700     // 변신 연출 시간
 #define GOD_MODE_DURATION_MS    1000    // 무적 지속 시간

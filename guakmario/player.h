@@ -26,18 +26,23 @@ struct Player
     bool tino_motion = false;
     bool tino_fire_motion = false;
     bool supergod = false;
+    CharacterType charType = CHAR_MARIO;
 };
 
 struct PlayerContext {
     Player mario;
     bool keyState[256] = {};
 };
-extern PlayerContext g_player;
+// 멀티플레이어 배열 (싱글: [0]만 사용, 멀티: [0~2])
+extern PlayerContext g_allPlayers[3];
+extern int           g_localPlayerIdx;   // 현재 로컬 조작 대상 (기본 0)
+#define g_player g_allPlayers[g_localPlayerIdx]
 
 // 렌더러가 필요한 데이터만 담는 뷰 — Player 내부 구현(god/vx/vy 등)을 노출하지 않음
 struct MarioRenderData {
     int x, y, width, height; Direction direction;
     MarioForm form;
+    CharacterType charType;
     bool isWalking, isJumping, isFlying, isDead;
     bool star, fire_motion, tino_motion, tino_fire_motion;
     int walk_motion, motion_timer;
@@ -45,6 +50,7 @@ struct MarioRenderData {
     int tino_cooldown_z, tino_cooldown_space;
 };
 MarioRenderData BuildMarioRenderData();
+MarioRenderData BuildMarioRenderDataFor(int idx);  // 렌더 테스트용 — 임의 슬롯 빌드
 
 void movePlayer();
 void UpdatePlayer();

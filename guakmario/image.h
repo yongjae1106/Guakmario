@@ -65,7 +65,9 @@ struct ImageSet {
     Image* big_mario_walk_motion_2 = nullptr;
     Image* big_mario_walk_motion_3 = nullptr;
     Image* big_mario_jump = nullptr;
-    Image* big_mario_change = nullptr;
+    Image* big_mario_change  = nullptr;
+    Image* big_luigi_change  = nullptr;
+    Image* big_toad_change   = nullptr;
 
     Image* tino_mario_stop = nullptr;
     Image* tino_mario_walk_motion_1 = nullptr;
@@ -85,6 +87,20 @@ struct ImageSet {
     Image* tino_mario_fire_fade_1 = nullptr;
     Image* tino_mario_fire_fade_2 = nullptr;
     Image* tino_mario_fire_fade_3 = nullptr;
+
+    Image* tino_luigi_attack_1 = nullptr;
+    Image* tino_luigi_attack_2 = nullptr;
+    Image* tino_luigi_attack_3 = nullptr;
+    Image* tino_luigi_attack_4 = nullptr;
+    Image* tino_luigi_attack_5 = nullptr;
+    Image* tino_luigi_attack_6 = nullptr;
+
+    Image* tino_toad_attack_1 = nullptr;
+    Image* tino_toad_attack_2 = nullptr;
+    Image* tino_toad_attack_3 = nullptr;
+    Image* tino_toad_attack_4 = nullptr;
+    Image* tino_toad_attack_5 = nullptr;
+    Image* tino_toad_attack_6 = nullptr;
 
     Image* flower_mario_stop = nullptr;
     Image* flower_mario_walk_motion_1 = nullptr;
@@ -188,12 +204,17 @@ struct ImageSet {
     Image* screen_coin_x = nullptr;
 
     Image* title_screen = nullptr;
+    Image* title_screen_multi     = nullptr;
+    Image* title_screen_multi_sel = nullptr;
     Image* title_cursor = nullptr;
     Image* title_dead = nullptr;
 
     Image* flag_stick = nullptr;
     Image* flag_marble = nullptr;
     Image* flag = nullptr;
+
+    // 멀티 캐릭터 스프라이트 시트 (Luigi, Toad 등)
+    Image* mario_sprite_sheet = nullptr;
 
     int mario_stop_Width = 0;
     int mario_stop_Height = 0;

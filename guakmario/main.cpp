@@ -1,6 +1,7 @@
 ﻿// 마리오 스타일 WinAPI 엔진 (카메라 포함, Y 고정)
 #define _CRT_SECURE_NO_WARNINGS
 #include <tchar.h>
+#include "network.h"
 #include "data.h"
 #include "map.h"
 #include "renderer.h"
@@ -41,43 +42,194 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SetTimer(hWnd, TIMER_COOL,  1000, NULL);    // 스킬 쿨타임
             break;
         }
+        case WM_TIMER:
+        {
+            // 호스트 로비: 접속 수락 + 끊김 처리 (접속 현황 갱신)
+            if (wParam == TIMER_GAME && g_game.showMultiScreen && g_net.isHost)
+            {
+                NetPollAccept();
+                NetPollPackets();
+                InvalidateRect(hWnd, NULL, FALSE);
+            }
+            break;
+        }
         case WM_KEYDOWN:
         {
             switch (wParam)
             {
+            case VK_ESCAPE:
+            {
+                if (g_game.showIpInput)
+                {
+                    // IP 입력 취소
+                    memset(g_game.ipInputBuf, 0, sizeof(g_game.ipInputBuf));
+                    g_game.ipInputLen     = 0;
+                    g_game.showIpInput    = false;
+                    g_game.showMultiSelect = true;
+                }
+                else if (g_game.showMultiScreen)
+                {
+                    NetShutdown();
+                    g_game.showMultiScreen = false;
+                    g_game.showMultiSelect = true;
+                }
+                else
+                {
+                    g_game.showMultiSelect = false;
+                }
+                break;
+            }
+            case VK_BACK:
+            {
+                if (g_game.showIpInput && g_game.ipInputLen > 0)
+                {
+                    g_game.ipInputBuf[--g_game.ipInputLen] = '\0';
+                    InvalidateRect(hWnd, nullptr, FALSE);
+                }
+                break;
+            }
+            case VK_LEFT:
+            {
+                if (g_game.showMultiScreen)
+                {
+                    g_game.multi_select = 0;
+                }
+                break;
+            }
+            case VK_RIGHT:
+            {
+                if (g_game.showMultiScreen)
+                {
+                    g_game.multi_select = 1;
+                }
+                break;
+            }
             case VK_UP:
             {
-                if (g_game.title_select == 1)
+                if (g_game.showMultiSelect)
                 {
-                    g_game.title_select = 0;
+                    if (g_game.multi_select > 0) g_game.multi_select--;
+                    break;
+                }
+                if (g_game.showMultiScreen) break;
+                if (g_game.title_select > 0)
+                {
+                    g_game.title_select--;
                 }
                 break;
             }
             case VK_DOWN:
             {
-                if (g_game.title_select == 0)
+                if (g_game.showMultiSelect)
                 {
-                    g_game.title_select = 1;
+                    if (g_game.multi_select < 2) g_game.multi_select++;
+                    break;
+                }
+                if (g_game.showMultiScreen) break;
+                if (g_game.title_select < 2)
+                {
+                    g_game.title_select++;
                 }
                 break;
             }
             case VK_RETURN:
             {
+                if (g_game.showIpInput)
+                {
+                    // IP 입력 확정 → A-8에서 NetInit(false, ip) 연결 구현 예정
+                    // TODO(A-8): NetInit(false, g_game.ipInputBuf);
+                    break;
+                }
+                if (g_game.showMultiSelect)
+                {
+                    if (g_game.multi_select == 0)
+                    {
+                        // 방 만들기 → 호스트 로비
+                        NetInit(true);
+                        g_game.showMultiSelect = false;
+                        g_game.showMultiScreen = true;
+                        g_game.multi_select = 0;
+                    }
+                    else if (g_game.multi_select == 1)
+                    {
+                        // 방 참가 → IP 입력 화면
+                        memset(g_game.ipInputBuf, 0, sizeof(g_game.ipInputBuf));
+                        g_game.ipInputLen      = 0;
+                        g_game.showMultiSelect = false;
+                        g_game.showIpInput     = true;
+                    }
+                    else if (g_game.multi_select == 2)
+                    {
+                        // 렌더 테스트 — 네트워크 없이 3인 렌더 확인
+                        g_game.isMulti       = true;
+                        g_game.isRenderTest  = true;
+                        g_game.showMultiSelect = false;
+                        g_localPlayerIdx     = 0;
+                        mario_DC = CreateCompatibleDC(g_memDC);
+                        LoadStage();
+                        g_game.gameStart = true;
+                    }
+                    break;
+                }
+                if (g_game.showMultiScreen)
+                {
+                    if (g_game.multi_select == 0)
+                    {
+                        // 3인(호스트 + 클라이언트 2명) 접속 완료 시에만 시작
+                        if (g_net.connectedCount == 3)
+                        {
+                            NetBroadcastGameStart();
+                            g_game.isMulti         = true;
+                            g_game.isRenderTest    = false;
+                            g_game.showMultiScreen = false;
+                            g_localPlayerIdx       = 0;
+                            mario_DC = CreateCompatibleDC(g_memDC);
+                            LoadStage();
+                            g_game.gameStart = true;
+                        }
+                    }
+                    else
+                    {
+                        g_game.showMultiScreen = false;
+                        g_game.showMultiSelect = true;  // 선택 화면으로 돌아가기
+                    }
+                    break;
+                }
                 if (g_game.title_select == 0)
                 {
+                    g_game.isMulti      = false;
+                    g_game.isRenderTest = false;
+                    g_localPlayerIdx    = 0;
                     mario_DC = CreateCompatibleDC(g_memDC);
-
                     LoadStage();
-
                     g_game.gameStart = true;
                 }
                 else if (g_game.title_select == 1)
+                {
+                    g_game.showMultiSelect = true;
+                    g_game.multi_select = 0;
+                }
+                else if (g_game.title_select == 2)
                 {
                     exit(1);
                 }
             }
             }
             InvalidateRect(hWnd, NULL, FALSE);
+            break;
+        }
+        case WM_CHAR:
+        {
+            if (g_game.showIpInput)
+            {
+                char c = (char)wParam;
+                if ((c >= '0' && c <= '9' || c == '.') && g_game.ipInputLen < 15)
+                {
+                    g_game.ipInputBuf[g_game.ipInputLen++] = c;
+                    g_game.ipInputBuf[g_game.ipInputLen]   = '\0';
+                    InvalidateRect(hWnd, nullptr, FALSE);
+                }
+            }
             break;
         }
         case WM_PAINT:
@@ -94,14 +246,99 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);    // 타이틀
 
-            // 커서
-            if (g_game.title_select == 0)
+            if (g_game.showIpInput)
             {
-                graphics.DrawImage(g_images.title_cursor, 220, 380, 25, 25);
+                graphics.DrawImage(g_images.title_screen_multi_sel, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+                // 반투명 어두운 패널
+                RECT panel = { 180, 220, 620, 400 };
+                HBRUSH dimBrush = CreateSolidBrush(RGB(20, 20, 20));
+                FillRect(g_memDC, &panel, dimBrush);
+                DeleteObject(dimBrush);
+
+                SetTextColor(g_memDC, RGB(255, 255, 255));
+                TextOut(g_memDC, 320, 240, L"JOIN ROOM", 9);
+                TextOut(g_memDC, 220, 285, L"Host IP :", 9);
+
+                // 입력 중인 IP (Host IP 아래 칸)
+                TCHAR ipW[32];
+                MultiByteToWideChar(CP_ACP, 0, g_game.ipInputBuf, -1, ipW, 32);
+                bool blink = (GetTickCount() / 500) % 2 == 0;
+                if (blink) lstrcat(ipW, L"_");
+                TextOut(g_memDC, 220, 310, ipW, lstrlen(ipW));
+
+                SetTextColor(g_memDC, RGB(160, 160, 160));
+                TextOut(g_memDC, 220, 360, L"ENTER       ESC", 15);
+                SetTextColor(g_memDC, RGB(255, 255, 255));
             }
-            else if (g_game.title_select == 1)
+            else if (g_game.showMultiSelect)
             {
-                graphics.DrawImage(g_images.title_cursor, 220, 420, 25, 25);
+                graphics.DrawImage(g_images.title_screen_multi_sel, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+                SetTextColor(g_memDC, RGB(0, 0, 0));
+                TextOut(g_memDC, 200, 300, L"CREATE ROOM", 11);
+                TextOut(g_memDC, 200, 340, L"JOIN ROOM",   9);
+                TextOut(g_memDC, 200, 380, L"RENDER TEST", 11);
+                if (g_game.multi_select == 0)
+                    graphics.DrawImage(g_images.title_cursor, 170, 295, 25, 25);
+                else if (g_game.multi_select == 1)
+                    graphics.DrawImage(g_images.title_cursor, 170, 335, 25, 25);
+                else
+                    graphics.DrawImage(g_images.title_cursor, 170, 375, 25, 25);
+                SetTextColor(g_memDC, RGB(255, 255, 255));
+            }
+            else if (g_game.showMultiScreen)
+            {
+                graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+                // 커서 먼저 (GDI+)
+                if (g_game.multi_select == 0)
+                {
+                    graphics.DrawImage(g_images.title_cursor, 250, 478, 25, 25);
+                }
+                else
+                {
+                    graphics.DrawImage(g_images.title_cursor, 400, 478, 25, 25);
+                }
+
+                // PLAYER 1 : IP (첫 번째 줄)
+                TCHAR player1Line[64];
+                SetTextColor(g_memDC, RGB(0, 0, 0));
+                _stprintf_s(player1Line, L"PLAYER 1");
+                TextOut(g_memDC, 230, 240, player1Line, lstrlen(player1Line));
+                _stprintf_s(player1Line, L"%S", g_net.localIp);
+                TextOut(g_memDC, 230, 260, player1Line, lstrlen(player1Line));
+                _stprintf_s(player1Line, L"PLAYER 2");
+                TextOut(g_memDC, 230, 320, player1Line, lstrlen(player1Line));
+                _stprintf_s(player1Line, L"PLAYER 3");
+                TextOut(g_memDC, 230, 400, player1Line, lstrlen(player1Line));
+
+                // 클라이언트 슬롯 접속 현황
+                for (int i = 0; i < 2; i++)
+                {
+                    const TCHAR* status = (g_net.clientSockets[i] != INVALID_SOCKET) ? L"CONNECTED" : L"WAITING";
+                    TextOut(g_memDC, 230, 340 + i * 80, status, lstrlen(status));
+                }
+                SetTextColor(g_memDC, RGB(255, 255, 255));
+
+                // START / EXIT 텍스트 (GDI — GDI+ 이후에)
+                TextOut(g_memDC, 280,  480, L"START", 5);
+                TextOut(g_memDC, 430, 480, L"EXIT",  4);
+            }
+            else
+            {
+                // 커서 (0=PLAYER GAME, 1=MULTI GAME, 2=EXIT GAME)
+                if (g_game.title_select == 0)
+                {
+                    graphics.DrawImage(g_images.title_cursor, 220, 380, 25, 25);
+                }
+                else if (g_game.title_select == 1)
+                {
+                    graphics.DrawImage(g_images.title_cursor, 220, 420, 25, 25);
+                }
+                else if (g_game.title_select == 2)
+                {
+                    graphics.DrawImage(g_images.title_cursor, 220, 460, 25, 25);
+                }
             }
 
             Draw_information();
@@ -143,15 +380,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case TIMER_WALK:
             {
-                if (g_player.mario.isWalking)
+                int _wcount = g_game.isRenderTest ? 3 : 1;
+                for (int _wi = 0; _wi < _wcount; _wi++)
                 {
-                    if (g_player.mario.walk_motion < 2)
+                    Player& _wp = g_allPlayers[_wi].mario;
+                    if (_wp.isWalking)
                     {
-                        g_player.mario.walk_motion++;
-                    }
-                    else
-                    {
-                        g_player.mario.walk_motion = 0;
+                        if (_wp.walk_motion < 2) _wp.walk_motion++;
+                        else                     _wp.walk_motion = 0;
                     }
                 }
                 break;
@@ -197,6 +433,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         case WM_KEYDOWN:
         {
+            // 렌더 테스트: TAB 으로 조작 슬롯 전환
+            if (g_game.isRenderTest && wParam == VK_TAB)
+            {
+                // 이전 슬롯의 스크린 x를 월드 x로 복원 (카메라 핀 해제)
+                g_allPlayers[g_localPlayerIdx].mario.x += (int)g_game.cameraX;
+
+                g_localPlayerIdx = (g_localPlayerIdx + 1) % 3;
+
+                // 새 슬롯의 월드 x를 스크린 x로 변환 (카메라 적용)
+                g_allPlayers[g_localPlayerIdx].mario.x -= (int)g_game.cameraX;
+
+                InvalidateRect(hWnd, NULL, FALSE);
+                break;
+            }
             HandleGameKeyDown(wParam);
             break;
         }
