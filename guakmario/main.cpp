@@ -288,41 +288,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             else if (g_game.showMultiScreen)
             {
-                graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-                // 커서 먼저 (GDI+)
-                if (g_game.multi_select == 0)
-                {
-                    graphics.DrawImage(g_images.title_cursor, 250, 478, 25, 25);
-                }
-                else
-                {
-                    graphics.DrawImage(g_images.title_cursor, 400, 478, 25, 25);
-                }
-
-                // PLAYER 1 : IP (첫 번째 줄)
-                TCHAR player1Line[64];
-                SetTextColor(g_memDC, RGB(0, 0, 0));
-                _stprintf_s(player1Line, L"PLAYER 1");
-                TextOut(g_memDC, 230, 240, player1Line, lstrlen(player1Line));
-                _stprintf_s(player1Line, L"%S", g_net.localIp);
-                TextOut(g_memDC, 230, 260, player1Line, lstrlen(player1Line));
-                _stprintf_s(player1Line, L"PLAYER 2");
-                TextOut(g_memDC, 230, 320, player1Line, lstrlen(player1Line));
-                _stprintf_s(player1Line, L"PLAYER 3");
-                TextOut(g_memDC, 230, 400, player1Line, lstrlen(player1Line));
-
-                // 클라이언트 슬롯 접속 현황
-                for (int i = 0; i < 2; i++)
-                {
-                    const TCHAR* status = (g_net.clientSockets[i] != INVALID_SOCKET) ? L"CONNECTED" : L"WAITING";
-                    TextOut(g_memDC, 230, 340 + i * 80, status, lstrlen(status));
-                }
-                SetTextColor(g_memDC, RGB(255, 255, 255));
-
-                // START / EXIT 텍스트 (GDI — GDI+ 이후에)
-                TextOut(g_memDC, 280,  480, L"START", 5);
-                TextOut(g_memDC, 430, 480, L"EXIT",  4);
+                graphics.Flush(FlushIntentionSync);
+                DrawLobbyScreen();
             }
             else
             {

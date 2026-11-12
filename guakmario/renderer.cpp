@@ -1,4 +1,5 @@
 ﻿#include <tchar.h>
+#include "network.h"  // winsock2.h를 windows.h보다 먼저 포함
 #include "data.h"
 #include "image.h"
 #include "item.h"
@@ -10,6 +11,47 @@
 #include "renderer.h"
 
 using namespace Gdiplus;
+
+void DrawLobbyScreen()
+{
+    // 로비 이미지의 투명 영역에 이전 화면이나 문구가 남지 않도록 지운다.
+    RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+    FillRect(g_memDC, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    Graphics graphics(g_memDC);
+    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    graphics.DrawImage(g_images.title_cursor,
+        g_game.multi_select == 0 ? 250 : 400, 498, 25, 25);
+
+    // GDI+ 배경과 커서를 그린 뒤 GDI 텍스트를 출력한다.
+    graphics.Flush(FlushIntentionSync);
+    const COLORREF previousColor = SetTextColor(g_memDC, RGB(0, 0, 0));
+    const int previousBkMode = SetBkMode(g_memDC, TRANSPARENT);
+
+    // 기존 IP와 접속 상태 표시를 로비 배경의 각 플레이어 영역에 배치한다.
+    TCHAR hostIp[32];
+    _stprintf_s(hostIp, _T("%S"), g_net.localIp);
+    TextOut(g_memDC, 230, 260, _T("PLAYER 1"), 8);
+    TextOut(g_memDC, 230, 285, hostIp, lstrlen(hostIp));
+
+    for (int i = 0; i < 2; i++)
+    {
+        TCHAR playerLabel[16];
+        _stprintf_s(playerLabel, _T("PLAYER %d"), i + 2);
+        TextOut(g_memDC, 230, 345 + i * 80, playerLabel, lstrlen(playerLabel));
+        const TCHAR* connection = g_net.clientSockets[i] != INVALID_SOCKET
+            ? _T("CONNECTED") : _T("WAITING");
+        TextOut(g_memDC, 230, 370 + i * 80, connection, lstrlen(connection));
+    }
+
+    SetTextColor(g_memDC, RGB(255, 255, 255));
+    TextOut(g_memDC, 280, 500, _T("START"), 5);
+    TextOut(g_memDC, 430, 500, _T("EXIT"), 4);
+
+    // 같은 DC를 사용하는 HUD 출력에 영향을 주지 않도록 텍스트 설정을 복원한다.
+    SetBkMode(g_memDC, previousBkMode);
+    SetTextColor(g_memDC, previousColor);
+}
 
 static void Draw_luigi(const MarioRenderData& p);
 static void Draw_toad(const MarioRenderData& p);
