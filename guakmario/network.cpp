@@ -323,7 +323,9 @@ void NetPollPackets()
 
 void NetFlushSend()
 {
-    if (g_net.myPlayerId < 0) return;
+    //플레이어 배열의 유효 인덱스는 0~2
+    if (g_net.myPlayerId < 0 || g_net.myPlayerId >= 3) 
+        return;
 
     uint8_t buf[sizeof(PacketHeader) + sizeof(PlayerStateData)];
     auto* hdr     = (PacketHeader*)buf;
