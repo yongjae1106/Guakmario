@@ -269,34 +269,7 @@ void NetPollPackets()
             int id = hdr->playerId;
             if (id < 0 || id > 2 || id == g_net.myPlayerId) break;
             const auto* ps = (const PlayerStateData*)(pkt.data() + sizeof(PacketHeader));
-            Player& p  = g_allPlayers[id].mario;
-            p.x                   = ps->worldX;  // 다른 플레이어는 월드 좌표로 보관
-            p.y                   = ps->y;
-            p.vx                  = ps->vx;
-            p.vy                  = ps->vy;
-            p.coin                = ps->coin;
-            p.life                = ps->life;
-            p.form                = (MarioForm)ps->form;
-            p.charType            = (CharacterType)ps->charType;
-            p.width               = ps->width;
-            p.height              = ps->height;
-            p.walk_motion         = ps->walkMotion;
-            p.motion_timer        = ps->motionTimer;
-            p.tino_cooldown_z     = ps->tinoCooldownZ;
-            p.tino_cooldown_space = ps->tinoCooldownSpace;
-            p.direction           = (ps->flags & FLAG_FACING_RIGHT) ? DIR_RIGHT : DIR_LEFT;
-            p.isJumping           = (ps->flags & FLAG_JUMPING)          != 0;
-            p.isFlying            = (ps->flags & FLAG_FLYING)           != 0;
-            p.isWalking           = (ps->flags & FLAG_WALKING)          != 0;
-            p.isDead              = (ps->flags & FLAG_DEAD)             != 0;
-            p.gameover            = (ps->flags & FLAG_GAMEOVER)         != 0;
-            p.star                = (ps->flags & FLAG_STAR)             != 0;
-            p.god                 = (ps->flags & FLAG_INVINCIBLE)       != 0;
-            p.supergod            = (ps->flags & FLAG_SUPERGOD)         != 0;
-            p.fire_motion         = (ps->flags & FLAG_FIRE_MOTION)      != 0;
-            p.tino_motion         = (ps->flags & FLAG_TINO_MOTION)      != 0;
-            p.tino_fire_motion    = (ps->flags & FLAG_TINO_FIRE_MOTION) != 0;
-            // transformTarget, FLAG_TRANSFORMING은 Player에 저장할 곳이 없어 렌더 통합 시 처리
+            ApplyRemotePlayerState(id, *ps);
             break;
         }
         case PKT_GAME_EVENT:
@@ -336,6 +309,7 @@ void NetPollPackets()
             if (g_net.isHost) break;
             if (pkt.size() < sizeof(PacketHeader) + sizeof(ConnectAckData)) break;
             const auto* ack = (const ConnectAckData*)(pkt.data() + sizeof(PacketHeader));
+            if (ack->assignedId < 1 || ack->assignedId > 2) break;
             g_net.myPlayerId = ack->assignedId;
             g_sharedLives    = ack->sharedLives;
             g_localPlayerIdx = g_net.myPlayerId;

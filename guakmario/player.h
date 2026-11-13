@@ -26,6 +26,8 @@ struct Player
     bool tino_motion = false;
     bool tino_fire_motion = false;
     bool supergod = false;
+    bool isTransforming = false;
+    MarioForm transformTarget = FORM_SMALL;
     CharacterType charType = CHAR_MARIO;
 };
 
@@ -59,3 +61,7 @@ void UpdateDeadMotion();
 void dead();
 void resurrection();
 void ResetMario(int life, int coin);
+
+struct PlayerStateData;
+// Main thread only. Remote x is stored in world coordinates.
+bool ApplyRemotePlayerState(int playerId, const PlayerStateData& state);
