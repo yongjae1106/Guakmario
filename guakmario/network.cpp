@@ -491,3 +491,67 @@ static DWORD WINAPI RecvThread(LPVOID param)
     closesocket(sock);
     return 0;
 }
+
+
+// B: packet helpers deliberately do not mutate game state or send sockets.
+namespace {
+bool ValidateMonsterSnapshot(uint8_t kind, const std::vector<MonsterStateData>& states)
+{
+    if (kind > MON_FIREBALL || states.size() > 100 ||
+        (kind == MON_BROWN_TURTLE && !states.empty())) return false;
+
+    bool seen[100] = {};
+    for (const auto& state : states) {
+        if (state.slot >= 100 || seen[state.slot] ||
+            state.width == 0 || state.height == 0) return false;
+        seen[state.slot] = true;
+        uint8_t allowed = MON_FLAG_ALIVE | MON_FLAG_DEAD | MON_FLAG_ACTIVE | MON_FLAG_FALLING;
+        if (kind == MON_TURTLE) allowed |= MON_FLAG_DAMAGE | MON_FLAG_FACING_LEFT;
+        if (kind == MON_ANGEL_TURTLE) allowed |= MON_FLAG_GOING_UP;
+        if (kind == MON_FIREBALL) allowed = MON_FLAG_ACTIVE;
+        if (state.flags & ~allowed) return false;
+        if (kind == MON_TURTLE) {
+            if (state.state > 2) return false;
+        } else if (kind == MON_ANGEL_TURTLE) {
+            if (state.state > 1) return false;
+        } else if (state.state != 0) return false;
+        if (kind != MON_TURTLE && state.timerB != 0) return false;
+    }
+    return true;
+}
+}
+
+bool BuildMonsterStatePacket(uint8_t kind, const std::vector<MonsterStateData>& states,
+    std::vector<uint8_t>& packet)
+{
+    if (!ValidateMonsterSnapshot(kind, states)) return false;
+    const size_t prefix = sizeof(PacketHeader) + sizeof(MonsterStateHeader);
+    std::vector<uint8_t> result(prefix + states.size() * sizeof(MonsterStateData));
+    PacketHeader header = { static_cast<uint16_t>(result.size()), PKT_MONSTER_STATE, 0 };
+    MonsterStateHeader snapshot = { kind, static_cast<uint8_t>(states.size()) };
+    memcpy(result.data(), &header, sizeof(header));
+    memcpy(result.data() + sizeof(header), &snapshot, sizeof(snapshot));
+    if (!states.empty()) memcpy(result.data() + prefix, states.data(), states.size() * sizeof(MonsterStateData));
+    packet.swap(result);
+    return true;
+}
+
+bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
+    std::vector<MonsterStateData>& states)
+{
+    const size_t prefix = sizeof(PacketHeader) + sizeof(MonsterStateHeader);
+    if (packet.size() < prefix) return false;
+    PacketHeader header = {};
+    MonsterStateHeader snapshot = {};
+    memcpy(&header, packet.data(), sizeof(header));
+    memcpy(&snapshot, packet.data() + sizeof(header), sizeof(snapshot));
+    if (header.type != PKT_MONSTER_STATE || header.playerId != 0 ||
+        header.size != packet.size() || snapshot.count > 100 ||
+        packet.size() != prefix + snapshot.count * sizeof(MonsterStateData)) return false;
+    std::vector<MonsterStateData> result(snapshot.count);
+    if (!result.empty()) memcpy(result.data(), packet.data() + prefix, result.size() * sizeof(MonsterStateData));
+    if (!ValidateMonsterSnapshot(snapshot.kind, result)) return false;
+    kind = snapshot.kind;
+    states.swap(result);
+    return true;
+}

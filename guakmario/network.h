@@ -155,15 +155,21 @@ enum MonsterEntryFlags : uint8_t {
     MON_FLAG_FACING_LEFT = 1 << 6,
 };
 
-struct MonsterEntry {
+// 개발일정의 MonsterStateData: 몬스터 한 개체의 전송 상태.
+struct MonsterStateData {
     uint8_t  slot;
     int16_t  x, y, vx, vy;
     uint8_t  width, height;
     uint8_t  state;     // TurtleState 또는 AngelTurtle state
     uint8_t  flags;     // MonsterEntryFlags
-    uint16_t timerA;    // MON_NORMAL·ANGEL: 사망/숨기 경과 ms, TURTLE: shellTimer, FIREBALL: motion
-    uint16_t timerB;    // TURTLE: damageTimer
+    uint16_t timerA;    // MON_NORMAL·ANGEL: 사망/숨기 경과 ms, TURTLE: SHELL 경과 ms, FIREBALL: motion
+    uint16_t timerB;    // TURTLE: SPINNING 피해 대기 경과 ms (시작 시각 아님)
 };
+
+using MonsterEntry = MonsterStateData; // 기존 A/C 코드 이름과 호환
+static_assert(sizeof(MonsterStateData) == 17, "Monster state wire size changed");
+static_assert(sizeof(MonsterStateHeader) == 2, "Monster header wire size changed");
+static_assert(sizeof(PacketHeader) == 4, "Packet header wire size changed");
 
 // 보스 상태 (PKT_BOSS_STATE, 호스트 → 전체)
 enum BossStateFlags : uint8_t {
@@ -284,3 +290,11 @@ void SendToOne(int playerId, const void* data, int size); // 특정 플레이어
 // 수신 큐 (내부용 — RecvThread에서 호출)
 void PushRecvPacket(std::vector<uint8_t> pkt);
 bool PopRecvPacket(std::vector<uint8_t>& out);
+
+// B: 종류별 완전 스냅샷 인코딩/디코딩. 실패 시 출력 인자는 유지한다.
+// kind 2는 예약: 빈 스냅샷만 허용. 보스는 별도 PKT_BOSS_STATE 사용.
+// Parse 호출 전 실제 호스트 연결에서 수신했는지 호출자가 확인해야 한다.
+bool BuildMonsterStatePacket(uint8_t kind, const std::vector<MonsterStateData>& states,
+    std::vector<uint8_t>& packet);
+bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
+    std::vector<MonsterStateData>& states);
