@@ -27,6 +27,23 @@ constexpr UINT TIMER_COOL  = 5;   // 스킬 쿨타임                  — 1000m
 // 윈도우 핸들
 HWND hWnd;
 
+static void StartMultiplayerGame()
+{
+    // 호스트 로비에서 3인 접속을 확인하고 시작 이벤트의 중복 전송을 방지한다
+    if (g_game.gameStart || !g_game.showMultiScreen ||
+        !g_net.isHost || g_net.connectedCount != 3) return;
+
+    NetBroadcastGameStart();
+    g_game.isMulti = true;
+    g_game.isRenderTest = false;
+    g_game.showMultiScreen = false;
+    // 네트워크 ID와 로컬 조작 슬롯을 맞춘 뒤 게임 화면에 필요한 데이터를 준비한다
+    g_localPlayerIdx = g_net.myPlayerId;
+    mario_DC = CreateCompatibleDC(g_memDC);
+    LoadStage();
+    g_game.gameStart = true;
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     if (!g_game.gameStart)
@@ -49,6 +66,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 NetPollAccept();
                 NetPollPackets();
+                // 접속 해제까지 반영한 인원이 3명이면 게임 화면으로 전환한다.
+                StartMultiplayerGame();
                 InvalidateRect(hWnd, NULL, FALSE);
             }
             break;
@@ -175,18 +194,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     if (g_game.multi_select == 0)
                     {
-                        // 3인(호스트 + 클라이언트 2명) 접속 완료 시에만 시작
-                        if (g_net.connectedCount == 3)
-                        {
-                            NetBroadcastGameStart();
-                            g_game.isMulti         = true;
-                            g_game.isRenderTest    = false;
-                            g_game.showMultiScreen = false;
-                            g_localPlayerIdx       = 0;
-                            mario_DC = CreateCompatibleDC(g_memDC);
-                            LoadStage();
-                            g_game.gameStart = true;
-                        }
+                        StartMultiplayerGame();
                     }
                     else
                     {
