@@ -28,25 +28,48 @@ void DrawLobbyScreen()
     const COLORREF previousColor = SetTextColor(g_memDC, RGB(0, 0, 0));
     const int previousBkMode = SetBkMode(g_memDC, TRANSPARENT);
 
-    // 기존 IP와 접속 상태 표시를 로비 배경의 각 플레이어 영역에 배치한다.
-    TCHAR hostIp[32];
-    _stprintf_s(hostIp, _T("%S"), g_net.localIp);
-    TextOut(g_memDC, 230, 260, _T("PLAYER 1"), 8);
-    TextOut(g_memDC, 230, 285, hostIp, lstrlen(hostIp));
+    // 접속 인원은 호스트 자신을 포함한 네트워크 상태를 사용한다.
+    TCHAR playerCount[32];
+    _stprintf_s(playerCount, _T("PLAYERS %d / 3"), g_net.connectedCount);
+    const TCHAR* lobbyStatus;
 
-    for (int i = 0; i < 2; i++)
+    if (g_net.isHost)
     {
-        TCHAR playerLabel[16];
-        _stprintf_s(playerLabel, _T("PLAYER %d"), i + 2);
-        TextOut(g_memDC, 230, 345 + i * 80, playerLabel, lstrlen(playerLabel));
-        const TCHAR* connection = g_net.clientSockets[i] != INVALID_SOCKET
-            ? _T("CONNECTED") : _T("WAITING");
-        TextOut(g_memDC, 230, 370 + i * 80, connection, lstrlen(connection));
+        lobbyStatus = g_net.connectedCount == 3
+            ? _T("READY TO START") : _T("WAITING FOR PLAYERS");
+
+        TCHAR hostIp[32];
+        _stprintf_s(hostIp, _T("%S"), g_net.localIp);
+        TextOut(g_memDC, 230, 260, _T("PLAYER 1 (HOST)"), 15);
+        TextOut(g_memDC, 230, 285, hostIp, lstrlen(hostIp));
+
+        for (int i = 0; i < 2; i++)
+        {
+            TCHAR playerLabel[16];
+            _stprintf_s(playerLabel, _T("PLAYER %d"), i + 2);
+            TextOut(g_memDC, 230, 345 + i * 80, playerLabel, lstrlen(playerLabel));
+            const TCHAR* connection = g_net.clientSockets[i] != INVALID_SOCKET
+                ? _T("CONNECTED") : _T("WAITING");
+            TextOut(g_memDC, 230, 370 + i * 80, connection, lstrlen(connection));
+        }
+    }
+    else
+    {
+        // 클라이언트는 ACK로 부여된 ID를 기준으로 연결 중과 시작 대기를 구분한다.
+        lobbyStatus = g_net.myPlayerId >= 1 && g_net.myPlayerId <= 2
+            ? _T("WAITING FOR HOST...") : _T("CONNECTING TO HOST...");
+
+        TCHAR hostIp[32];
+        _stprintf_s(hostIp, _T("%S"), g_game.ipInputBuf);
+        TextOut(g_memDC, 230, 260, _T("HOST IP"), 7);
+        TextOut(g_memDC, 230, 285, hostIp, lstrlen(hostIp));
     }
 
     SetTextColor(g_memDC, RGB(255, 255, 255));
     TextOut(g_memDC, 280, 500, _T("START"), 5);
     TextOut(g_memDC, 430, 500, _T("EXIT"), 4);
+    TextOut(g_memDC, 230, 530, playerCount, lstrlen(playerCount));
+    TextOut(g_memDC, 150, 565, lobbyStatus, lstrlen(lobbyStatus));
 
     // 같은 DC를 사용하는 HUD 출력에 영향을 주지 않도록 텍스트 설정을 복원한다.
     SetBkMode(g_memDC, previousBkMode);
