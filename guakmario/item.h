@@ -84,3 +84,8 @@ void UpdateAllItems();
 void UpdateAllShots();
 void HandleItemCollisions();
 void HandleShotCollisions();
+struct ItemPickupData;
+// B-3 (11/17): main-thread, host-side validation only; no pickup is committed.
+// senderPlayerId must come from the connection, NOT the packet's claimed ID.
+// true means eligible now; revalidate when confirming (11/18-19).
+bool HandleItemPickupRequest(int senderPlayerId, const ItemPickupData& request);

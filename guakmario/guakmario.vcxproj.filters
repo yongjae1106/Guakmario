@@ -83,6 +83,9 @@
     <ClCompile Include="image.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="item_pickup.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="item.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
