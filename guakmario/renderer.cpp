@@ -68,8 +68,24 @@ void DrawLobbyScreen()
     SetTextColor(g_memDC, RGB(255, 255, 255));
     TextOut(g_memDC, 280, 500, _T("START"), 5);
     TextOut(g_memDC, 430, 500, _T("EXIT"), 4);
-    TextOut(g_memDC, 230, 530, playerCount, lstrlen(playerCount));
-    TextOut(g_memDC, 150, 565, lobbyStatus, lstrlen(lobbyStatus));
+
+    // 하단 안내만 작은 글꼴로 출력하고 이후 HUD를 위해 원래 글꼴을 복원한다.
+    HFONT infoFont = CreateFont(18, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+        DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Super Mario Bros. NES"));
+    HGDIOBJ previousFont = nullptr;
+    if (infoFont) previousFont = SelectObject(g_memDC, infoFont);
+
+    const UINT previousTextAlign = SetTextAlign(g_memDC, TA_CENTER | TA_TOP);
+    TextOut(g_memDC, SCREEN_WIDTH / 2, 530, playerCount, lstrlen(playerCount));
+    TextOut(g_memDC, SCREEN_WIDTH / 2, 550, lobbyStatus, lstrlen(lobbyStatus));
+    SetTextAlign(g_memDC, previousTextAlign);
+
+    if (infoFont)
+    {
+        SelectObject(g_memDC, previousFont);
+        DeleteObject(infoFont);
+    }
 
     // 같은 DC를 사용하는 HUD 출력에 영향을 주지 않도록 텍스트 설정을 복원한다.
     SetBkMode(g_memDC, previousBkMode);
