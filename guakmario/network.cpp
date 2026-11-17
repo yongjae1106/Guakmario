@@ -304,7 +304,8 @@ void NetPollPackets()
                 g_sharedLives = evt->param;
                 break;
             case EVT_GAME_START:
-                g_game.gameStart = true;
+                // gameStart를 바로 켜면 isMulti·LoadStage 없이 게임 루프로 넘어가므로 신호만 남긴다
+                g_game.multiStartPending = true;
                 break;
             case EVT_GAME_OVER:
                 g_game.gameState = GAME_OVER;
