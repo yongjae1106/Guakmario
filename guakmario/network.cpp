@@ -515,7 +515,7 @@ static DWORD WINAPI RecvThread(LPVOID param)
 
 // B: packet helpers deliberately do not mutate game state or send sockets.
 namespace {
-bool ValidateMonsterSnapshot(uint8_t kind, const std::vector<MonsterStateData>& states)
+bool ValidateMonsterSnapshot(uint8_t kind, const std::vector<MonsterEntry>& states)
 {
     if (kind > MON_FIREBALL || states.size() > 100 ||
         (kind == MON_BROWN_TURTLE && !states.empty())) return false;
@@ -541,23 +541,23 @@ bool ValidateMonsterSnapshot(uint8_t kind, const std::vector<MonsterStateData>& 
 }
 }
 
-bool BuildMonsterStatePacket(uint8_t kind, const std::vector<MonsterStateData>& states,
+bool BuildMonsterStatePacket(uint8_t kind, const std::vector<MonsterEntry>& states,
     std::vector<uint8_t>& packet)
 {
     if (!ValidateMonsterSnapshot(kind, states)) return false;
     const size_t prefix = sizeof(PacketHeader) + sizeof(MonsterStateHeader);
-    std::vector<uint8_t> result(prefix + states.size() * sizeof(MonsterStateData));
+    std::vector<uint8_t> result(prefix + states.size() * sizeof(MonsterEntry));
     PacketHeader header = { static_cast<uint16_t>(result.size()), PKT_MONSTER_STATE, 0 };
     MonsterStateHeader snapshot = { kind, static_cast<uint8_t>(states.size()) };
     memcpy(result.data(), &header, sizeof(header));
     memcpy(result.data() + sizeof(header), &snapshot, sizeof(snapshot));
-    if (!states.empty()) memcpy(result.data() + prefix, states.data(), states.size() * sizeof(MonsterStateData));
+    if (!states.empty()) memcpy(result.data() + prefix, states.data(), states.size() * sizeof(MonsterEntry));
     packet.swap(result);
     return true;
 }
 
 bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
-    std::vector<MonsterStateData>& states)
+    std::vector<MonsterEntry>& states)
 {
     const size_t prefix = sizeof(PacketHeader) + sizeof(MonsterStateHeader);
     if (packet.size() < prefix) return false;
@@ -567,9 +567,9 @@ bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
     memcpy(&snapshot, packet.data() + sizeof(header), sizeof(snapshot));
     if (header.type != PKT_MONSTER_STATE || header.playerId != 0 ||
         header.size != packet.size() || snapshot.count > 100 ||
-        packet.size() != prefix + snapshot.count * sizeof(MonsterStateData)) return false;
-    std::vector<MonsterStateData> result(snapshot.count);
-    if (!result.empty()) memcpy(result.data(), packet.data() + prefix, result.size() * sizeof(MonsterStateData));
+        packet.size() != prefix + snapshot.count * sizeof(MonsterEntry)) return false;
+    std::vector<MonsterEntry> result(snapshot.count);
+    if (!result.empty()) memcpy(result.data(), packet.data() + prefix, result.size() * sizeof(MonsterEntry));
     if (!ValidateMonsterSnapshot(snapshot.kind, result)) return false;
     kind = snapshot.kind;
     states.swap(result);

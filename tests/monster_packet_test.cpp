@@ -12,12 +12,12 @@ bool ApplyRemotePlayerState(int, const PlayerStateData&) { return false; }
 
 int main() {
     std::vector<uint8_t> packet;
-    std::vector<MonsterStateData> states, decoded;
+    std::vector<MonsterEntry> states, decoded;
     uint8_t kind = 255;
     assert(BuildMonsterStatePacket(MON_NORMAL, states, packet));
     assert(packet.size() == 6);
     assert(ParseMonsterStatePacket(packet, kind, decoded) && decoded.empty());
-    MonsterStateData a = {};
+    MonsterEntry a = {};
     a.slot = 2; a.x = -123; a.width = 32; a.height = 32; a.flags = MON_FLAG_ACTIVE;
     states.push_back(a); a.slot = 99; a.timerA = 65535; states.push_back(a);
     assert(BuildMonsterStatePacket(MON_NORMAL, states, packet));
@@ -30,7 +30,7 @@ int main() {
         uint8_t previous = kind;
         assert(!ParseMonsterStatePacket(bad, kind, decoded));
         assert(kind == previous && decoded.size() == before.size());
-        assert(memcmp(decoded.data(), before.data(), before.size() * sizeof(MonsterStateData)) == 0);
+        assert(memcmp(decoded.data(), before.data(), before.size() * sizeof(MonsterEntry)) == 0);
     };
     auto bad = valid; bad.pop_back(); rejects(bad);
     bad = valid; bad.push_back(0); rejects(bad);
