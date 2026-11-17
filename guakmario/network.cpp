@@ -23,12 +23,26 @@ static std::vector<HANDLE>              g_recvThreads;  // 메인 스레드에�
 
 struct RecvThreadParam {
     SOCKET sock;
-    int    playerId;  // 1 or 2
+    int    playerId;  // 이 소켓 상대의 ID — 호스트 쪽: 1 또는 2, 클라이언트 쪽: 0 (호스트)
 };
 
 static bool RecvFull(SOCKET sock, std::vector<uint8_t>& out);
 static DWORD WINAPI RecvThread(LPVOID param);
 static void SendFull(SOCKET sock, const void* data, int size);
+
+// 소켓 하나를 맡을 RecvThread 생성 (메인 스레드에서만 호출)
+static bool NetStartRecvThread(SOCKET sock, int playerId)
+{
+    auto* tp = new RecvThreadParam{ sock, playerId };
+    HANDLE thread = CreateThread(nullptr, 0, RecvThread, tp, 0, nullptr);
+    if (thread == nullptr)
+    {
+        delete tp;
+        return false;
+    }
+    g_recvThreads.push_back(thread);
+    return true;
+}
 
 // 소켓을 닫아 blocking recv를 깨운 뒤 RecvThread 종료를 기다리고 수신 큐를 비움
 static void NetCloseResources()
@@ -94,7 +108,7 @@ void NetFetchLocalIp()
     }
 }
 
-void NetInit(bool isHost, const char* hostIp)
+bool NetInit(bool isHost, const char* hostIp)
 {
     // 이전 방의 소켓과 스레드가 남아 있으면 먼저 정리 (재진입 대비)
     if (g_recvCSInit)
@@ -122,6 +136,7 @@ void NetInit(bool isHost, const char* hostIp)
     if (isHost)
     {
         g_net.listenSock = socket(AF_INET, SOCK_STREAM, 0);
+        if (g_net.listenSock == INVALID_SOCKET) return false;
 
         int opt = 1;
         setsockopt(g_net.listenSock, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
@@ -131,14 +146,52 @@ void NetInit(bool isHost, const char* hostIp)
         addr.sin_port        = htons(NET_PORT);
         addr.sin_addr.s_addr = INADDR_ANY;
 
-        bind(g_net.listenSock, (sockaddr*)&addr, sizeof(addr));
-        listen(g_net.listenSock, 2);    // backlog 2 (클라이언트 최대 2명)
+        // 포트 사용 중 등으로 실패하면 방을 만들 수 없음
+        if (bind(g_net.listenSock, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR ||
+            listen(g_net.listenSock, 2) == SOCKET_ERROR)    // backlog 2 (클라이언트 최대 2명)
+        {
+            closesocket(g_net.listenSock);
+            g_net.listenSock = INVALID_SOCKET;
+            return false;
+        }
 
         // listen 소켓만 non-blocking — NetPollAccept에서 매 프레임 폴링
         u_long mode = 1;
         ioctlsocket(g_net.listenSock, FIONBIO, &mode);
+        return true;
     }
-    // 클라이언트 connect 처리는 11/16 예정
+
+    // ---- 클라이언트: 호스트에 connect ----
+    if (hostIp == nullptr || hostIp[0] == '\0') return false;
+
+    sockaddr_in addr = {};
+    addr.sin_family = AF_INET;
+    addr.sin_port   = htons(NET_PORT);
+    if (inet_pton(AF_INET, hostIp, &addr.sin_addr) != 1)
+        return false;  // IP 형식 오류 (예: "192.168.0")
+
+    SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET) return false;
+
+    // blocking connect — 연결되거나 실패할 때까지 메인 스레드가 대기
+    // (방이 없으면 바로 실패, 응답 없는 IP면 OS 기본 대기 시간 동안 창이 멈춤)
+    if (connect(s, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR)
+    {
+        closesocket(s);
+        return false;  // 호스트가 없거나 방이 안 열림
+    }
+
+    g_net.hostSocket = s;
+
+    // 호스트에서 오는 패킷 수신 — 끊기면 EVT_DISCONNECT(param 0)가 큐에 들어옴
+    if (!NetStartRecvThread(s, 0))
+    {
+        closesocket(s);
+        g_net.hostSocket = INVALID_SOCKET;
+        return false;
+    }
+    // myPlayerId는 PKT_CONNECT_ACK을 받으면 설정됨 (NetPollPackets)
+    return true;
 }
 
 
@@ -225,10 +278,7 @@ void NetPollAccept()
 
     SendConnectAck(slot + 1);  // playerId 1 또는 2 부여
 
-    auto* tp = new RecvThreadParam{ s, slot + 1 };
-    HANDLE thread = CreateThread(nullptr, 0, RecvThread, tp, 0, nullptr);
-    if (thread != nullptr) g_recvThreads.push_back(thread);
-    else                   delete tp;
+    NetStartRecvThread(s, slot + 1);
 }
 
 // ============================================================
@@ -291,13 +341,25 @@ void NetPollPackets()
             case EVT_DISCONNECT:
             {
                 int pid = evt->param;
-                if (g_net.isHost && pid >= 1 && pid <= 2 && g_net.clientSockets[pid - 1] != INVALID_SOCKET)
+                if (g_net.isHost)
                 {
-                    closesocket(g_net.clientSockets[pid - 1]);  // 소켓은 메인 스레드가 닫음
-                    g_net.clientSockets[pid - 1] = INVALID_SOCKET;
+                    // 클라이언트 이탈: 슬롯 비우고 인원 감소
+                    if (pid >= 1 && pid <= 2 && g_net.clientSockets[pid - 1] != INVALID_SOCKET)
+                    {
+                        closesocket(g_net.clientSockets[pid - 1]);  // 소켓은 메인 스레드가 닫음
+                        g_net.clientSockets[pid - 1] = INVALID_SOCKET;
+                        if (g_net.connectedCount > 0)
+                            g_net.connectedCount--;
+                    }
                 }
-                if (g_net.connectedCount > 0)
-                    g_net.connectedCount--;
+                else if (pid == 0 && g_net.hostSocket != INVALID_SOCKET)
+                {
+                    // 호스트 연결 끊김: 더 보낼 곳이 없으므로 송신 중단 (화면 처리는 A-9 · C-4)
+                    closesocket(g_net.hostSocket);
+                    g_net.hostSocket     = INVALID_SOCKET;
+                    g_net.myPlayerId     = -1;  // NetFlushSend 중단
+                    g_net.connectedCount = 0;
+                }
                 break;
             }
             case EVT_LIVES_CHANGED:

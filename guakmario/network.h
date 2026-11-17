@@ -268,7 +268,9 @@ extern int       g_sharedLives; // 공용 목숨 — 호스트가 관리, PKT_GA
 
 // 초기화 / 종료
 void NetFetchLocalIp();  // WSAStartup + IP 조회만 (소켓 미생성)
-void NetInit(bool isHost, const char* hostIp = nullptr);
+// 호스트: listen 소켓 준비 / 클라이언트: hostIp로 connect + 수신 스레드 시작
+// 실패 시 false (호스트: 포트 사용 중 등, 클라이언트: IP 형식 오류·접속 실패·시간 초과)
+bool NetInit(bool isHost, const char* hostIp = nullptr);
 void NetShutdown();
 
 // 로비: accept 폴링 (호스트 전용, GAME_LOBBY 루프에서 매 프레임 호출)
