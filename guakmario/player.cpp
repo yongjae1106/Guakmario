@@ -1,4 +1,5 @@
-﻿#include <tchar.h>
+﻿#include "network.h" // Winsock must precede windows.h.
+#include <tchar.h>
 #include "data.h"
 #include "image.h"
 #include "item.h"
@@ -21,7 +22,7 @@ void movePlayer()
         g_player.mario.direction = DIR_LEFT;
     }
     else if (g_player.keyState[VK_RIGHT] && !g_player.keyState[VK_LEFT])
-    {
+    { 
         g_player.mario.vx = PLAYER_WALK_SPEED;
         g_player.mario.direction = DIR_RIGHT;
     }
@@ -322,4 +323,44 @@ MarioRenderData BuildMarioRenderDataFor(int idx)
         m.life, m.coin,
         m.tino_cooldown_z, m.tino_cooldown_space
     };
+}
+
+bool ApplyRemotePlayerState(int playerId, const PlayerStateData& state)
+{
+    if (playerId < 0 || playerId >= 3 || playerId == g_localPlayerIdx)
+        return false;
+    if (state.form > FORM_TINO || state.charType > CHAR_TOAD ||
+        state.transformTarget > FORM_TINO || state.width == 0 || state.height == 0)
+        return false;
+
+    Player& p  = g_allPlayers[playerId].mario;
+    p.x = state.worldX;  // 다른 플레이어는 월드 좌표로 보관
+    p.y = state.y;
+    p.vx = state.vx;
+    p.vy = state.vy;
+    p.coin = state.coin;
+    p.life = state.life;
+    p.form = (MarioForm)state.form;
+    p.charType = (CharacterType)state.charType;
+    p.width = state.width;
+    p.height = state.height;
+    p.walk_motion = state.walkMotion;
+    p.motion_timer = state.motionTimer;
+    p.tino_cooldown_z = state.tinoCooldownZ;
+    p.tino_cooldown_space = state.tinoCooldownSpace;
+    p.direction = (state.flags & FLAG_FACING_RIGHT) ? DIR_RIGHT : DIR_LEFT;
+    p.isJumping = (state.flags & FLAG_JUMPING)          != 0;
+    p.isFlying = (state.flags & FLAG_FLYING)           != 0;
+    p.isWalking = (state.flags & FLAG_WALKING)          != 0;
+    p.isDead = (state.flags & FLAG_DEAD)     != 0;
+    p.gameover = (state.flags & FLAG_GAMEOVER)         != 0;
+    p.star = (state.flags & FLAG_STAR)     != 0;
+    p.god = (state.flags & FLAG_INVINCIBLE)       != 0;
+    p.supergod = (state.flags & FLAG_SUPERGOD)         != 0;
+    p.fire_motion = (state.flags & FLAG_FIRE_MOTION)      != 0;
+    p.tino_motion = (state.flags & FLAG_TINO_MOTION)      != 0;
+    p.tino_fire_motion = (state.flags & FLAG_TINO_FIRE_MOTION) != 0;
+    p.isTransforming = (state.flags & FLAG_TRANSFORMING) != 0;
+    p.transformTarget = static_cast<MarioForm>(state.transformTarget);
+    return true;
 }

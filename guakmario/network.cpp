@@ -279,34 +279,7 @@ void NetPollPackets()
             }
 
             const auto* ps = (const PlayerStateData*)(pkt.data() + sizeof(PacketHeader));
-            Player& p  = g_allPlayers[id].mario;
-            p.x                   = ps->worldX;  // 다른 플레이어는 월드 좌표로 보관
-            p.y                   = ps->y;
-            p.vx                  = ps->vx;
-            p.vy                  = ps->vy;
-            p.coin                = ps->coin;
-            p.life                = ps->life;
-            p.form                = (MarioForm)ps->form;
-            p.charType            = (CharacterType)ps->charType;
-            p.width               = ps->width;
-            p.height              = ps->height;
-            p.walk_motion         = ps->walkMotion;
-            p.motion_timer        = ps->motionTimer;
-            p.tino_cooldown_z     = ps->tinoCooldownZ;
-            p.tino_cooldown_space = ps->tinoCooldownSpace;
-            p.direction           = (ps->flags & FLAG_FACING_RIGHT) ? DIR_RIGHT : DIR_LEFT;
-            p.isJumping           = (ps->flags & FLAG_JUMPING)          != 0;
-            p.isFlying            = (ps->flags & FLAG_FLYING)           != 0;
-            p.isWalking           = (ps->flags & FLAG_WALKING)          != 0;
-            p.isDead              = (ps->flags & FLAG_DEAD)             != 0;
-            p.gameover            = (ps->flags & FLAG_GAMEOVER)         != 0;
-            p.star                = (ps->flags & FLAG_STAR)             != 0;
-            p.god                 = (ps->flags & FLAG_INVINCIBLE)       != 0;
-            p.supergod            = (ps->flags & FLAG_SUPERGOD)         != 0;
-            p.fire_motion         = (ps->flags & FLAG_FIRE_MOTION)      != 0;
-            p.tino_motion         = (ps->flags & FLAG_TINO_MOTION)      != 0;
-            p.tino_fire_motion    = (ps->flags & FLAG_TINO_FIRE_MOTION) != 0;
-            // transformTarget, FLAG_TRANSFORMING은 Player에 저장할 곳이 없어 렌더 통합 시 처리
+            ApplyRemotePlayerState(id, *ps);
             break;
         }
         case PKT_GAME_EVENT:
@@ -349,6 +322,7 @@ void NetPollPackets()
             if (g_net.isHost) break;
             if (pkt.size() < sizeof(PacketHeader) + sizeof(ConnectAckData)) break;
             const auto* ack = (const ConnectAckData*)(pkt.data() + sizeof(PacketHeader));
+            if (ack->assignedId < 1 || ack->assignedId > 2) break;
             g_net.myPlayerId = ack->assignedId;
             g_sharedLives    = ack->sharedLives;
             g_localPlayerIdx = g_net.myPlayerId;
@@ -362,7 +336,9 @@ void NetPollPackets()
 
 void NetFlushSend()
 {
-    if (g_net.myPlayerId < 0) return;
+    //플레이어 배열의 유효 인덱스는 0~2
+    if (g_net.myPlayerId < 0 || g_net.myPlayerId >= 3) 
+        return;
 
     uint8_t buf[sizeof(PacketHeader) + sizeof(PlayerStateData)];
     auto* hdr     = (PacketHeader*)buf;
@@ -534,4 +510,68 @@ static DWORD WINAPI RecvThread(LPVOID param)
     RecvQueuePush(std::vector<uint8_t>(buf, buf + sizeof(buf)));
 
     return 0;
+}
+
+
+// B: packet helpers deliberately do not mutate game state or send sockets.
+namespace {
+bool ValidateMonsterSnapshot(uint8_t kind, const std::vector<MonsterStateData>& states)
+{
+    if (kind > MON_FIREBALL || states.size() > 100 ||
+        (kind == MON_BROWN_TURTLE && !states.empty())) return false;
+
+    bool seen[100] = {};
+    for (const auto& state : states) {
+        if (state.slot >= 100 || seen[state.slot] ||
+            state.width == 0 || state.height == 0) return false;
+        seen[state.slot] = true;
+        uint8_t allowed = MON_FLAG_ALIVE | MON_FLAG_DEAD | MON_FLAG_ACTIVE | MON_FLAG_FALLING;
+        if (kind == MON_TURTLE) allowed |= MON_FLAG_DAMAGE | MON_FLAG_FACING_LEFT;
+        if (kind == MON_ANGEL_TURTLE) allowed |= MON_FLAG_GOING_UP;
+        if (kind == MON_FIREBALL) allowed = MON_FLAG_ACTIVE;
+        if (state.flags & ~allowed) return false;
+        if (kind == MON_TURTLE) {
+            if (state.state > 2) return false;
+        } else if (kind == MON_ANGEL_TURTLE) {
+            if (state.state > 1) return false;
+        } else if (state.state != 0) return false;
+        if (kind != MON_TURTLE && state.timerB != 0) return false;
+    }
+    return true;
+}
+}
+
+bool BuildMonsterStatePacket(uint8_t kind, const std::vector<MonsterStateData>& states,
+    std::vector<uint8_t>& packet)
+{
+    if (!ValidateMonsterSnapshot(kind, states)) return false;
+    const size_t prefix = sizeof(PacketHeader) + sizeof(MonsterStateHeader);
+    std::vector<uint8_t> result(prefix + states.size() * sizeof(MonsterStateData));
+    PacketHeader header = { static_cast<uint16_t>(result.size()), PKT_MONSTER_STATE, 0 };
+    MonsterStateHeader snapshot = { kind, static_cast<uint8_t>(states.size()) };
+    memcpy(result.data(), &header, sizeof(header));
+    memcpy(result.data() + sizeof(header), &snapshot, sizeof(snapshot));
+    if (!states.empty()) memcpy(result.data() + prefix, states.data(), states.size() * sizeof(MonsterStateData));
+    packet.swap(result);
+    return true;
+}
+
+bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
+    std::vector<MonsterStateData>& states)
+{
+    const size_t prefix = sizeof(PacketHeader) + sizeof(MonsterStateHeader);
+    if (packet.size() < prefix) return false;
+    PacketHeader header = {};
+    MonsterStateHeader snapshot = {};
+    memcpy(&header, packet.data(), sizeof(header));
+    memcpy(&snapshot, packet.data() + sizeof(header), sizeof(snapshot));
+    if (header.type != PKT_MONSTER_STATE || header.playerId != 0 ||
+        header.size != packet.size() || snapshot.count > 100 ||
+        packet.size() != prefix + snapshot.count * sizeof(MonsterStateData)) return false;
+    std::vector<MonsterStateData> result(snapshot.count);
+    if (!result.empty()) memcpy(result.data(), packet.data() + prefix, result.size() * sizeof(MonsterStateData));
+    if (!ValidateMonsterSnapshot(snapshot.kind, result)) return false;
+    kind = snapshot.kind;
+    states.swap(result);
+    return true;
 }
