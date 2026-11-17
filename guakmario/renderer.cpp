@@ -1,4 +1,5 @@
 ﻿#include <tchar.h>
+#include "network.h"  // winsock2.h를 windows.h보다 먼저 포함
 #include "data.h"
 #include "image.h"
 #include "item.h"
@@ -10,6 +11,86 @@
 #include "renderer.h"
 
 using namespace Gdiplus;
+
+void DrawLobbyScreen()
+{
+    // 로비 이미지의 투명 영역에 이전 화면이나 문구가 남지 않도록 지운다.
+    RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+    FillRect(g_memDC, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    Graphics graphics(g_memDC);
+    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    graphics.DrawImage(g_images.title_cursor,
+        g_game.multi_select == 0 ? 250 : 400, 498, 25, 25);
+
+    // GDI+ 배경과 커서를 그린 뒤 GDI 텍스트를 출력한다.
+    graphics.Flush(FlushIntentionSync);
+    const COLORREF previousColor = SetTextColor(g_memDC, RGB(0, 0, 0));
+    const int previousBkMode = SetBkMode(g_memDC, TRANSPARENT);
+
+    // 접속 인원은 호스트 자신을 포함한 네트워크 상태를 사용한다.
+    TCHAR playerCount[32];
+    _stprintf_s(playerCount, _T("PLAYERS %d / 3"), g_net.connectedCount);
+    const TCHAR* lobbyStatus;
+
+    if (g_net.isHost)
+    {
+        lobbyStatus = g_net.connectedCount == 3
+            ? _T("READY TO START") : _T("WAITING FOR PLAYERS");
+
+        TCHAR hostIp[32];
+        _stprintf_s(hostIp, _T("%S"), g_net.localIp);
+        TextOut(g_memDC, 230, 260, _T("PLAYER 1 (HOST)"), 15);
+        TextOut(g_memDC, 230, 285, hostIp, lstrlen(hostIp));
+
+        for (int i = 0; i < 2; i++)
+        {
+            TCHAR playerLabel[16];
+            _stprintf_s(playerLabel, _T("PLAYER %d"), i + 2);
+            TextOut(g_memDC, 230, 345 + i * 80, playerLabel, lstrlen(playerLabel));
+            const TCHAR* connection = g_net.clientSockets[i] != INVALID_SOCKET
+                ? _T("CONNECTED") : _T("WAITING");
+            TextOut(g_memDC, 230, 370 + i * 80, connection, lstrlen(connection));
+        }
+    }
+    else
+    {
+        // 클라이언트는 ACK로 부여된 ID를 기준으로 연결 중과 시작 대기를 구분한다.
+        lobbyStatus = g_net.myPlayerId >= 1 && g_net.myPlayerId <= 2
+            ? _T("WAITING FOR HOST...") : _T("CONNECTING TO HOST...");
+
+        TCHAR hostIp[32];
+        _stprintf_s(hostIp, _T("%S"), g_game.ipInputBuf);
+        TextOut(g_memDC, 230, 260, _T("HOST IP"), 7);
+        TextOut(g_memDC, 230, 285, hostIp, lstrlen(hostIp));
+    }
+
+    SetTextColor(g_memDC, RGB(255, 255, 255));
+    TextOut(g_memDC, 280, 500, _T("START"), 5);
+    TextOut(g_memDC, 430, 500, _T("EXIT"), 4);
+
+    // 하단 안내만 작은 글꼴로 출력하고 이후 HUD를 위해 원래 글꼴을 복원한다.
+    HFONT infoFont = CreateFont(18, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+        DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Super Mario Bros. NES"));
+    HGDIOBJ previousFont = nullptr;
+    if (infoFont) previousFont = SelectObject(g_memDC, infoFont);
+
+    const UINT previousTextAlign = SetTextAlign(g_memDC, TA_CENTER | TA_TOP);
+    TextOut(g_memDC, SCREEN_WIDTH / 2, 530, playerCount, lstrlen(playerCount));
+    TextOut(g_memDC, SCREEN_WIDTH / 2, 550, lobbyStatus, lstrlen(lobbyStatus));
+    SetTextAlign(g_memDC, previousTextAlign);
+
+    if (infoFont)
+    {
+        SelectObject(g_memDC, previousFont);
+        DeleteObject(infoFont);
+    }
+
+    // 같은 DC를 사용하는 HUD 출력에 영향을 주지 않도록 텍스트 설정을 복원한다.
+    SetBkMode(g_memDC, previousBkMode);
+    SetTextColor(g_memDC, previousColor);
+}
 
 static void Draw_luigi(const MarioRenderData& p);
 static void Draw_toad(const MarioRenderData& p);

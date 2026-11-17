@@ -15,3 +15,4 @@ extern TCHAR stage_print[32], stage_print2[32];
 
 void Draw();
 void Draw_information();
+void DrawLobbyScreen();

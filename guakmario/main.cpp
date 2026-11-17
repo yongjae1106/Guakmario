@@ -27,6 +27,23 @@ constexpr UINT TIMER_COOL  = 5;   // 스킬 쿨타임                  — 1000m
 // 윈도우 핸들
 HWND hWnd;
 
+static void StartMultiplayerGame()
+{
+    // 호스트 로비에서 3인 접속을 확인하고 시작 이벤트의 중복 전송을 방지한다
+    if (g_game.gameStart || !g_game.showMultiScreen ||
+        !g_net.isHost || g_net.connectedCount != 3) return;
+
+    NetBroadcastGameStart();
+    g_game.isMulti = true;
+    g_game.isRenderTest = false;
+    g_game.showMultiScreen = false;
+    // 네트워크 ID와 로컬 조작 슬롯을 맞춘 뒤 게임 화면에 필요한 데이터를 준비한다
+    g_localPlayerIdx = g_net.myPlayerId;
+    mario_DC = CreateCompatibleDC(g_memDC);
+    LoadStage();
+    g_game.gameStart = true;
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     if (!g_game.gameStart)
@@ -49,6 +66,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 NetPollAccept();
                 NetPollPackets();
+                // 접속 해제까지 반영한 인원이 3명이면 게임 화면으로 전환한다.
+                StartMultiplayerGame();
                 InvalidateRect(hWnd, NULL, FALSE);
             }
             break;
@@ -175,18 +194,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     if (g_game.multi_select == 0)
                     {
-                        // 3인(호스트 + 클라이언트 2명) 접속 완료 시에만 시작
-                        if (g_net.connectedCount == 3)
-                        {
-                            NetBroadcastGameStart();
-                            g_game.isMulti         = true;
-                            g_game.isRenderTest    = false;
-                            g_game.showMultiScreen = false;
-                            g_localPlayerIdx       = 0;
-                            mario_DC = CreateCompatibleDC(g_memDC);
-                            LoadStage();
-                            g_game.gameStart = true;
-                        }
+                        StartMultiplayerGame();
                     }
                     else
                     {
@@ -288,41 +296,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             else if (g_game.showMultiScreen)
             {
-                graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-                // 커서 먼저 (GDI+)
-                if (g_game.multi_select == 0)
-                {
-                    graphics.DrawImage(g_images.title_cursor, 250, 478, 25, 25);
-                }
-                else
-                {
-                    graphics.DrawImage(g_images.title_cursor, 400, 478, 25, 25);
-                }
-
-                // PLAYER 1 : IP (첫 번째 줄)
-                TCHAR player1Line[64];
-                SetTextColor(g_memDC, RGB(0, 0, 0));
-                _stprintf_s(player1Line, L"PLAYER 1");
-                TextOut(g_memDC, 230, 240, player1Line, lstrlen(player1Line));
-                _stprintf_s(player1Line, L"%S", g_net.localIp);
-                TextOut(g_memDC, 230, 260, player1Line, lstrlen(player1Line));
-                _stprintf_s(player1Line, L"PLAYER 2");
-                TextOut(g_memDC, 230, 320, player1Line, lstrlen(player1Line));
-                _stprintf_s(player1Line, L"PLAYER 3");
-                TextOut(g_memDC, 230, 400, player1Line, lstrlen(player1Line));
-
-                // 클라이언트 슬롯 접속 현황
-                for (int i = 0; i < 2; i++)
-                {
-                    const TCHAR* status = (g_net.clientSockets[i] != INVALID_SOCKET) ? L"CONNECTED" : L"WAITING";
-                    TextOut(g_memDC, 230, 340 + i * 80, status, lstrlen(status));
-                }
-                SetTextColor(g_memDC, RGB(255, 255, 255));
-
-                // START / EXIT 텍스트 (GDI — GDI+ 이후에)
-                TextOut(g_memDC, 280,  480, L"START", 5);
-                TextOut(g_memDC, 430, 480, L"EXIT",  4);
+                graphics.Flush(FlushIntentionSync);
+                DrawLobbyScreen();
             }
             else
             {
