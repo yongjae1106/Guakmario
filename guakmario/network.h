@@ -282,5 +282,5 @@ void SendToHost(const void* data, int size);            // 클라이언트 전�
 void SendToOne(int playerId, const void* data, int size); // 특정 플레이어
 
 // 수신 큐 (내부용 — RecvThread에서 호출)
-void PushRecvPacket(std::vector<uint8_t> pkt);
-bool PopRecvPacket(std::vector<uint8_t>& out);
+void RecvQueuePush(std::vector<uint8_t> pkt);
+bool RecvQueuePop(std::vector<uint8_t>& out);

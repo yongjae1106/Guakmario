@@ -26,12 +26,12 @@ struct RecvThreadParam {
     int    playerId;  // 1 or 2
 };
 
-static bool RecvPacketFull(SOCKET sock, std::vector<uint8_t>& out);
+static bool RecvFull(SOCKET sock, std::vector<uint8_t>& out);
 static DWORD WINAPI RecvThread(LPVOID param);
 static void SendFull(SOCKET sock, const void* data, int size);
 
 // 소켓을 닫아 blocking recv를 깨운 뒤 RecvThread 종료를 기다리고 수신 큐를 비움
-static void CloseNetResources()
+static void NetCloseResources()
 {
     for (int i = 0; i < 2; i++)
     {
@@ -98,7 +98,7 @@ void NetInit(bool isHost, const char* hostIp)
 {
     // 이전 방의 소켓과 스레드가 남아 있으면 먼저 정리 (재진입 대비)
     if (g_recvCSInit)
-        CloseNetResources();
+        NetCloseResources();
 
     g_net.isHost          = isHost;
     g_net.myPlayerId      = isHost ? 0 : -1;   // 클라이언트는 ACK 받은 후 설정
@@ -171,7 +171,7 @@ void NetShutdown()
 {
     if (!g_recvCSInit) return;  // NetInit 전이거나 이미 종료됨
 
-    CloseNetResources();
+    NetCloseResources();
 
     DeleteCriticalSection(&g_recvCS);
     g_recvCSInit = false;
@@ -258,7 +258,7 @@ void NetBroadcastGameStart()
 void NetPollPackets()
 {
     std::vector<uint8_t> pkt;
-    while (PopRecvPacket(pkt))
+    while (RecvQueuePop(pkt))
     {
         if (pkt.size() < sizeof(PacketHeader)) continue;
         const auto* hdr = (const PacketHeader*)pkt.data();
@@ -453,14 +453,14 @@ void SendToOne(int playerId, const void* data, int size)
 //  A-4 — 수신 큐 (11/5)
 // ============================================================
 
-void PushRecvPacket(std::vector<uint8_t> pkt)
+void RecvQueuePush(std::vector<uint8_t> pkt)
 {
     EnterCriticalSection(&g_recvCS);
     g_recvQueue.push(std::move(pkt));
     LeaveCriticalSection(&g_recvCS);
 }
 
-bool PopRecvPacket(std::vector<uint8_t>& out)
+bool RecvQueuePop(std::vector<uint8_t>& out)
 {
     EnterCriticalSection(&g_recvCS);
     if (g_recvQueue.empty())
@@ -479,7 +479,7 @@ bool PopRecvPacket(std::vector<uint8_t>& out)
 // ============================================================
 
 // 헤더 size 필드 기준 패킷 전체 수신 (blocking)
-static bool RecvPacketFull(SOCKET sock, std::vector<uint8_t>& out)
+static bool RecvFull(SOCKET sock, std::vector<uint8_t>& out)
 {
     // 1단계: 헤더 수신
     PacketHeader hdr;
@@ -516,9 +516,9 @@ static DWORD WINAPI RecvThread(LPVOID param)
     delete p;
 
     std::vector<uint8_t> pkt;
-    while (RecvPacketFull(sock, pkt))
+    while (RecvFull(sock, pkt))
     {
-        PushRecvPacket(pkt);
+        RecvQueuePush(pkt);
     }
 
     // 연결 끊김 → EVT_DISCONNECT 큐 삽입
@@ -531,7 +531,7 @@ static DWORD WINAPI RecvThread(LPVOID param)
     evt->eventType   = EVT_DISCONNECT;
     evt->param       = (uint8_t)playerId;
 
-    PushRecvPacket(std::vector<uint8_t>(buf, buf + sizeof(buf)));
+    RecvQueuePush(std::vector<uint8_t>(buf, buf + sizeof(buf)));
 
     return 0;
 }
