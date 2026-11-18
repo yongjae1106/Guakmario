@@ -19,8 +19,9 @@ void DrawLobbyScreen()
     // 로비 이미지의 투명 영역에 이전 화면이나 문구가 남지 않도록 타이틀 배경으로 덮는다.
     graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    graphics.DrawImage(g_images.title_cursor,
-        g_game.multi_select == 0 ? 250 : 400, 475, 25, 25);
+    // 클라이언트는 START 버튼이 없으므로 커서를 항상 EXIT에 둔다.
+    const bool cursorOnStart = g_net.isHost && g_game.multi_select == 0;
+    graphics.DrawImage(g_images.title_cursor, cursorOnStart ? 250 : 400, 475, 25, 25);
 
     // GDI+ 배경과 커서를 그린 뒤 GDI 텍스트를 출력한다.
     graphics.Flush(FlushIntentionSync);
@@ -36,36 +37,36 @@ void DrawLobbyScreen()
     {
         lobbyStatus = g_net.connectedCount == 3
             ? _T("READY TO START") : _T("WAITING FOR PLAYERS");
-
-        TCHAR hostIp[32];
-        _stprintf_s(hostIp, _T("%S"), g_net.localIp);
-        TextOut(g_memDC, 230, 237, _T("PLAYER 1 (HOST)"), 15);
-        TextOut(g_memDC, 230, 262, hostIp, lstrlen(hostIp));
-
-        for (int i = 0; i < 2; i++)
-        {
-            TCHAR playerLabel[16];
-            _stprintf_s(playerLabel, _T("PLAYER %d"), i + 2);
-            TextOut(g_memDC, 230, 323 + i * 80, playerLabel, lstrlen(playerLabel));
-            const TCHAR* connection = g_net.clientSockets[i] != INVALID_SOCKET
-                ? _T("CONNECTED") : _T("WAITING");
-            TextOut(g_memDC, 230, 347 + i * 80, connection, lstrlen(connection));
-        }
     }
     else
     {
         // 클라이언트는 ACK로 부여된 ID를 기준으로 연결 중과 시작 대기를 구분한다.
         lobbyStatus = g_net.myPlayerId >= 1 && g_net.myPlayerId <= 2
             ? _T("WAITING FOR HOST...") : _T("CONNECTING TO HOST...");
+    }
 
-        TCHAR hostIp[32];
-        _stprintf_s(hostIp, _T("%S"), g_game.ipInputBuf);
-        TextOut(g_memDC, 230, 260, _T("HOST IP"), 7);
-        TextOut(g_memDC, 230, 285, hostIp, lstrlen(hostIp));
+    // 호스트 IP — 호스트는 자기 IP, 클라이언트는 입력한 IP
+    TCHAR hostIp[32];
+    _stprintf_s(hostIp, _T("%S"), g_net.isHost ? g_net.localIp : g_game.ipInputBuf);
+    TextOut(g_memDC, 230, 237, _T("PLAYER 1 (HOST)"), 15);
+    TextOut(g_memDC, 230, 262, hostIp, lstrlen(hostIp));
+
+    // PLAYER 2 · 3 접속 현황 — 클라이언트도 호스트가 보낸 EVT_LOBBY_STATUS로 같은 화면을 본다.
+    for (int id = 1; id <= 2; id++)
+    {
+        TCHAR playerLabel[24];
+        if (id == g_net.myPlayerId && !g_net.isHost)
+            _stprintf_s(playerLabel, _T("PLAYER %d (YOU)"), id + 1);
+        else
+            _stprintf_s(playerLabel, _T("PLAYER %d"), id + 1);
+        TextOut(g_memDC, 230, 323 + (id - 1) * 80, playerLabel, lstrlen(playerLabel));
+        const TCHAR* connection = NetIsPlayerConnected(id) ? _T("CONNECTED") : _T("WAITING");
+        TextOut(g_memDC, 230, 347 + (id - 1) * 80, connection, lstrlen(connection));
     }
 
     SetTextColor(g_memDC, RGB(255, 255, 255));
-    TextOut(g_memDC, 280, 477, _T("START"), 5);
+    if (g_net.isHost)
+        TextOut(g_memDC, 280, 477, _T("START"), 5);   // 게임 시작은 호스트만
     TextOut(g_memDC, 430, 477, _T("EXIT"), 4);
 
     // 하단 안내만 작은 글꼴로 출력하고 이후 HUD를 위해 원래 글꼴을 복원한다.

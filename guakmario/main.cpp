@@ -27,6 +27,9 @@ constexpr UINT TIMER_COOL  = 5;   // 스킬 쿨타임                  — 1000m
 // 윈도우 핸들
 HWND hWnd;
 
+// IP 입력 화면에 띄울 안내 문구 (접속 실패 · 호스트 끊김), 없으면 nullptr
+static const wchar_t* s_ipInputMsg = nullptr;
+
 static void StartMultiplayerGame()
 {
     // 호스트 로비에서 3인 접속을 확인하고 시작 이벤트의 중복 전송을 방지한다
@@ -61,11 +64,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         case WM_TIMER:
         {
-            // 호스트 로비: 접속 수락 + 끊김 처리 (접속 현황 갱신)
-            if (wParam == TIMER_GAME && g_game.showMultiScreen && g_net.isHost)
+            // 로비: 호스트는 접속 수락 + 끊김 처리, 클라이언트는 ACK · 게임 시작 수신
+            if (wParam == TIMER_GAME && g_game.showMultiScreen)
             {
-                NetPollAccept();
+                if (g_net.isHost) NetPollAccept();
                 NetPollPackets();
+
+                // 클라이언트: 로비에서 호스트가 나가면 IP 입력 화면으로 돌아간다
+                if (!g_net.isHost && g_net.hostSocket == INVALID_SOCKET)
+                {
+                    NetShutdown();
+                    g_game.showMultiScreen = false;
+                    g_game.showIpInput     = true;
+                    s_ipInputMsg           = L"HOST DISCONNECTED";
+                    InvalidateRect(hWnd, NULL, FALSE);
+                    break;
+                }
                 // 접속 해제까지 반영한 인원이 3명이면 게임 화면으로 전환한다.
                 StartMultiplayerGame();
                 InvalidateRect(hWnd, NULL, FALSE);
@@ -83,6 +97,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // IP 입력 취소
                     memset(g_game.ipInputBuf, 0, sizeof(g_game.ipInputBuf));
                     g_game.ipInputLen     = 0;
+                    s_ipInputMsg          = nullptr;
                     g_game.showIpInput    = false;
                     g_game.showMultiSelect = true;
                 }
@@ -109,7 +124,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case VK_LEFT:
             {
-                if (g_game.showMultiScreen)
+                if (g_game.showMultiScreen && g_net.isHost)   // 클라이언트는 START 없음
                 {
                     g_game.multi_select = 0;
                 }
@@ -155,16 +170,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 if (g_game.showIpInput)
                 {
-                    // IP 입력 확정 → A-8에서 NetInit(false, ip) 연결 구현 예정
-                    // TODO(A-8): NetInit(false, g_game.ipInputBuf);
+                    // IP 입력 확정 → 호스트에 connect (blocking, 실패하면 입력 화면 유지)
+                    if (g_game.ipInputLen == 0) break;
+                    if (NetInit(false, g_game.ipInputBuf))
+                    {
+                        s_ipInputMsg           = nullptr;
+                        g_game.showIpInput     = false;
+                        g_game.showMultiScreen = true;   // 로비에서 ACK · 게임 시작 대기
+                        g_game.multi_select    = 1;      // 클라이언트는 START 불가 → EXIT에 커서
+                    }
+                    else
+                    {
+                        NetShutdown();                   // WSAStartup · 잠금 정리
+                        s_ipInputMsg = L"CONNECT FAILED";
+                    }
                     break;
                 }
                 if (g_game.showMultiSelect)
                 {
                     if (g_game.multi_select == 0)
                     {
-                        // 방 만들기 → 호스트 로비
-                        NetInit(true);
+                        // 방 만들기 → 호스트 로비 (포트 사용 중 등으로 실패하면 선택 화면 유지)
+                        if (!NetInit(true))
+                        {
+                            NetShutdown();
+                            break;
+                        }
                         g_game.showMultiSelect = false;
                         g_game.showMultiScreen = true;
                         g_game.multi_select = 0;
@@ -174,6 +205,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         // 방 참가 → IP 입력 화면
                         memset(g_game.ipInputBuf, 0, sizeof(g_game.ipInputBuf));
                         g_game.ipInputLen      = 0;
+                        s_ipInputMsg           = nullptr;
                         g_game.showMultiSelect = false;
                         g_game.showIpInput     = true;
                     }
@@ -235,6 +267,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     g_game.ipInputBuf[g_game.ipInputLen++] = c;
                     g_game.ipInputBuf[g_game.ipInputLen]   = '\0';
+                    s_ipInputMsg = nullptr;
                     InvalidateRect(hWnd, nullptr, FALSE);
                 }
             }
@@ -274,6 +307,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 bool blink = (GetTickCount() / 500) % 2 == 0;
                 if (blink) lstrcat(ipW, L"_");
                 TextOut(g_memDC, 220, 310, ipW, lstrlen(ipW));
+
+                if (s_ipInputMsg != nullptr)
+                {
+                    SetTextColor(g_memDC, RGB(255, 80, 80));
+                    TextOut(g_memDC, 220, 335, s_ipInputMsg, lstrlen(s_ipInputMsg));
+                }
 
                 SetTextColor(g_memDC, RGB(160, 160, 160));
                 TextOut(g_memDC, 220, 360, L"ENTER       ESC", 15);

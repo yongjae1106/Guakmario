@@ -68,6 +68,7 @@ enum GameEventType : uint8_t {
     EVT_PLAYER_DIED    = 7, // 플레이어 사망 (클라이언트 → 호스트 → 전체), param = playerId
     EVT_PLAYER_REVIVED = 8, // 플레이어 부활 (호스트 → 전체), param = playerId
     EVT_STAGE_LOAD     = 9, // 스테이지 로드 (호스트 → 전체), param = 스테이지 번호
+    EVT_LOBBY_STATUS   = 10, // 로비 접속 현황 (호스트 → 전체), param = 접속 비트 (bit0 = P1 호스트, bit1 = P2, bit2 = P3)
 };
 
 // 접속 확인 페이로드 (PKT_CONNECT_ACK, 호스트 → 클라이언트)
@@ -252,6 +253,7 @@ struct NetContext {
     bool   isHost;
     int    myPlayerId;          // 0~2 (호스트=0)
     int    connectedCount;      // 현재 접속 인원 (호스트 자신 포함)
+    uint8_t lobbyMask;          // 접속 중인 playerId 비트 (bit0 = P1 호스트) — 클라이언트는 EVT_LOBBY_STATUS로 갱신
     SOCKET listenSock;          // 호스트 전용 listen 소켓
     SOCKET clientSockets[2];    // 호스트 전용 — 클라이언트 소켓 슬롯
     SOCKET hostSocket;          // 클라이언트 전용 — 호스트 연결 소켓
@@ -275,6 +277,7 @@ void NetShutdown();
 
 // 로비: accept 폴링 (호스트 전용, GAME_LOBBY 루프에서 매 프레임 호출)
 void NetPollAccept();
+bool NetIsPlayerConnected(int playerId);  // 로비 표시용 — 해당 playerId(0~2)가 접속 중인지
 void NetBroadcastGameStart();  // connectedCount == 3 → GAME_START 브로드캐스트 + listen 소켓 닫기
 
 // 수신 큐 소비 (메인 스레드, UpdateGame() 첫 줄에서 호출)

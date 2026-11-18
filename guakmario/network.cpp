@@ -117,6 +117,7 @@ bool NetInit(bool isHost, const char* hostIp)
     g_net.isHost          = isHost;
     g_net.myPlayerId      = isHost ? 0 : -1;   // 클라이언트는 ACK 받은 후 설정
     g_net.connectedCount  = isHost ? 1 : 0;    // 호스트 자신 포함
+    g_net.lobbyMask       = isHost ? 1 : 0;    // 클라이언트는 EVT_LOBBY_STATUS를 받으면 설정
     g_net.listenSock      = INVALID_SOCKET;
     g_net.clientSockets[0] = INVALID_SOCKET;
     g_net.clientSockets[1] = INVALID_SOCKET;
@@ -199,6 +200,33 @@ bool NetInit(bool isHost, const char* hostIp)
 //  PKT_CONNECT_ACK 전송 헬퍼 (내부용)
 // ============================================================
 
+// 호스트: 현재 접속 현황을 비트로 만들어 모든 클라이언트에게 알린다 (접속 · 끊김 때마다)
+static void BroadcastLobbyStatus()
+{
+    uint8_t mask = 1;  // bit0 = 호스트
+    for (int i = 0; i < 2; i++)
+        if (g_net.clientSockets[i] != INVALID_SOCKET) mask |= (uint8_t)(1 << (i + 1));
+    g_net.lobbyMask = mask;
+
+    uint8_t buf[sizeof(PacketHeader) + sizeof(GameEventData)];
+    auto* hdr     = (PacketHeader*)buf;
+    hdr->size     = (uint16_t)sizeof(buf);
+    hdr->type     = PKT_GAME_EVENT;
+    hdr->playerId = 0;
+
+    auto* evt      = (GameEventData*)(buf + sizeof(PacketHeader));
+    evt->eventType = EVT_LOBBY_STATUS;
+    evt->param     = mask;
+
+    SendToAll(buf, (int)sizeof(buf));
+}
+
+bool NetIsPlayerConnected(int playerId)
+{
+    if (playerId < 0 || playerId > 2) return false;
+    return (g_net.lobbyMask & (1 << playerId)) != 0;
+}
+
 static void SendConnectAck(int assignedId)
 {
     uint8_t buf[sizeof(PacketHeader) + sizeof(ConnectAckData)];
@@ -279,6 +307,9 @@ void NetPollAccept()
     SendConnectAck(slot + 1);  // playerId 1 또는 2 부여
 
     NetStartRecvThread(s, slot + 1);
+
+    // ACK 뒤에 보내므로 새 클라이언트도 자기 ID를 먼저 알고 현황을 받는다
+    BroadcastLobbyStatus();
 }
 
 // ============================================================
@@ -350,6 +381,7 @@ void NetPollPackets()
                         g_net.clientSockets[pid - 1] = INVALID_SOCKET;
                         if (g_net.connectedCount > 0)
                             g_net.connectedCount--;
+                        BroadcastLobbyStatus();  // 남은 클라이언트의 로비 표시 갱신
                     }
                 }
                 else if (pid == 0 && g_net.hostSocket != INVALID_SOCKET)
@@ -359,7 +391,17 @@ void NetPollPackets()
                     g_net.hostSocket     = INVALID_SOCKET;
                     g_net.myPlayerId     = -1;  // NetFlushSend 중단
                     g_net.connectedCount = 0;
+                    g_net.lobbyMask      = 0;
                 }
+                break;
+            }
+            case EVT_LOBBY_STATUS:
+            {
+                if (g_net.isHost) break;
+                g_net.lobbyMask      = evt->param & 0x07;
+                g_net.connectedCount = 0;
+                for (int i = 0; i < 3; i++)
+                    if (g_net.lobbyMask & (1 << i)) g_net.connectedCount++;
                 break;
             }
             case EVT_LIVES_CHANGED:
