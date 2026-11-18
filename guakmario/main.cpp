@@ -30,21 +30,31 @@ HWND hWnd;
 // IP 입력 화면에 띄울 안내 문구 (접속 실패 · 호스트 끊김), 없으면 nullptr
 static const wchar_t* s_ipInputMsg = nullptr;
 
-static void StartMultiplayerGame()
+// 호스트 · 클라이언트 공통 — 멀티 게임 화면으로 들어간다
+static void EnterMultiplayerGame()
 {
-    // 호스트 로비에서 3인 접속을 확인하고 시작 이벤트의 중복 전송을 방지한다
-    if (g_game.gameStart || !g_game.showMultiScreen ||
-        !g_net.isHost || g_net.connectedCount != 3) return;
+    if (g_game.gameStart) return;  // 중복 진입 방지
 
-    NetBroadcastGameStart();
+    g_game.multiStartPending = false;
     g_game.isMulti = true;
     g_game.isRenderTest = false;
     g_game.showMultiScreen = false;
     // 네트워크 ID와 로컬 조작 슬롯을 맞춘 뒤 게임 화면에 필요한 데이터를 준비한다
+    // (클라이언트는 ACK로 받은 1 또는 2 — 0으로 덮어쓰지 않기)
     g_localPlayerIdx = g_net.myPlayerId;
     mario_DC = CreateCompatibleDC(g_memDC);
     LoadStage();
     g_game.gameStart = true;
+}
+
+// 호스트 START 버튼 — 3인 접속을 확인하고 시작 이벤트를 보낸 뒤 진입한다
+static void StartMultiplayerGame()
+{
+    if (g_game.gameStart || !g_game.showMultiScreen ||
+        !g_net.isHost || g_net.connectedCount != 3) return;
+
+    NetBroadcastGameStart();
+    EnterMultiplayerGame();
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -80,8 +90,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     InvalidateRect(hWnd, NULL, FALSE);
                     break;
                 }
-                // 접속 해제까지 반영한 인원이 3명이면 게임 화면으로 전환한다.
-                StartMultiplayerGame();
+                // 클라이언트: 호스트의 EVT_GAME_START를 받으면 게임 화면으로 들어간다 (C-6)
+                // 호스트는 자동 시작하지 않고 START 버튼(Enter)으로만 시작한다
+                if (!g_net.isHost && g_game.multiStartPending && g_net.myPlayerId >= 1)
+                    EnterMultiplayerGame();
                 InvalidateRect(hWnd, NULL, FALSE);
             }
             break;
@@ -174,8 +186,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     if (g_game.ipInputLen == 0) break;
                     if (NetInit(false, g_game.ipInputBuf))
                     {
-                        s_ipInputMsg           = nullptr;
-                        g_game.showIpInput     = false;
+                        s_ipInputMsg             = nullptr;
+                        g_game.multiStartPending = false;  // 이전 방의 시작 신호가 남지 않게
+                        g_game.showIpInput       = false;
                         g_game.showMultiScreen = true;   // 로비에서 ACK · 게임 시작 대기
                         g_game.multi_select    = 1;      // 클라이언트는 START 불가 → EXIT에 커서
                     }
