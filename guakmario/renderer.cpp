@@ -14,14 +14,13 @@ using namespace Gdiplus;
 
 void DrawLobbyScreen()
 {
-    // 로비 이미지의 투명 영역에 이전 화면이나 문구가 남지 않도록 지운다.
-    RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-    FillRect(g_memDC, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    // 로비 이미지의 투명 영역에 이전 화면이나 문구가 남지 않도록 타이틀 배경으로 덮는다.
+    graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     graphics.DrawImage(g_images.title_cursor,
-        g_game.multi_select == 0 ? 250 : 400, 498, 25, 25);
+        g_game.multi_select == 0 ? 250 : 400, 475, 25, 25);
 
     // GDI+ 배경과 커서를 그린 뒤 GDI 텍스트를 출력한다.
     graphics.Flush(FlushIntentionSync);
@@ -40,17 +39,17 @@ void DrawLobbyScreen()
 
         TCHAR hostIp[32];
         _stprintf_s(hostIp, _T("%S"), g_net.localIp);
-        TextOut(g_memDC, 230, 260, _T("PLAYER 1 (HOST)"), 15);
-        TextOut(g_memDC, 230, 285, hostIp, lstrlen(hostIp));
+        TextOut(g_memDC, 230, 237, _T("PLAYER 1 (HOST)"), 15);
+        TextOut(g_memDC, 230, 262, hostIp, lstrlen(hostIp));
 
         for (int i = 0; i < 2; i++)
         {
             TCHAR playerLabel[16];
             _stprintf_s(playerLabel, _T("PLAYER %d"), i + 2);
-            TextOut(g_memDC, 230, 345 + i * 80, playerLabel, lstrlen(playerLabel));
+            TextOut(g_memDC, 230, 323 + i * 80, playerLabel, lstrlen(playerLabel));
             const TCHAR* connection = g_net.clientSockets[i] != INVALID_SOCKET
                 ? _T("CONNECTED") : _T("WAITING");
-            TextOut(g_memDC, 230, 370 + i * 80, connection, lstrlen(connection));
+            TextOut(g_memDC, 230, 347 + i * 80, connection, lstrlen(connection));
         }
     }
     else
@@ -66,8 +65,8 @@ void DrawLobbyScreen()
     }
 
     SetTextColor(g_memDC, RGB(255, 255, 255));
-    TextOut(g_memDC, 280, 500, _T("START"), 5);
-    TextOut(g_memDC, 430, 500, _T("EXIT"), 4);
+    TextOut(g_memDC, 280, 477, _T("START"), 5);
+    TextOut(g_memDC, 430, 477, _T("EXIT"), 4);
 
     // 하단 안내만 작은 글꼴로 출력하고 이후 HUD를 위해 원래 글꼴을 복원한다.
     HFONT infoFont = CreateFont(18, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
