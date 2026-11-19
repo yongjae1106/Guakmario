@@ -288,7 +288,9 @@ void resurrection()
 
 void ResetMario(int life, int coin)
 {
+    const CharacterType charType = g_game.isMulti ? g_player.mario.charType : CHAR_MARIO;
     g_player.mario = {};
+    g_player.mario.charType = charType;
     g_player.mario.x = 100;
     g_player.mario.y = 300;
     g_player.mario.life = life;
