@@ -553,7 +553,10 @@ void Draw()
             case CHAR_LUIGI: Draw_luigi(rm); break;
             case CHAR_TOAD:  Draw_toad(rm);  break;
             default:
-                if (!rm.isDead) Draw_mario(rm);
+                if (rm.isDead)
+                    DrawSprite(graphics, g_images.mario_dead, rm.x, rm.y, rm.width, TILE_SIZE, rm.direction == DIR_LEFT);
+                else
+                    Draw_mario(rm);
                 break;
             }
         }

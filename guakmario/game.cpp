@@ -31,10 +31,8 @@ static void handle_transform(MarioForm targetForm, void (*primary_fn)(), void (*
     }
 }
 
-void UpdateGame()
+static void UpdateGameState()
 {
-    if (g_game.isMulti && !g_game.isRenderTest) NetPollPackets();
-
     // 변신 모션 (mushroom / flower / tino)
     if (g_game.gameState == GAME_TRANSFORMING)
     {
@@ -171,8 +169,16 @@ void UpdateGame()
         CheckFlagCollision();
         if (g_game.stage == 3) CheckClearCollision();
     }
+}
 
-    if (g_game.isMulti && !g_game.isRenderTest) NetFlushSend();
+void UpdateGame()
+{
+    const bool networkGame = g_game.isMulti && !g_game.isRenderTest;
+    if (networkGame) NetPollPackets();
+
+    UpdateGameState();
+
+    if (networkGame && g_game.gameStart) NetFlushSend();
 }
 
 void TickTimer()
