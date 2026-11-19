@@ -45,12 +45,8 @@ bool OverlapsPickup(const Player& player, double worldX, const Item& item)
 
 void SendItemPickupPacket(const ItemPickupData& pickup)
 {
-    struct Packet {
-        PacketHeader header;
-        ItemPickupData pickup;
-    };
-    const Packet packet = {
-        { sizeof(Packet), PKT_ITEM_PICKUP, static_cast<uint8_t>(g_net.myPlayerId) },
+    const ItemPickupPacket packet = {
+        { sizeof(ItemPickupPacket), PKT_ITEM_PICKUP, static_cast<uint8_t>(g_net.myPlayerId) },
         pickup
     };
     if (g_net.isHost) SendToAll(&packet, sizeof(packet));
@@ -93,17 +89,24 @@ bool ConfirmItemPickup(int senderPlayerId, const ItemPickupData& request)
     return true;
 }
 
-void ApplyItemPickupConfirmation(const ItemPickupData& approved)
+void ApplyItemPickupResult(const ItemPickupData& result)
 {
-    if (!IsOnlineGame() || g_net.isHost || approved.approved != 1 || approved.pickerId >= 3)
+    if (!IsOnlineGame() || g_net.isHost || result.approved > 1 || result.pickerId >= 3)
         return;
 
-    Item* item = FindPickupItem(approved.itemType, approved.slot);
-    if (!item || (!item->active && !item->motion)) return;
+    const bool isLocalPicker = result.pickerId == g_net.myPlayerId &&
+        result.pickerId == g_localPlayerIdx;
+    const ItemPickupData& pending = g_net.pendingItemPickup;
+    const bool matchesPending = isLocalPicker && g_net.waitingForItemPickup &&
+        result.itemType == pending.itemType && result.slot == pending.slot;
+    if (matchesPending) g_net.waitingForItemPickup = false;
+
+    if (result.approved == 0) return;
+    Item* item = FindPickupItem(result.itemType, result.slot);
+    if (!item || (!item->active && !item->motion && !matchesPending)) return;
     item->active = false;
     item->motion = false;
-    if (approved.pickerId == g_net.myPlayerId && approved.pickerId == g_localPlayerIdx)
-        ApplyItemPickupEffect(static_cast<ItemType>(approved.itemType));
+    if (isLocalPicker) ApplyItemPickupEffect(static_cast<ItemType>(result.itemType));
 }
 
 void ApplyItemSpawn(const ItemSpawnData& spawn)
@@ -125,7 +128,7 @@ void HandleMultiplayerItemCollisions()
     const int playerId = g_localPlayerIdx;
     if (!IsOnlineGame() || g_game.gameState != GAME_RUNNING ||
         playerId < 0 || playerId >= 3 || playerId != g_net.myPlayerId ||
-        (!g_net.isHost && g_net.hostSocket == INVALID_SOCKET)) return;
+        (!g_net.isHost && (g_net.hostSocket == INVALID_SOCKET || g_net.waitingForItemPickup))) return;
 
     const Player& player = g_allPlayers[playerId].mario;
     if (!CanPickUpItems(player)) return;
@@ -139,7 +142,9 @@ void HandleMultiplayerItemCollisions()
             if (g_net.isHost) {
                 ConfirmItemPickup(playerId, request);
             } else {
-                // The host checks overlap against the latest state from this socket.
+                // Wait for the result before requesting another item.
+                g_net.pendingItemPickup = request;
+                g_net.waitingForItemPickup = true;
                 NetFlushSend();
                 SendItemPickupPacket(request);
             }

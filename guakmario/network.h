@@ -107,8 +107,14 @@ struct ItemSpawnData {
 struct ItemPickupData {
     uint8_t itemType, slot;
     uint8_t pickerId;   // 획득 요청자
-    uint8_t approved;   // 요청 0, 호스트 확정 1
+    uint8_t approved;   // 요청/호스트 거절 0, 호스트 확정 1
 };
+
+struct ItemPickupPacket {
+    PacketHeader header;
+    ItemPickupData pickup;
+};
+static_assert(sizeof(ItemPickupPacket) == 8, "Item pickup wire size changed");
 
 // 맵 타일 변경 (PKT_TILE_CHANGE, 호스트 → 전체)
 struct TileChangeData {
@@ -258,6 +264,8 @@ struct NetContext {
     SOCKET clientSockets[2];    // 호스트 전용 — 클라이언트 소켓 슬롯
     SOCKET hostSocket;          // 클라이언트 전용 — 호스트 연결 소켓
     char   localIp[16];         // 로컬 IP 문자열 (예: "192.168.0.5")
+    bool   waitingForItemPickup;
+    ItemPickupData pendingItemPickup;
 };
 
 extern NetContext g_net;

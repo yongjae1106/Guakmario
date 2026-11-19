@@ -86,7 +86,7 @@ struct ItemPickupData;
 // Call on the game thread. For remote requests, use the connection's player ID.
 bool HandleItemPickupRequest(int senderPlayerId, const ItemPickupData& request);
 bool ConfirmItemPickup(int senderPlayerId, const ItemPickupData& request);
-void ApplyItemPickupConfirmation(const ItemPickupData& approved);
+void ApplyItemPickupResult(const ItemPickupData& result);
 void ApplyItemSpawn(const ItemSpawnData& spawn);
 void HandleMultiplayerItemCollisions();
 void ApplyItemPickupEffect(ItemType type);

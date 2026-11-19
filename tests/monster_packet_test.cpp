@@ -10,7 +10,7 @@ int g_localPlayerIdx = 0;
 GameContext g_game = {};
 bool ApplyRemotePlayerState(int, const PlayerStateData&) { return false; }
 bool ConfirmItemPickup(int, const ItemPickupData&) { return false; }
-void ApplyItemPickupConfirmation(const ItemPickupData&) {}
+void ApplyItemPickupResult(const ItemPickupData&) {}
 void ApplyItemSpawn(const ItemSpawnData&) {}
 
 int main() {

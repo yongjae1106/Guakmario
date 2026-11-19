@@ -127,6 +127,7 @@ bool NetInit(bool isHost, const char* hostIp)
     g_net.myPlayerId      = isHost ? 0 : -1;   // 클라이언트는 ACK 받은 후 설정
     g_net.connectedCount  = isHost ? 1 : 0;    // 호스트 자신 포함
     g_net.lobbyMask       = isHost ? 1 : 0;    // 클라이언트는 EVT_LOBBY_STATUS를 받으면 설정
+    g_net.waitingForItemPickup = false;
     g_net.listenSock      = INVALID_SOCKET;
     g_net.clientSockets[0] = INVALID_SOCKET;
     g_net.clientSockets[1] = INVALID_SOCKET;
@@ -379,18 +380,24 @@ void NetPollPackets()
         }
         case PKT_ITEM_PICKUP:
         {
-            if (pkt.size() != sizeof(PacketHeader) + sizeof(ItemPickupData) || hdr->size != pkt.size()) break;
+            if (pkt.size() != sizeof(ItemPickupPacket) || hdr->size != pkt.size()) break;
             ItemPickupData pickup;
             memcpy(&pickup, pkt.data() + sizeof(PacketHeader), sizeof(pickup));
             if (g_net.isHost)
             {
-                if (senderPlayerId >= 1 && hdr->playerId == senderPlayerId &&
-                    pickup.pickerId == senderPlayerId && pickup.approved == 0)
-                    ConfirmItemPickup(senderPlayerId, pickup);
+                if (senderPlayerId < 1 || senderPlayerId > 2 || hdr->playerId != senderPlayerId ||
+                    pickup.pickerId != senderPlayerId || pickup.approved != 0) break;
+                if (!ConfirmItemPickup(senderPlayerId, pickup))
+                {
+                    const ItemPickupPacket rejected = {
+                        { sizeof(ItemPickupPacket), PKT_ITEM_PICKUP, 0 }, pickup
+                    };
+                    SendToOne(senderPlayerId, &rejected, sizeof(rejected));
+                }
             }
-            else if (fromHost && pickup.approved == 1)
+            else if (fromHost)
             {
-                ApplyItemPickupConfirmation(pickup);
+                ApplyItemPickupResult(pickup);
             }
             break;
         }

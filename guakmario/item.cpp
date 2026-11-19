@@ -207,7 +207,7 @@ void UpdateItems_star()
         int right = (star[i].x + TILE_SIZE - 1) / TILE_SIZE;
         int top = star[i].y / TILE_SIZE;
         int bottom = (star[i].y + TILE_SIZE - 1) / TILE_SIZE;
-        int middle = (g_player.mario.y + g_player.mario.height / 2 - 1) / TILE_SIZE;
+        int middle = (star[i].y + star[i].height / 2 - 1) / TILE_SIZE;
         
         // 2️⃣ 수평 충돌 처리
         if (star[i].vx < 0 && 
