@@ -14,7 +14,6 @@ struct GameContext {
     DWORD transformStartTime = 0;
     DWORD starStartTime      = 0;
     DWORD deadStartTime      = 0;
-    DWORD godstart           = 0;
     DWORD victoryStart       = 0;
     DWORD clearStart         = 0;
     MarioForm transformTarget    = FORM_SMALL;   // GAME_TRANSFORMING 시 목표 폼

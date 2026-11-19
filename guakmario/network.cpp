@@ -497,13 +497,13 @@ void NetFlushSend()
     auto* ps         = (PlayerStateData*)(buf + sizeof(PacketHeader));
     ps->worldX            = (int16_t)(me.x + (int)g_game.cameraX);  // 로컬 x는 화면 좌표
     ps->y                 = (int16_t)me.y;
-    ps->vx                = (int16_t)me.vx;
-    ps->vy                = (int16_t)me.vy;
+    ps->vx                = me.isTransforming ? 0 : (int16_t)me.vx;
+    ps->vy                = me.isTransforming ? 0 : (int16_t)me.vy;
     ps->coin              = (int16_t)me.coin;
     ps->life              = (uint8_t)me.life;
     ps->form              = (uint8_t)me.form;
     ps->charType          = (uint8_t)me.charType;
-    ps->transformTarget   = (uint8_t)g_game.transformTarget;
+    ps->transformTarget   = (uint8_t)me.transformTarget;
     ps->width             = (uint8_t)me.width;
     ps->height            = (uint8_t)me.height;
     ps->walkMotion        = (uint8_t)me.walk_motion;
@@ -515,7 +515,7 @@ void NetFlushSend()
     if (me.isFlying)         ps->flags |= FLAG_FLYING;
     if (me.isDead)           ps->flags |= FLAG_DEAD;
     if (me.star)             ps->flags |= FLAG_STAR;
-    if (me.god)              ps->flags |= FLAG_INVINCIBLE;
+    if (me.god || me.isTransforming) ps->flags |= FLAG_INVINCIBLE;
     if (me.isWalking)        ps->flags |= FLAG_WALKING;
     if (me.direction == DIR_RIGHT) ps->flags |= FLAG_FACING_RIGHT;
     if (me.fire_motion)      ps->flags |= FLAG_FIRE_MOTION;
@@ -523,7 +523,7 @@ void NetFlushSend()
     if (me.tino_fire_motion) ps->flags |= FLAG_TINO_FIRE_MOTION;
     if (me.gameover)         ps->flags |= FLAG_GAMEOVER;
     if (me.supergod)         ps->flags |= FLAG_SUPERGOD;
-    if (g_game.gameState == GAME_TRANSFORMING) ps->flags |= FLAG_TRANSFORMING;
+    if (me.isTransforming)   ps->flags |= FLAG_TRANSFORMING;
 
     if (g_net.isHost) SendToAll(buf, (int)sizeof(buf));
     else              SendToHost(buf, (int)sizeof(buf));

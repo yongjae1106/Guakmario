@@ -488,43 +488,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case(ID_TRANS_TINO):
             {
-                if (g_player.mario.form != FORM_TINO && g_game.gameState == GAME_RUNNING)
+                if (g_player.mario.form != FORM_TINO && g_game.gameState == GAME_RUNNING && !g_player.mario.isTransforming)
                 {
                     PlaySoundBuffer(powerup_Sound);
-                    if (g_player.mario.form == FORM_SMALL)
-                    {
-                        g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
-                    }
-                    g_game.transformTarget = FORM_TINO;
-                    g_game.gameState = GAME_TRANSFORMING;
-                    g_game.transformStartTime = GetTickCount();
+                    StartPlayerTransformation(FORM_TINO);
                 }
                 break;
             }
             case(ID_TRANS_FLOWER):
             {
-                if (g_player.mario.form != FORM_FLOWER && g_game.gameState == GAME_RUNNING)
+                if (g_player.mario.form != FORM_FLOWER && g_game.gameState == GAME_RUNNING && !g_player.mario.isTransforming)
                 {
                     PlaySoundBuffer(powerup_Sound);
-                    if (g_player.mario.form == FORM_SMALL)
-                    {
-                        g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
-                    }
-                    g_game.transformTarget = FORM_FLOWER;
-                    g_game.gameState = GAME_TRANSFORMING;
-                    g_game.transformStartTime = GetTickCount();
+                    StartPlayerTransformation(FORM_FLOWER);
                 }
                 break;
             }
             case(ID_TRANS_BIG):
             {
-                if (g_player.mario.form == FORM_SMALL && g_game.gameState == GAME_RUNNING)
+                if (g_player.mario.form == FORM_SMALL && g_game.gameState == GAME_RUNNING && !g_player.mario.isTransforming)
                 {
                     PlaySoundBuffer(powerup_Sound);
-                    g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
-                    g_game.transformTarget = FORM_BIG;
-                    g_game.gameState = GAME_TRANSFORMING;
-                    g_game.transformStartTime = GetTickCount();
+                    StartPlayerTransformation(FORM_BIG);
                 }
                 break;
             }

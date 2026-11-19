@@ -21,6 +21,7 @@ struct Player
     bool gameover = false;
     MarioForm form = FORM_SMALL;
     bool god = false;
+    DWORD godStartTime = 0;
     bool star = false;
     bool fire_motion = false;
     bool tino_motion = false;
@@ -28,6 +29,7 @@ struct Player
     bool supergod = false;
     bool isTransforming = false;
     MarioForm transformTarget = FORM_SMALL;
+    DWORD transformStartTime = 0;
     CharacterType charType = CHAR_MARIO;
 };
 
@@ -50,12 +52,16 @@ struct MarioRenderData {
     int walk_motion, motion_timer;
     int life, coin;
     int tino_cooldown_z, tino_cooldown_space;
+    bool isTransforming;
+    MarioForm transformTarget;
 };
 MarioRenderData BuildMarioRenderData();
 MarioRenderData BuildMarioRenderDataFor(int idx);  // 렌더 테스트용 — 임의 슬롯 빌드
 
 void movePlayer();
 void UpdatePlayer();
+void StartPlayerTransformation(MarioForm target);
+void UpdatePlayerTransformation(Player& player, DWORD now);
 void UpdateMario_motion();
 void UpdateDeadMotion();
 void dead();

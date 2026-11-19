@@ -42,14 +42,8 @@ void ApplyItemPickupEffect(ItemType type)
     }
 
     PlaySoundBuffer(powerup_Sound);
-    if (g_game.gameState != GAME_RUNNING || player.form == target ||
-        (type == ITEM_MUSHROOM && player.form != FORM_SMALL)) return;
-
-    if (player.form == FORM_SMALL)
-        player.y -= TILE_SIZE + 1;
-    g_game.transformTarget = target;
-    g_game.gameState = GAME_TRANSFORMING;
-    g_game.transformStartTime = GetTickCount();
+    if (type == ITEM_MUSHROOM && player.form != FORM_SMALL) return;
+    StartPlayerTransformation(target);
 }
 
 static void HandleLocalItemCollisions(Item (&items)[MAX_ITEMS], ItemType type)

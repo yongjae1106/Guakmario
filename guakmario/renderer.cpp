@@ -356,6 +356,27 @@ static void Draw_toad(const MarioRenderData& p)
         flip);
 }
 
+static void DrawPlayerTransformation(MarioRenderData mario)
+{
+    const int bottom = mario.y + mario.height;
+    if ((GetTickCount() / 100) % 2 == 0) mario.form = mario.transformTarget;
+    mario.height = mario.form == FORM_SMALL ? TILE_SIZE : 2 * TILE_SIZE;
+    mario.y = bottom - mario.height;
+    mario.isWalking = false;
+    mario.isJumping = false;
+    mario.isFlying = false;
+    mario.fire_motion = false;
+    mario.tino_motion = false;
+    mario.tino_fire_motion = false;
+
+    switch (mario.charType)
+    {
+    case CHAR_LUIGI: Draw_luigi(mario); break;
+    case CHAR_TOAD:  Draw_toad(mario); break;
+    default:         Draw_mario(mario); break;
+    }
+}
+
 void Draw()
 {
     RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -410,7 +431,11 @@ void Draw()
     const bool isAltChar = (mario.charType == CHAR_LUIGI || mario.charType == CHAR_TOAD);
 
     // mario
-    if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_BIG && mario.form == FORM_SMALL)
+    if (mario.isTransforming && !mario.isDead)
+    {
+        DrawPlayerTransformation(mario);
+    }
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_BIG && mario.form == FORM_SMALL)
     {
         if ((GetTickCount() / 100) % 2 == 0)
             DrawSprite(graphics, getChangeImg(false), mario.x, mario.y,
@@ -518,6 +543,11 @@ void Draw()
             if (_ri == g_localPlayerIdx) continue;
             MarioRenderData rm = BuildMarioRenderDataFor(_ri);
             rm.x -= (int)g_game.cameraX;  // 월드 좌표 → 스크린 좌표
+            if (rm.isTransforming && !rm.isDead)
+            {
+                DrawPlayerTransformation(rm);
+                continue;
+            }
             switch (rm.charType)
             {
             case CHAR_LUIGI: Draw_luigi(rm); break;
