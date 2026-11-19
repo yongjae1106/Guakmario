@@ -291,10 +291,6 @@ void SendToAll(const void* data, int size);             // 호스트 전용
 void SendToHost(const void* data, int size);            // 클라이언트 전용
 void SendToOne(int playerId, const void* data, int size); // 특정 플레이어
 
-// 수신 큐 (내부용 — RecvThread에서 호출)
-void RecvQueuePush(std::vector<uint8_t> pkt);
-bool RecvQueuePop(std::vector<uint8_t>& out);
-
 // B: 종류별 완전 스냅샷 인코딩/디코딩. 실패 시 출력 인자는 유지한다.
 // kind 2는 예약: 빈 스냅샷만 허용. 보스는 별도 PKT_BOSS_STATE 사용.
 // Parse 호출 전 실제 호스트 연결에서 수신했는지 호출자가 확인해야 한다.

@@ -4,9 +4,10 @@
 #include "game.h"
 #include <cassert>
 #include <cstdio>
+#include <cstring>
 #include <limits>
 
-// Real validator, isolated game-state fixtures; no sockets or game loop run here.
+// Real pickup logic with isolated game state and captured network/effect calls.
 NetContext g_net = {};
 GameContext g_game = {};
 PlayerContext g_allPlayers[3] = {};
@@ -14,8 +15,42 @@ int g_localPlayerIdx = 0;
 Item mushroom[MAX_ITEMS], up_mushroom[MAX_ITEMS], star[MAX_ITEMS];
 Item flower[MAX_ITEMS], tino[MAX_ITEMS];
 
+static int broadcasts, requests, appliedEffects, statesSent;
+static PacketHeader lastHeader;
+static ItemPickupData lastPickup;
+
+static void CapturePickup(const void* data, int size)
+{
+    assert(size == sizeof(PacketHeader) + sizeof(ItemPickupData));
+    memcpy(&lastHeader, data, sizeof(lastHeader));
+    memcpy(&lastPickup, static_cast<const uint8_t*>(data) + sizeof(lastHeader), sizeof(lastPickup));
+    assert(lastHeader.size == size && lastHeader.type == PKT_ITEM_PICKUP);
+}
+
+void SendToAll(const void* data, int size)
+{
+    ++broadcasts;
+    CapturePickup(data, size);
+}
+
+void SendToHost(const void* data, int size)
+{
+    assert(statesSent == requests + 1);
+    ++requests;
+    CapturePickup(data, size);
+}
+
+void NetFlushSend() { ++statesSent; }
+
+void ApplyItemPickupEffect(ItemType type)
+{
+    ++appliedEffects;
+    if (type == ITEM_UP_MUSHROOM) ++g_player.mario.life;
+}
+
 static void Reset()
 {
+    broadcasts = requests = appliedEffects = statesSent = 0;
     g_game = GameContext{};
     g_game.isMulti = true;
     g_game.gameStart = true;
@@ -36,6 +71,59 @@ static void Reset()
         for (int i = 0; i < MAX_ITEMS; ++i) items[i] = Item{};
         items[0] = Item(600, 100, 0, 0, 30, 30, 0, true, false);
     }
+}
+
+static void TestConfirmation()
+{
+    Reset();
+    ItemPickupData request = { ITEM_UP_MUSHROOM, 0, 1, 0 };
+    assert(!ConfirmItemPickup(2, request));
+    assert(up_mushroom[0].active && broadcasts == 0);
+
+    assert(ConfirmItemPickup(1, request));
+    assert(!up_mushroom[0].active && broadcasts == 1 && appliedEffects == 0);
+    assert(lastHeader.playerId == 0 && lastPickup.approved == 1);
+    assert(lastPickup.pickerId == 1 && lastPickup.slot == 0 && lastPickup.itemType == ITEM_UP_MUSHROOM);
+    assert(!ConfirmItemPickup(1, request));
+    request.pickerId = 2;
+    assert(!ConfirmItemPickup(2, request));
+    assert(broadcasts == 1);
+
+    Reset();
+    const int hostLife = g_player.mario.life;
+    HandleMultiplayerItemCollisions();
+    assert(!mushroom[0].active && broadcasts == 1 && appliedEffects == 1);
+    assert(lastPickup.pickerId == 0 && lastPickup.approved == 1);
+    request.pickerId = 0;
+    assert(ConfirmItemPickup(0, request));
+    assert(!ConfirmItemPickup(0, request) && g_player.mario.life == hostLife + 1);
+
+    Reset();
+    g_net.isHost = false;
+    g_net.myPlayerId = g_localPlayerIdx = 1;
+    g_net.hostSocket = static_cast<SOCKET>(20);
+    g_player.mario.x = 100;
+    mushroom[0].active = false;
+    const int clientLife = g_player.mario.life;
+    HandleMultiplayerItemCollisions();
+    assert(up_mushroom[0].active && g_player.mario.life == clientLife);
+    assert(requests == 1 && statesSent == 1 && lastHeader.playerId == 1 && lastPickup.approved == 0);
+    assert(lastPickup.pickerId == 1 && lastPickup.itemType == ITEM_UP_MUSHROOM);
+    ApplyItemPickupConfirmation(lastPickup);
+    assert(up_mushroom[0].active);
+
+    const ItemPickupData approval = { ITEM_UP_MUSHROOM, 0, 1, 1 };
+    ApplyItemPickupConfirmation(approval);
+    ApplyItemPickupConfirmation(approval);
+    assert(!up_mushroom[0].active && g_player.mario.life == clientLife + 1);
+    assert(appliedEffects == 1);
+
+    const ItemSpawnData spawn = { ITEM_UP_MUSHROOM, 0, 0, ITEM_FLAG_MOTION, 600, 100, 1, 0, 30, 30 };
+    ApplyItemSpawn(spawn);
+    assert(!up_mushroom[0].active && up_mushroom[0].motion && up_mushroom[0].vx == 1);
+    const ItemPickupData remoteApproval = { ITEM_UP_MUSHROOM, 0, 2, 1 };
+    ApplyItemPickupConfirmation(remoteApproval);
+    assert(!up_mushroom[0].active && !up_mushroom[0].motion && appliedEffects == 1);
 }
 
 int main()
@@ -106,4 +194,6 @@ int main()
     mushroom[0].x = (std::numeric_limits<int>::max)(); check(1, true);
     g_allPlayers[1].mario.x = (std::numeric_limits<int>::min)(); check(1, false);
     printf("Item pickup validation: %d checks passed\n", checks);
+    TestConfirmation();
+    puts("Item pickup confirmation and duplicate tests passed");
 }

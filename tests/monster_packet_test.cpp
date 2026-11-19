@@ -9,6 +9,9 @@ PlayerContext g_allPlayers[3] = {};
 int g_localPlayerIdx = 0;
 GameContext g_game = {};
 bool ApplyRemotePlayerState(int, const PlayerStateData&) { return false; }
+bool ConfirmItemPickup(int, const ItemPickupData&) { return false; }
+void ApplyItemPickupConfirmation(const ItemPickupData&) {}
+void ApplyItemSpawn(const ItemSpawnData&) {}
 
 int main() {
     std::vector<uint8_t> packet;

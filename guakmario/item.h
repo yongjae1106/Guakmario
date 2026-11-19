@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "data.h"
+#include <stdint.h>
 #define MAX_ITEMS 30
 #define MAX_SHOT 10
 
@@ -67,11 +68,6 @@ void SpawnItem_tino(int x, int y);
 void SpawnFireball(int x, int y);
 void SpawnTinoFire(int x, int y);
 
-void HandleMushroomPickup();
-void HandleUpMushroomPickup();
-void HandleStarPickup();
-void HandleFlowerPickup();
-void HandleTinoPickup();
 void HandleFireballHit();
 void HandleTinoFireHit();
 
@@ -84,8 +80,13 @@ void UpdateAllItems();
 void UpdateAllShots();
 void HandleItemCollisions();
 void HandleShotCollisions();
+enum ItemType : uint8_t;
+struct ItemSpawnData;
 struct ItemPickupData;
-// B-3 (11/17): main-thread, host-side validation only; no pickup is committed.
-// senderPlayerId must come from the connection, NOT the packet's claimed ID.
-// true means eligible now; revalidate when confirming (11/18-19).
+// Call on the game thread. For remote requests, use the connection's player ID.
 bool HandleItemPickupRequest(int senderPlayerId, const ItemPickupData& request);
+bool ConfirmItemPickup(int senderPlayerId, const ItemPickupData& request);
+void ApplyItemPickupConfirmation(const ItemPickupData& approved);
+void ApplyItemSpawn(const ItemSpawnData& spawn);
+void HandleMultiplayerItemCollisions();
+void ApplyItemPickupEffect(ItemType type);

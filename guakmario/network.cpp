@@ -2,6 +2,7 @@
 #include "config.h"
 #include "player.h"
 #include "game.h"
+#include "item.h"
 #include <queue>
 
 // ============================================================
@@ -16,10 +17,16 @@ int        g_sharedLives = 3;
 //  수신 큐 / 크리티컬 섹션 (A-4, A-5에서 사용)
 // ============================================================
 
-static std::queue<std::vector<uint8_t>> g_recvQueue;
-static CRITICAL_SECTION                 g_recvCS;
-static bool                             g_recvCSInit = false;
-static std::vector<HANDLE>              g_recvThreads;  // 메인 스레드에서만 접근
+struct ReceivedPacket {
+    std::vector<uint8_t> bytes;
+    int senderPlayerId;
+    bool disconnected;
+};
+
+static std::queue<ReceivedPacket> g_recvQueue;
+static CRITICAL_SECTION          g_recvCS;
+static bool                      g_recvCSInit = false;
+static std::vector<HANDLE>       g_recvThreads;  // 메인 스레드에서만 접근
 
 struct RecvThreadParam {
     SOCKET sock;
@@ -29,6 +36,8 @@ struct RecvThreadParam {
 static bool RecvFull(SOCKET sock, std::vector<uint8_t>& out);
 static DWORD WINAPI RecvThread(LPVOID param);
 static void SendFull(SOCKET sock, const void* data, int size);
+static void RecvQueuePush(ReceivedPacket packet);
+static bool RecvQueuePop(ReceivedPacket& out);
 
 // 소켓 하나를 맡을 RecvThread 생성 (메인 스레드에서만 호출)
 static bool NetStartRecvThread(SOCKET sock, int playerId)
@@ -74,7 +83,7 @@ static void NetCloseResources()
     g_recvThreads.clear();
 
     // 스레드가 모두 끝난 뒤라 잠금 불필요 — 이전 방의 패킷 제거
-    std::queue<std::vector<uint8_t>>().swap(g_recvQueue);
+    std::queue<ReceivedPacket>().swap(g_recvQueue);
 }
 
 
@@ -338,11 +347,14 @@ void NetBroadcastGameStart()
 
 void NetPollPackets()
 {
-    std::vector<uint8_t> pkt;
-    while (RecvQueuePop(pkt))
+    ReceivedPacket received;
+    while (RecvQueuePop(received))
     {
+        const auto& pkt = received.bytes;
         if (pkt.size() < sizeof(PacketHeader)) continue;
         const auto* hdr = (const PacketHeader*)pkt.data();
+        const int senderPlayerId = received.senderPlayerId;
+        const bool fromHost = !g_net.isHost && senderPlayerId == 0 && hdr->playerId == 0;
 
         switch (hdr->type)
         {
@@ -351,6 +363,10 @@ void NetPollPackets()
             if (pkt.size() < sizeof(PacketHeader) + sizeof(PlayerStateData)) break;
             int id = hdr->playerId;
             if (id < 0 || id > 2 || id == g_net.myPlayerId) break;
+            if (g_net.isHost && id != senderPlayerId) break;
+
+            const auto* ps = (const PlayerStateData*)(pkt.data() + sizeof(PacketHeader));
+            if (!ApplyRemotePlayerState(id, *ps)) break;
 
             // 호스트: 보낸 사람을 제외한 나머지 클라이언트에게 중계 (헤더의 playerId 유지)
             if (g_net.isHost)
@@ -359,8 +375,32 @@ void NetPollPackets()
                     if (target != id) SendToOne(target, pkt.data(), (int)pkt.size());
             }
 
-            const auto* ps = (const PlayerStateData*)(pkt.data() + sizeof(PacketHeader));
-            ApplyRemotePlayerState(id, *ps);
+            break;
+        }
+        case PKT_ITEM_PICKUP:
+        {
+            if (pkt.size() != sizeof(PacketHeader) + sizeof(ItemPickupData) || hdr->size != pkt.size()) break;
+            ItemPickupData pickup;
+            memcpy(&pickup, pkt.data() + sizeof(PacketHeader), sizeof(pickup));
+            if (g_net.isHost)
+            {
+                if (senderPlayerId >= 1 && hdr->playerId == senderPlayerId &&
+                    pickup.pickerId == senderPlayerId && pickup.approved == 0)
+                    ConfirmItemPickup(senderPlayerId, pickup);
+            }
+            else if (fromHost && pickup.approved == 1)
+            {
+                ApplyItemPickupConfirmation(pickup);
+            }
+            break;
+        }
+        case PKT_ITEM_SPAWN:
+        {
+            if (!fromHost || pkt.size() != sizeof(PacketHeader) + sizeof(ItemSpawnData) ||
+                hdr->size != pkt.size()) break;
+            ItemSpawnData spawn;
+            memcpy(&spawn, pkt.data() + sizeof(PacketHeader), sizeof(spawn));
+            ApplyItemSpawn(spawn);
             break;
         }
         case PKT_GAME_EVENT:
@@ -371,7 +411,8 @@ void NetPollPackets()
             {
             case EVT_DISCONNECT:
             {
-                int pid = evt->param;
+                if (!received.disconnected) break;
+                int pid = senderPlayerId;
                 if (g_net.isHost)
                 {
                     // 클라이언트 이탈: 슬롯 비우고 인원 감소
@@ -408,9 +449,10 @@ void NetPollPackets()
                 g_sharedLives = evt->param;
                 break;
             case EVT_GAME_START:
-                // gameStart를 바로 켜면 isMulti·LoadStage 없이 게임 루프로 넘어가므로 신호만 남긴다
+                if (!fromHost || g_game.gameStart || g_net.myPlayerId < 1) break;
+                // 로비에서 스테이지를 준비한 뒤 다음 게임 패킷을 처리한다.
                 g_game.multiStartPending = true;
-                break;
+                return;
             case EVT_GAME_OVER:
                 g_game.gameState = GAME_OVER;
                 break;
@@ -534,14 +576,14 @@ void SendToOne(int playerId, const void* data, int size)
 //  A-4 — 수신 큐 (11/5)
 // ============================================================
 
-void RecvQueuePush(std::vector<uint8_t> pkt)
+static void RecvQueuePush(ReceivedPacket packet)
 {
     EnterCriticalSection(&g_recvCS);
-    g_recvQueue.push(std::move(pkt));
+    g_recvQueue.push(std::move(packet));
     LeaveCriticalSection(&g_recvCS);
 }
 
-bool RecvQueuePop(std::vector<uint8_t>& out)
+static bool RecvQueuePop(ReceivedPacket& out)
 {
     EnterCriticalSection(&g_recvCS);
     if (g_recvQueue.empty())
@@ -599,7 +641,7 @@ static DWORD WINAPI RecvThread(LPVOID param)
     std::vector<uint8_t> pkt;
     while (RecvFull(sock, pkt))
     {
-        RecvQueuePush(pkt);
+        RecvQueuePush({ std::move(pkt), playerId, false });
     }
 
     // 연결 끊김 → EVT_DISCONNECT 큐 삽입
@@ -612,7 +654,7 @@ static DWORD WINAPI RecvThread(LPVOID param)
     evt->eventType   = EVT_DISCONNECT;
     evt->param       = (uint8_t)playerId;
 
-    RecvQueuePush(std::vector<uint8_t>(buf, buf + sizeof(buf)));
+    RecvQueuePush({ std::vector<uint8_t>(buf, buf + sizeof(buf)), playerId, true });
 
     return 0;
 }
