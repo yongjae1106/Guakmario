@@ -65,7 +65,7 @@ enum GameEventType : uint8_t {
     EVT_LIVES_CHANGED = 4,  // 공용 목숨 변경 (호스트 → 전체), param = 새 목숨 수
     EVT_DISCONNECT    = 5,  // 플레이어 접속 끊김, param = playerId
     EVT_PLAYER_ARRIVED = 6, // 플레이어 클리어 지점 도착 (클라이언트 → 호스트)
-    EVT_PLAYER_DIED    = 7, // 플레이어 사망 (클라이언트 → 호스트 → 전체), param = playerId
+    EVT_PLAYER_DIED    = 7, // 플레이어 사망 (클라이언트 → 호스트), param = playerId
     EVT_PLAYER_REVIVED = 8, // 플레이어 부활 (호스트 → 전체), param = playerId
     EVT_STAGE_LOAD     = 9, // 스테이지 로드 (호스트 → 전체), param = 스테이지 번호
     EVT_LOBBY_STATUS   = 10, // 로비 접속 현황 (호스트 → 전체), param = 접속 비트 (bit0 = P1 호스트, bit1 = P2, bit2 = P3)
@@ -295,6 +295,7 @@ void NetPollPackets();
 void NetFlushSend();
 
 // 송신
+void NetSendGameEvent(GameEventType type, uint8_t param); // 호스트 → 전체 / 클라이언트 → 호스트
 void SendToAll(const void* data, int size);             // 호스트 전용
 void SendToHost(const void* data, int size);            // 클라이언트 전용
 void SendToOne(int playerId, const void* data, int size); // 특정 플레이어

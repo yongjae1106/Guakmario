@@ -264,20 +264,39 @@ void UpdateDeadMotion()
 
 void dead()
 {
-    g_pBGMBuffer->Stop();
+    const bool online = IsMultiplayerGame();
+    Player& player = g_player.mario;
+    if (online && (player.isDead || g_game.gameState != GAME_RUNNING)) return;
+
+    if (!online && g_pBGMBuffer) g_pBGMBuffer->Stop();
     PlaySoundBuffer(die_Sound);
-    g_game.gameState = GAME_OVER;
-    g_player.mario.isDead = true;
-    g_player.mario.isTransforming = false;
-    g_player.mario.form = FORM_SMALL;
+    player.isDead = true;
+    player.isTransforming = false;
+    player.form = FORM_SMALL;
     g_game.deadStartTime = GetTickCount();
 
-    g_player.mario.life--;
-    g_game.stage_time = STAGE_TIME_LIMIT;
+    if (online)
+    {
+        g_game.multiplayerDeathMotionStarted = false;
+        ReportMultiplayerDeath();
+        return;
+    }
 
+    g_game.stage_time = STAGE_TIME_LIMIT;
+    g_game.gameState = GAME_OVER;
+    --player.life;
 }
 void resurrection()
 {
+    if (IsMultiplayerGame())
+    {
+        if (g_player.mario.star) SetStage_BGM();
+        g_game.cameraX = 0;
+        ResetMario(g_sharedLives, g_player.mario.coin);
+        g_game.multiplayerDeathMotionStarted = false;
+        return;
+    }
+
     ResetItems();
     ResetMonsters();
     LoadStage();
@@ -334,7 +353,7 @@ bool ApplyRemotePlayerState(int playerId, const PlayerStateData& state)
     p.vx = state.vx;
     p.vy = state.vy;
     p.coin = state.coin;
-    p.life = state.life;
+    p.life = IsMultiplayerGame() ? g_sharedLives : state.life;
     p.form = (MarioForm)state.form;
     p.charType = (CharacterType)state.charType;
     p.width = state.width;

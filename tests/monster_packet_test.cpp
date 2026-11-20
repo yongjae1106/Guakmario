@@ -9,6 +9,8 @@ PlayerContext g_allPlayers[3] = {};
 int g_localPlayerIdx = 0;
 GameContext g_game = {};
 bool ApplyRemotePlayerState(int, const PlayerStateData&) { return false; }
+void HandleMultiplayerGameEvent(int, const GameEventData&) {}
+void HandleMultiplayerPlayerState(int, int) {}
 bool ConfirmItemPickup(int, const ItemPickupData&) { return false; }
 void ApplyItemPickupResult(const ItemPickupData&) {}
 void ApplyItemSpawn(const ItemSpawnData&) {}

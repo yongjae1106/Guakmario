@@ -80,6 +80,7 @@ bool ConfirmItemPickup(int senderPlayerId, const ItemPickupData& request)
 
     // Validate and consume on the same game thread before any effects or broadcast.
     FindPickupItem(request.itemType, request.slot)->active = false;
+    if (request.itemType == ITEM_UP_MUSHROOM) AwardMultiplayerLife();
     if (senderPlayerId == g_localPlayerIdx)
         ApplyItemPickupEffect(static_cast<ItemType>(request.itemType));
 

@@ -43,8 +43,7 @@ static void EnterMultiplayerGame()
     // (클라이언트는 ACK로 받은 1 또는 2 — 0으로 덮어쓰지 않기)
     g_localPlayerIdx = g_net.myPlayerId;
     mario_DC = CreateCompatibleDC(g_memDC);
-    LoadStage();
-    g_game.gameStart = true;
+    StartMultiplayerMatch();
 }
 
 // 호스트 START 버튼 — 3인 접속을 확인하고 시작 이벤트를 보낸 뒤 진입한다
@@ -552,21 +551,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             Graphics graphics(g_memDC);
             graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
 
-            // 게임오버
-            if (g_player.mario.gameover)
-            {
-                TCHAR gameover[30] = L"GAME OVER";
-                TextOut(g_memDC, 360, 300, gameover, lstrlen(gameover));    // 게임오버 문구
-
-                EndPaint(hWnd, &ps);
-                break;
-            }
             RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
             FillRect(g_memDC, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));  // 배경 클리어
 
             Draw();
 
             Draw_information();
+            if (g_player.mario.gameover)
+            {
+                const TCHAR gameover[] = L"GAME OVER";
+                TextOut(g_memDC, 360, 355, gameover, lstrlen(gameover));
+            }
 
             BitBlt(hdc, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, g_memDC, 0, 0, SRCCOPY);
 

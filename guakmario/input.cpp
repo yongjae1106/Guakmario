@@ -6,9 +6,15 @@
 #include "sound.h"
 #include "config.h"
 
+static bool IsMultiplayerInputBlocked()
+{
+    return IsMultiplayerGame() && (g_game.gameState != GAME_RUNNING || g_player.mario.isDead);
+}
+
 void HandleGameKeyDown(WPARAM wParam)
 {
     if (g_game.gameState == GAME_OVER || g_game.gameState == GAME_VICTORY || g_game.gameState == GAME_CLEAR) return;
+    if (IsMultiplayerInputBlocked()) return;
     g_player.keyState[wParam] = true;
     if (g_player.mario.isTransforming) return;
     g_player.mario.isWalking = true;
@@ -47,7 +53,7 @@ void HandleGameKeyDown(WPARAM wParam)
 void HandleGameKeyUp(WPARAM wParam)
 {
     g_player.keyState[wParam] = false;
-    if (g_player.mario.isTransforming) return;
+    if (g_player.mario.isTransforming || IsMultiplayerInputBlocked()) return;
     switch (wParam)
     {
     case VK_SPACE:
@@ -77,7 +83,7 @@ void HandleGameKeyUp(WPARAM wParam)
 
 void HandleGameChar(WPARAM wParam)
 {
-    if (g_player.mario.isTransforming) return;
+    if (g_player.mario.isTransforming || IsMultiplayerInputBlocked()) return;
     switch (wParam)
     {
     case ('z'):

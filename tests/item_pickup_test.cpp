@@ -15,7 +15,7 @@ int g_localPlayerIdx = 0;
 Item mushroom[MAX_ITEMS], up_mushroom[MAX_ITEMS], star[MAX_ITEMS];
 Item flower[MAX_ITEMS], tino[MAX_ITEMS];
 
-static int broadcasts, requests, appliedEffects, statesSent;
+static int broadcasts, requests, appliedEffects, statesSent, sharedLifeAwards;
 static PacketHeader lastHeader;
 static ItemPickupData lastPickup;
 
@@ -42,15 +42,17 @@ void SendToHost(const void* data, int size)
 
 void NetFlushSend() { ++statesSent; }
 
-void ApplyItemPickupEffect(ItemType type)
+void AwardMultiplayerLife()
 {
-    ++appliedEffects;
-    if (type == ITEM_UP_MUSHROOM) ++g_player.mario.life;
+    assert(g_net.isHost);
+    ++sharedLifeAwards;
 }
+
+void ApplyItemPickupEffect(ItemType) { ++appliedEffects; }
 
 static void Reset()
 {
-    broadcasts = requests = appliedEffects = statesSent = 0;
+    broadcasts = requests = appliedEffects = statesSent = sharedLifeAwards = 0;
     g_game = GameContext{};
     g_game.isMulti = true;
     g_game.gameStart = true;
@@ -78,25 +80,26 @@ static void TestConfirmation()
     Reset();
     ItemPickupData request = { ITEM_UP_MUSHROOM, 0, 1, 0 };
     assert(!ConfirmItemPickup(2, request));
-    assert(up_mushroom[0].active && broadcasts == 0);
+    assert(up_mushroom[0].active && broadcasts == 0 && sharedLifeAwards == 0);
 
     assert(ConfirmItemPickup(1, request));
-    assert(!up_mushroom[0].active && broadcasts == 1 && appliedEffects == 0);
+    assert(!up_mushroom[0].active && broadcasts == 1 && appliedEffects == 0 && sharedLifeAwards == 1);
     assert(lastHeader.playerId == 0 && lastPickup.approved == 1);
     assert(lastPickup.pickerId == 1 && lastPickup.slot == 0 && lastPickup.itemType == ITEM_UP_MUSHROOM);
     assert(!ConfirmItemPickup(1, request));
     request.pickerId = 2;
     assert(!ConfirmItemPickup(2, request));
-    assert(broadcasts == 1);
+    assert(broadcasts == 1 && sharedLifeAwards == 1);
 
     Reset();
     const int hostLife = g_player.mario.life;
     HandleMultiplayerItemCollisions();
-    assert(!mushroom[0].active && broadcasts == 1 && appliedEffects == 1);
+    assert(!mushroom[0].active && broadcasts == 1 && appliedEffects == 1 && sharedLifeAwards == 0);
     assert(lastPickup.pickerId == 0 && lastPickup.approved == 1);
     request.pickerId = 0;
     assert(ConfirmItemPickup(0, request));
-    assert(!ConfirmItemPickup(0, request) && g_player.mario.life == hostLife + 1);
+    assert(!ConfirmItemPickup(0, request) && sharedLifeAwards == 1);
+    assert(g_player.mario.life == hostLife && appliedEffects == 2);
 
     Reset();
     g_net.isHost = false;
@@ -122,8 +125,8 @@ static void TestConfirmation()
     const ItemPickupData approval = { ITEM_UP_MUSHROOM, 0, 1, 1 };
     ApplyItemPickupResult(approval);
     ApplyItemPickupResult(approval);
-    assert(!g_net.waitingForItemPickup && !up_mushroom[0].active && g_player.mario.life == clientLife + 1);
-    assert(appliedEffects == 1);
+    assert(!g_net.waitingForItemPickup && !up_mushroom[0].active && g_player.mario.life == clientLife);
+    assert(appliedEffects == 1 && sharedLifeAwards == 0);
 
     const ItemSpawnData spawn = { ITEM_UP_MUSHROOM, 0, 0, ITEM_FLAG_MOTION, 600, 100, 1, 0, 30, 30 };
     ApplyItemSpawn(spawn);

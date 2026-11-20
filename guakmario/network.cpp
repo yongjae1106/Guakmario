@@ -9,8 +9,9 @@
 //  전역 변수 정의
 // ============================================================
 
+static constexpr int INITIAL_SHARED_LIVES = 3;
 NetContext g_net       = {};
-int        g_sharedLives = 3;
+int        g_sharedLives = INITIAL_SHARED_LIVES;
 
 
 // ============================================================
@@ -132,6 +133,7 @@ bool NetInit(bool isHost, const char* hostIp)
     g_net.clientSockets[0] = INVALID_SOCKET;
     g_net.clientSockets[1] = INVALID_SOCKET;
     g_net.hostSocket      = INVALID_SOCKET;
+    if (isHost) g_sharedLives = INITIAL_SHARED_LIVES;
 
     // 수신 큐 크리티컬 섹션 초기화 (최초 1회)
     if (!g_recvCSInit)
@@ -346,6 +348,24 @@ void NetBroadcastGameStart()
     g_net.listenSock = INVALID_SOCKET;
 }
 
+void NetSendGameEvent(GameEventType type, uint8_t param)
+{
+    if (g_net.myPlayerId < 0 || g_net.myPlayerId > 2) return;
+
+    struct GameEventPacket {
+        PacketHeader header;
+        GameEventData event;
+    };
+    static_assert(sizeof(GameEventPacket) == 6, "Game event wire size changed");
+
+    const GameEventPacket packet = {
+        { sizeof(GameEventPacket), PKT_GAME_EVENT, static_cast<uint8_t>(g_net.myPlayerId) },
+        { type, param }
+    };
+    if (g_net.isHost) SendToAll(&packet, sizeof(packet));
+    else SendToHost(&packet, sizeof(packet));
+}
+
 void NetPollPackets()
 {
     ReceivedPacket received;
@@ -361,17 +381,19 @@ void NetPollPackets()
         {
         case PKT_PLAYER_STATE:
         {
-            if (pkt.size() < sizeof(PacketHeader) + sizeof(PlayerStateData)) break;
+            if (pkt.size() != sizeof(PacketHeader) + sizeof(PlayerStateData) || hdr->size != pkt.size()) break;
             int id = hdr->playerId;
             if (id < 0 || id > 2 || id == g_net.myPlayerId) break;
             if (g_net.isHost && id != senderPlayerId) break;
 
             const auto* ps = (const PlayerStateData*)(pkt.data() + sizeof(PacketHeader));
+            const int previousCoins = g_allPlayers[id].mario.coin;
             if (!ApplyRemotePlayerState(id, *ps)) break;
 
             // 호스트: 보낸 사람을 제외한 나머지 클라이언트에게 중계 (헤더의 playerId 유지)
             if (g_net.isHost)
             {
+                HandleMultiplayerPlayerState(id, previousCoins);
                 for (int target = 1; target <= 2; target++)
                     if (target != id) SendToOne(target, pkt.data(), (int)pkt.size());
             }
@@ -412,7 +434,7 @@ void NetPollPackets()
         }
         case PKT_GAME_EVENT:
         {
-            if (pkt.size() < sizeof(PacketHeader) + sizeof(GameEventData)) break;
+            if (pkt.size() != sizeof(PacketHeader) + sizeof(GameEventData) || hdr->size != pkt.size()) break;
             const auto* evt = (const GameEventData*)(pkt.data() + sizeof(PacketHeader));
             switch (evt->eventType)
             {
@@ -452,19 +474,23 @@ void NetPollPackets()
                     if (g_net.lobbyMask & (1 << i)) g_net.connectedCount++;
                 break;
             }
+            case EVT_PLAYER_DIED:
+                if (g_net.isHost && senderPlayerId >= 1 && senderPlayerId <= 2 &&
+                    hdr->playerId == senderPlayerId && evt->param == senderPlayerId)
+                    HandleMultiplayerGameEvent(senderPlayerId, *evt);
+                break;
             case EVT_LIVES_CHANGED:
-                g_sharedLives = evt->param;
+            case EVT_GAME_OVER:
+            case EVT_PLAYER_REVIVED:
+                if (fromHost) HandleMultiplayerGameEvent(senderPlayerId, *evt);
                 break;
             case EVT_GAME_START:
                 if (!fromHost || g_game.gameStart || g_net.myPlayerId < 1) break;
                 // 로비에서 스테이지를 준비한 뒤 다음 게임 패킷을 처리한다.
                 g_game.multiStartPending = true;
                 return;
-            case EVT_GAME_OVER:
-                g_game.gameState = GAME_OVER;
-                break;
             case EVT_STAGE_CLEAR:
-                g_game.gameState = GAME_CLEAR;
+                if (fromHost) g_game.gameState = GAME_CLEAR;
                 break;
             default:
                 break;

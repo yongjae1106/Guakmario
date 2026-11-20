@@ -21,7 +21,7 @@ void ApplyItemPickupEffect(ItemType type)
     Player& player = g_player.mario;
     if (type == ITEM_UP_MUSHROOM) {
         PlaySoundBuffer(up_Sound);
-        ++player.life;
+        if (!IsMultiplayerGame()) ++player.life;
         return;
     }
     if (type == ITEM_STAR) {
