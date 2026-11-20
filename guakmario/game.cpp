@@ -39,6 +39,26 @@ bool IsMultiplayerHostPlaying()
         g_game.gameState == GAME_RUNNING;
 }
 
+bool IsCastleStageRunning()
+{
+    return g_game.stage == CASTLE_STAGE && g_game.gameState == GAME_RUNNING;
+}
+
+void ApplyCastleGateOpened()
+{
+    OpenCastleGate();
+    FinishBowserDefeat();
+    for (Fireball& fireball : g_monsters.fireballs) fireball.active = false;
+}
+
+void ConfirmCastleGateOpened()
+{
+    if (!IsCastleStageRunning() || IsCastleGateOpen()) return;
+
+    ApplyCastleGateOpened();
+    NetSendGameEvent(EVT_CASTLE_GATE_OPENED, CASTLE_STAGE);
+}
+
 void ApplyMultiplayerGameOver()
 {
     if (g_game.gameState == GAME_OVER) return;
@@ -252,6 +272,20 @@ void ReportMultiplayerDeath()
     }
 }
 
+void ReportBowserDefeat()
+{
+    if (g_game.stage != CASTLE_STAGE) return;
+    if (!IsMultiplayerGame())
+    {
+        OpenCastleGate();
+        return;
+    }
+    if (!g_game.gameStart || !IsCastleStageRunning()) return;
+
+    if (g_net.isHost) ConfirmCastleGateOpened();
+    else NetSendGameEvent(EVT_BOWSER_DEFEAT_REPORT, CASTLE_STAGE);
+}
+
 void AwardMultiplayerLife()
 {
     if (!IsMultiplayerHostPlaying() || g_sharedLives <= 0 || g_sharedLives >= UINT8_MAX) return;
@@ -281,12 +315,18 @@ void HandleMultiplayerGameEvent(int senderPlayerId, const GameEventData& event)
             RecordMultiplayerDeath(senderPlayerId);
         else if (event.eventType == EVT_PLAYER_ARRIVED && event.param == senderPlayerId)
             RecordMultiplayerArrival(senderPlayerId);
+        else if (event.eventType == EVT_BOWSER_DEFEAT_REPORT && event.param == CASTLE_STAGE &&
+            senderPlayerId >= 1 && senderPlayerId <= 2)
+            ConfirmCastleGateOpened();
         return;
     }
 
     if (senderPlayerId != 0) return;
     switch (event.eventType)
     {
+    case EVT_CASTLE_GATE_OPENED:
+        if (IsCastleStageRunning() && event.param == CASTLE_STAGE) ApplyCastleGateOpened();
+        break;
     case EVT_STAGE_CLEAR:
         if (g_game.gameState == GAME_RUNNING && g_game.multiplayerArrived && event.param == g_game.stage)
             BeginMultiplayerStageClear();

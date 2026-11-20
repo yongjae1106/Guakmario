@@ -10,6 +10,13 @@ void InitMap();
 void InitMap2();
 void InitMap3();
 
+constexpr int CASTLE_STAGE = 3;
+constexpr int CASTLE_GATE_COLUMN = 138;
+constexpr int CASTLE_GATE_TOP_ROW = 5;
+constexpr int CASTLE_GATE_BOTTOM_ROW = 8;
+bool IsCastleGateOpen();
+void OpenCastleGate();
+
 #define MAX_HAZARDS 100
 struct Hazard
 {

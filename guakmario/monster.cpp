@@ -603,10 +603,38 @@ void HandleMarioAngelTurtleCollision()
     }
 }
 
-//g_monsters.bowser
+void FinishBowserDefeat()
+{
+    Bowser& bowser = g_monsters.bowser;
+    if (bowser.isAlive) PlaySoundBuffer(bowserdead_Sound);
+    bowser.isAlive = false;
+    bowser.isDead = true;
+    bowser.isFiring = false;
+}
+
 void UpdateBowser() 
 {
-    if (!g_monsters.bowser.isAlive) return;
+    Bowser& bowser = g_monsters.bowser;
+    if (!bowser.isAlive) return;
+
+    if (!bowser.isFalling && bowser.hp <= 0)
+    {
+        PlaySoundBuffer(bowserfalls_Sound);
+        bowser.isDead = true;
+        bowser.isFalling = true;
+    }
+
+    if (bowser.isFalling)
+    {
+        if (bowser.vy < 10) ++bowser.vy;
+        bowser.y += bowser.vy;
+        if (bowser.y > SCREEN_HEIGHT)
+        {
+            FinishBowserDefeat();
+            ReportBowserDefeat();
+        }
+        return;
+    }
 
     // === 이동 ===
     int moveSpeed = 2;
@@ -638,7 +666,8 @@ void UpdateBowser()
     // === 바닥 충돌 ===
     int tileX = (g_monsters.bowser.x + g_monsters.bowser.width / 2) / TILE_SIZE;
     int tileY = (g_monsters.bowser.y + g_monsters.bowser.height) / TILE_SIZE;
-    if (currentMap[tileY][tileX] != 0 && !g_monsters.bowser.isFalling) 
+    if (tileY >= 0 && tileY < MAP_HEIGHT && tileX >= 0 && tileX < MAP_WIDTH &&
+        currentMap[tileY][tileX] != TILE_EMPTY)
     {
         g_monsters.bowser.y = tileY * TILE_SIZE - g_monsters.bowser.height;
         g_monsters.bowser.vy = 0;
@@ -681,28 +710,6 @@ void UpdateBowser()
         if (g_monsters.bowser.fireDuration <= 0)
             g_monsters.bowser.isFiring = false;
     }
-    if (g_monsters.bowser.hp <= 0)
-    {
-        PlaySoundBuffer(bowserfalls_Sound);
-        g_monsters.bowser.isFalling = true;
-    }
-    // 화면 밖으로 나가면 비활성화
-    if (g_monsters.bowser.y > SCREEN_HEIGHT)
-    {
-        PlaySoundBuffer(bowserdead_Sound);
-        g_monsters.bowser.isAlive = false;
-        for (int i = 137; i < MAP_WIDTH; i++)
-        {
-            for (int j = 0; j < MAP_HEIGHT; j++)
-            {
-                if (currentMap[j][i] == TILE_KOOPA_BLOCK)
-                {
-                    currentMap[j][i] = 0;
-                }
-            }
-        }
-    }
-
 }
 void UpdateFireballs() 
 {

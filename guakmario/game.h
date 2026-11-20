@@ -50,6 +50,7 @@ struct GameEventData;
 bool IsMultiplayerGame();
 void StartMultiplayerMatch();
 void ReportMultiplayerDeath();
+void ReportBowserDefeat();
 void AwardMultiplayerLife();
 void HandleMultiplayerGameEvent(int senderPlayerId, const GameEventData& event);
 void HandleMultiplayerPlayerState(int playerId, int previousCoins);

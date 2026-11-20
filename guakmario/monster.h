@@ -110,6 +110,7 @@ void UpdateAngelTurtles();
 void HandleMarioAngelTurtleCollision();
 
 void UpdateBowser();
+void FinishBowserDefeat();
 void UpdateFireballs();
 void HandleMarioBowserCollision();
 void HandleMarioFireballCollision();
