@@ -233,13 +233,18 @@ void WalkAfterMultiplayerClear()
     UpdatePlayerTransformation(player, GetTickCount());
     const int previousWorldX = player.x + static_cast<int>(g_game.cameraX);
     player.direction = DIR_RIGHT;
-    if (g_game.gameState == GAME_CLEAR && previousWorldX + player.width >= CASTLE_PRINCESS_COLUMN * TILE_SIZE)
-    {
-        player.isWalking = false;
-        player.vx = 0;
-        return;
-    }
     player.vx = 1;
+    if (g_game.gameState == GAME_CLEAR)
+    {
+        const int remaining = CASTLE_PRINCESS_COLUMN * TILE_SIZE - previousWorldX - player.width;
+        if (remaining <= 0)
+        {
+            player.isWalking = false;
+            player.vx = 0;
+            return;
+        }
+        player.vx = remaining < PLAYER_WALK_SPEED ? remaining : PLAYER_WALK_SPEED;
+    }
     UpdatePlayer();
     player.isWalking = player.x + static_cast<int>(g_game.cameraX) > previousWorldX;
 }
