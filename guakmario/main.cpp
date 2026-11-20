@@ -407,8 +407,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case TIMER_WALK:
             {
-                int _wcount = g_game.isRenderTest ? 3 : 1;
-                for (int _wi = 0; _wi < _wcount; _wi++)
+                // 렌더 테스트는 3명 모두, 그 외에는 로컬 플레이어 슬롯만 갱신
+                // (원격 플레이어의 walk_motion은 패킷으로 받음)
+                const int _wbegin = g_game.isRenderTest ? 0 : g_localPlayerIdx;
+                const int _wend   = g_game.isRenderTest ? 3 : g_localPlayerIdx + 1;
+                for (int _wi = _wbegin; _wi < _wend; _wi++)
                 {
                     Player& _wp = g_allPlayers[_wi].mario;
                     if (_wp.isWalking)
