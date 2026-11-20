@@ -193,15 +193,7 @@ void TickTimer()
 
 void ResetMonsters()
 {
-    for (int i = 0; i < MAX_MONSTERS; i++)
-    {
-        g_monsters.monsters[i].active = false;
-    }
-    for (int i = 0; i < MAX_TURTLES; i++)
-    {
-        g_monsters.turtles[i].active = false;
-        g_monsters.angelTurtles[i].isAlive = false;
-    }
+    g_monsters = MonsterState{};
 }
 void ResetItems()
 {
