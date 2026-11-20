@@ -438,7 +438,7 @@ void HandleMarioTurtleCollision()
 {
     for (int i = 0; i < g_monsters.turtleCount && !g_player.mario.isTransforming; i++)
     {
-        if (!g_monsters.turtles[i].isAlive) continue;
+        if (!g_monsters.turtles[i].isAlive || g_monsters.turtles[i].isDead) continue;
 
         int marioLeft = g_player.mario.x;
         int marioRight = g_player.mario.x + g_player.mario.width;
@@ -566,7 +566,7 @@ void HandleMarioAngelTurtleCollision()
 {
     for (int i = 0; i < g_monsters.angelTurtleCount && !g_player.mario.isTransforming; i++)
     {
-        if (!g_monsters.angelTurtles[i].isAlive) continue;
+        if (!g_monsters.angelTurtles[i].isAlive || g_monsters.angelTurtles[i].isDead) continue;
 
         int marioLeft = g_player.mario.x;
         int marioRight = g_player.mario.x + g_player.mario.width;
@@ -771,7 +771,7 @@ void HandleMarioFireballCollision()
 
 void damage_mario()
 {
-    if (g_player.mario.god || g_player.mario.star || g_player.mario.isTransforming) return;
+    if (g_player.mario.isDead || g_player.mario.god || g_player.mario.star || g_player.mario.isTransforming) return;
 
     if (g_player.mario.form != FORM_SMALL)
     {
