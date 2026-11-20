@@ -5,7 +5,7 @@
 #include "item.h"
 #include "sound.h"
 
-constexpr int STAGE3_CLEAR_COLUMN = 139;
+constexpr int STAGE3_CLEAR_COLUMN = CASTLE_EXIT_COLUMN - 1;
 
 bool IsPlayerAtStageGoal(int playerId)
 {
@@ -13,10 +13,13 @@ bool IsPlayerAtStageGoal(int playerId)
 
     const Player& player = g_allPlayers[playerId].mario;
     const int worldX = player.x + (playerId == g_localPlayerIdx ? static_cast<int>(g_game.cameraX) : 0);
-    if (g_game.stage == 3)
+    if (g_game.stage == CASTLE_STAGE)
     {
-        return IsColliding(worldX, player.y, player.width, player.height,
-            STAGE3_CLEAR_COLUMN * TILE_SIZE, 0, TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
+        // 캐릭터가 성벽 터널을 완전히 빠져나온 위치에서 도착으로 판정한다.
+        return IsCastleGateOpen() && worldX >= CASTLE_EXIT_COLUMN * TILE_SIZE &&
+            worldX < (CASTLE_EXIT_COLUMN + 1) * TILE_SIZE &&
+            player.y < CASTLE_GATE_BOTTOM_ROW * TILE_SIZE &&
+            player.y + player.height > CASTLE_GATE_TOP_ROW * TILE_SIZE;
     }
     if (g_game.stage != 1 && g_game.stage != 2) return false;
 

@@ -178,7 +178,7 @@ void LoadMultiplayerStage(int stage)
 void BeginMultiplayerStageClear()
 {
     if (g_pBGMBuffer) g_pBGMBuffer->Stop();
-    if (g_game.stage == 3)
+    if (g_game.stage == CASTLE_STAGE)
     {
         g_game.gameState = GAME_CLEAR;
         g_game.clearStart = GetTickCount();
@@ -233,6 +233,12 @@ void WalkAfterMultiplayerClear()
     UpdatePlayerTransformation(player, GetTickCount());
     const int previousWorldX = player.x + static_cast<int>(g_game.cameraX);
     player.direction = DIR_RIGHT;
+    if (g_game.gameState == GAME_CLEAR && previousWorldX + player.width >= CASTLE_PRINCESS_COLUMN * TILE_SIZE)
+    {
+        player.isWalking = false;
+        player.vx = 0;
+        return;
+    }
     player.vx = 1;
     UpdatePlayer();
     player.isWalking = player.x + static_cast<int>(g_game.cameraX) > previousWorldX;

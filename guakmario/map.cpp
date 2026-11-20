@@ -673,7 +673,7 @@ void InitMap3()
         map3[y][162] = 15;
         map3[y][163] = 15;
     }
-    map3[8][147] = 999;
+    map3[8][CASTLE_PRINCESS_COLUMN] = TILE_INVISIBLE;
 }
 
 bool IsCastleGateOpen()
