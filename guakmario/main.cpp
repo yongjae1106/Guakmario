@@ -486,6 +486,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         case WM_COMMAND:
         {
+            if (IsMultiplayerGame() && g_game.multiplayerArrived) break;
             switch (LOWORD(wParam))
             {
             case(ID_TRANS_TINO):
@@ -524,17 +525,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             case(ID_STAGE_1):
             {
+                if (IsMultiplayerGame()) break;
                 LoadStage();
                 break;
             }
             case(ID_STAGE_2):
             {
+                if (IsMultiplayerGame()) break;
                 g_game.stage = 2;
                 LoadStage();
                 break;
             }
             case(ID_STAGE_3):
             {
+                if (IsMultiplayerGame()) break;
                 g_game.stage = 3;
                 LoadStage();
                 break;

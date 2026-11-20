@@ -22,6 +22,7 @@ struct GameContext {
     bool  isMulti            = false;  // 멀티플레이어 모드 여부
     bool  isRenderTest       = false;  // 렌더 테스트 모드 (네트워크 없이 3인 렌더 확인)
     bool  multiplayerDeathMotionStarted = false;
+    bool  multiplayerArrived = false;
     bool  showMultiSelect    = false;  // 방 만들기/방 참가 선택 화면
     bool  showMultiScreen    = false;  // 호스트 로비 화면
     bool  showIpInput        = false;  // JOIN: IP 입력 화면

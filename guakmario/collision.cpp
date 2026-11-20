@@ -7,6 +7,32 @@
 
 constexpr int STAGE3_CLEAR_COLUMN = 139;
 
+bool IsPlayerAtStageGoal(int playerId)
+{
+    if (playerId < 0 || playerId >= 3) return false;
+
+    const Player& player = g_allPlayers[playerId].mario;
+    const int worldX = player.x + (playerId == g_localPlayerIdx ? static_cast<int>(g_game.cameraX) : 0);
+    if (g_game.stage == 3)
+    {
+        return IsColliding(worldX, player.y, player.width, player.height,
+            STAGE3_CLEAR_COLUMN * TILE_SIZE, 0, TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
+    }
+    if (g_game.stage != 1 && g_game.stage != 2) return false;
+
+    for (int row = 0; row < MAP_HEIGHT; ++row)
+    {
+        for (int column = 0; column < MAP_WIDTH; ++column)
+        {
+            const int tile = currentMap[row][column];
+            if (tile != TILE_FLAG && tile != TILE_FLAG_TOP) continue;
+            if (IsColliding(worldX, player.y, player.width, player.height,
+                column * TILE_SIZE, row * TILE_SIZE, 10, 30)) return true;
+        }
+    }
+    return false;
+}
+
 void CheckFlagCollision()
 {
     int left = (g_player.mario.x + g_game.cameraX) / TILE_SIZE;

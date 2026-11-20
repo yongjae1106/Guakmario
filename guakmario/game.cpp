@@ -23,6 +23,8 @@ struct RespawnState {
 };
 
 RespawnState respawnStates[3];
+constexpr uint8_t ALL_PLAYERS_ARRIVED = 0x07;
+uint8_t arrivedPlayers = 0;
 
 void ApplySharedLives(int lives)
 {
@@ -116,15 +118,110 @@ void FinishMultiplayerMatch()
     g_game.isMulti = false;
     g_game.multiStartPending = false;
     g_game.gameClearText = false;
+    g_game.multiplayerArrived = false;
     g_game.stage = 1;
     g_localPlayerIdx = 0;
     g_player = {};
 }
 
+void StopLocalPlayerActions()
+{
+    Player& player = g_player.mario;
+    player.vx = 0;
+    player.vy = 0;
+    player.isWalking = false;
+    player.isJumping = false;
+    player.isFlying = false;
+    player.walk_motion = 0;
+    player.fire_motion = false;
+    player.tino_motion = false;
+    player.tino_fire_motion = false;
+    for (bool& pressed : g_player.keyState) pressed = false;
+}
+
+void LoadMultiplayerStage(int stage)
+{
+    arrivedPlayers = 0;
+    for (RespawnState& respawn : respawnStates) respawn = {};
+    g_game.multiplayerArrived = false;
+    g_game.gameClearText = false;
+    g_game.multiplayerDeathMotionStarted = false;
+    g_game.stage = stage;
+    g_game.gameState = GAME_RUNNING;
+    g_net.waitingForItemPickup = false;
+
+    StopLocalPlayerActions();
+    LoadStage();
+    ApplySharedLives(g_sharedLives);
+}
+
+void BeginMultiplayerStageClear()
+{
+    if (g_pBGMBuffer) g_pBGMBuffer->Stop();
+    if (g_game.stage == 3)
+    {
+        g_game.gameState = GAME_CLEAR;
+        g_game.clearStart = GetTickCount();
+        PlaySoundBuffer(world_clear_Sound);
+    }
+    else
+    {
+        g_game.gameState = GAME_VICTORY;
+        g_game.victoryStart = GetTickCount();
+        PlaySoundBuffer(stage_clear_Sound);
+    }
+}
+
+void RecordMultiplayerArrival(int playerId)
+{
+    if (!IsMultiplayerHostPlaying() || g_net.connectedCount != 3 ||
+        playerId < 0 || playerId >= 3) return;
+
+    const uint8_t playerBit = static_cast<uint8_t>(1 << playerId);
+    const Player& player = g_allPlayers[playerId].mario;
+    if ((arrivedPlayers & playerBit) || player.isDead || player.gameover ||
+        player.isTransforming || !IsPlayerAtStageGoal(playerId)) return;
+
+    arrivedPlayers |= playerBit;
+    if (arrivedPlayers == ALL_PLAYERS_ARRIVED)
+    {
+        BeginMultiplayerStageClear();
+        NetSendGameEvent(EVT_STAGE_CLEAR, static_cast<uint8_t>(g_game.stage));
+    }
+}
+
+void WaitAtMultiplayerGoal()
+{
+    const int playerId = g_net.myPlayerId;
+    if (playerId < 0 || playerId >= 3 || !IsPlayerAtStageGoal(playerId)) return;
+
+    g_game.multiplayerArrived = true;
+    StopLocalPlayerActions();
+
+    if (g_net.isHost)
+        RecordMultiplayerArrival(playerId);
+    else
+    {
+        NetFlushSend();
+        NetSendGameEvent(EVT_PLAYER_ARRIVED, static_cast<uint8_t>(playerId));
+    }
+}
+
+void WalkAfterMultiplayerClear()
+{
+    Player& player = g_player.mario;
+    UpdatePlayerTransformation(player, GetTickCount());
+    const int previousWorldX = player.x + static_cast<int>(g_game.cameraX);
+    player.direction = DIR_RIGHT;
+    player.vx = 1;
+    UpdatePlayer();
+    player.isWalking = player.x + static_cast<int>(g_game.cameraX) > previousWorldX;
+}
+
 bool CanUpdateLocalPlayer()
 {
     return !g_player.mario.isTransforming && (!IsMultiplayerGame() ||
-        (g_game.gameState == GAME_RUNNING && !g_player.mario.isDead));
+        (g_game.gameState == GAME_RUNNING && !g_player.mario.isDead && !g_game.multiplayerArrived));
 }
 }
 
@@ -135,14 +232,8 @@ bool IsMultiplayerGame()
 
 void StartMultiplayerMatch()
 {
-    for (RespawnState& respawn : respawnStates) respawn = {};
     for (PlayerContext& player : g_allPlayers) player = {};
-    g_game.stage = 1;
-    g_game.gameState = GAME_RUNNING;
-    g_game.gameClearText = false;
-    g_game.multiplayerDeathMotionStarted = false;
-    LoadStage();
-    ApplySharedLives(g_sharedLives);
+    LoadMultiplayerStage(1);
     g_game.gameStart = true;
 }
 
@@ -188,12 +279,25 @@ void HandleMultiplayerGameEvent(int senderPlayerId, const GameEventData& event)
     {
         if (event.eventType == EVT_PLAYER_DIED && event.param == senderPlayerId)
             RecordMultiplayerDeath(senderPlayerId);
+        else if (event.eventType == EVT_PLAYER_ARRIVED && event.param == senderPlayerId)
+            RecordMultiplayerArrival(senderPlayerId);
         return;
     }
 
     if (senderPlayerId != 0) return;
     switch (event.eventType)
     {
+    case EVT_STAGE_CLEAR:
+        if (g_game.gameState == GAME_RUNNING && g_game.multiplayerArrived && event.param == g_game.stage)
+            BeginMultiplayerStageClear();
+        break;
+    case EVT_STAGE_LOAD:
+        if (g_game.gameState == GAME_VICTORY && event.param == g_game.stage + 1 && event.param <= 3)
+        {
+            LoadMultiplayerStage(event.param);
+            NetSendGameEvent(EVT_STAGE_READY, event.param);
+        }
+        break;
     case EVT_LIVES_CHANGED:
         if (g_game.gameState != GAME_OVER) ApplySharedLives(event.param);
         break;
@@ -243,6 +347,17 @@ static void UpdateGameState()
     else if (g_game.gameState == GAME_VICTORY)
     {
         DWORD now = GetTickCount();
+        if (IsMultiplayerGame())
+        {
+            if (now - g_game.victoryStart < VICTORY_NEXT_STAGE_MS)
+                WalkAfterMultiplayerClear();
+            else if (g_net.isHost)
+            {
+                LoadMultiplayerStage(g_game.stage + 1);
+                NetSendGameEvent(EVT_STAGE_LOAD, static_cast<uint8_t>(g_game.stage));
+            }
+            return;
+        }
         g_player.mario.vx = 1;
         g_player.mario.x += g_player.mario.vx;
         if (now - g_game.victoryStart >= VICTORY_NEXT_STAGE_MS)
@@ -255,6 +370,21 @@ static void UpdateGameState()
     // 최종 승리 모션
     else if (g_game.gameState == GAME_CLEAR)
     {
+        if (IsMultiplayerGame())
+        {
+            const DWORD elapsed = GetTickCount() - g_game.clearStart;
+            if (elapsed >= CLEAR_RESET_MS)
+                FinishMultiplayerMatch();
+            else if (elapsed < CLEAR_WALK_MS)
+                WalkAfterMultiplayerClear();
+            else
+            {
+                g_game.gameClearText = true;
+                g_player.mario.isWalking = false;
+                g_player.mario.vx = 0;
+            }
+            return;
+        }
         if (GetTickCount() - g_game.clearStart >= 0 && GetTickCount() - g_game.clearStart <= CLEAR_WALK_MS)
         {
             g_player.mario.vx = 1;
@@ -366,8 +496,9 @@ static void UpdateGameState()
         UpdateMario_motion();
         if (g_player.mario.tino_motion) TinoAttack();  // 바이트 모션 동안 매 프레임 히트박스 적용
         UpdatePlayer();
+        if (IsMultiplayerGame() && CanUpdateLocalPlayer()) WaitAtMultiplayerGoal();
     }
-    if (IsMultiplayerGame() && g_game.gameState == GAME_OVER) return;
+    if (IsMultiplayerGame() && g_game.gameState != GAME_RUNNING) return;
 
     UpdateAllItems();
     UpdateAllMonsters();
@@ -380,7 +511,7 @@ static void UpdateGameState()
         HandleAllMonsterCollisions();
     }
     HandleShotCollisions();
-    if (CanUpdateLocalPlayer())
+    if (!IsMultiplayerGame() && CanUpdateLocalPlayer())
     {
         CheckFlagCollision();
         if (g_game.stage == 3) CheckClearCollision();
@@ -393,6 +524,11 @@ void UpdateGame()
     if (networkGame)
     {
         NetPollPackets();
+        if (g_net.connectedCount < 3 && (g_game.gameState == GAME_RUNNING || g_game.gameState == GAME_VICTORY))
+        {
+            FinishMultiplayerMatch();
+            return;
+        }
         UpdateMultiplayerRespawns();
     }
 
@@ -404,7 +540,7 @@ void UpdateGame()
 
 void TickTimer()
 {
-    if (IsMultiplayerGame() && g_player.mario.isDead) return;
+    if (IsMultiplayerGame() && (g_player.mario.isDead || g_game.multiplayerArrived)) return;
     g_game.stage_time--;
     if (g_game.stage_time == 0)
     {

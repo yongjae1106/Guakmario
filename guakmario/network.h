@@ -59,16 +59,17 @@ struct GameEventData {
 };
 
 enum GameEventType : uint8_t {
-    EVT_STAGE_CLEAR   = 1,  // 스테이지 클리어 (호스트 → 전체)
+    EVT_STAGE_CLEAR   = 1,  // 세 명 도착 후 자동 걷기 시작 (호스트 → 전체), param = 현재 스테이지
     EVT_GAME_OVER     = 2,  // 게임오버 (호스트 → 전체)
     EVT_GAME_START    = 3,  // 3인 접속 완료 → 게임 시작 (호스트 → 전체)
     EVT_LIVES_CHANGED = 4,  // 공용 목숨 변경 (호스트 → 전체), param = 새 목숨 수
     EVT_DISCONNECT    = 5,  // 플레이어 접속 끊김, param = playerId
-    EVT_PLAYER_ARRIVED = 6, // 플레이어 클리어 지점 도착 (클라이언트 → 호스트)
+    EVT_PLAYER_ARRIVED = 6, // 플레이어 클리어 지점 도착 (클라이언트 → 호스트), param = playerId
     EVT_PLAYER_DIED    = 7, // 플레이어 사망 (클라이언트 → 호스트), param = playerId
     EVT_PLAYER_REVIVED = 8, // 플레이어 부활 (호스트 → 전체), param = playerId
     EVT_STAGE_LOAD     = 9, // 스테이지 로드 (호스트 → 전체), param = 스테이지 번호
     EVT_LOBBY_STATUS   = 10, // 로비 접속 현황 (호스트 → 전체), param = 접속 비트 (bit0 = P1 호스트, bit1 = P2, bit2 = P3)
+    EVT_STAGE_READY    = 11, // 새 스테이지 로드 확인 (클라이언트 → 호스트), param = 스테이지 번호
 };
 
 // 접속 확인 페이로드 (PKT_CONNECT_ACK, 호스트 → 클라이언트)

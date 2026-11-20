@@ -266,7 +266,7 @@ void dead()
 {
     const bool online = IsMultiplayerGame();
     Player& player = g_player.mario;
-    if (online && (player.isDead || g_game.gameState != GAME_RUNNING)) return;
+    if (online && (player.isDead || g_game.gameState != GAME_RUNNING || g_game.multiplayerArrived)) return;
 
     if (!online && g_pBGMBuffer) g_pBGMBuffer->Stop();
     PlaySoundBuffer(die_Sound);

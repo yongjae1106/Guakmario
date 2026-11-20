@@ -8,7 +8,8 @@
 
 static bool IsMultiplayerInputBlocked()
 {
-    return IsMultiplayerGame() && (g_game.gameState != GAME_RUNNING || g_player.mario.isDead);
+    return IsMultiplayerGame() &&
+        (g_game.gameState != GAME_RUNNING || g_player.mario.isDead || g_game.multiplayerArrived);
 }
 
 void HandleGameKeyDown(WPARAM wParam)

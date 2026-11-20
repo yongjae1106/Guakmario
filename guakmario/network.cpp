@@ -12,6 +12,7 @@
 static constexpr int INITIAL_SHARED_LIVES = 3;
 NetContext g_net       = {};
 int        g_sharedLives = INITIAL_SHARED_LIVES;
+static uint8_t g_clientsLoadingStage = 0;
 
 
 // ============================================================
@@ -129,6 +130,7 @@ bool NetInit(bool isHost, const char* hostIp)
     g_net.connectedCount  = isHost ? 1 : 0;    // 호스트 자신 포함
     g_net.lobbyMask       = isHost ? 1 : 0;    // 클라이언트는 EVT_LOBBY_STATUS를 받으면 설정
     g_net.waitingForItemPickup = false;
+    g_clientsLoadingStage = 0;
     g_net.listenSock      = INVALID_SOCKET;
     g_net.clientSockets[0] = INVALID_SOCKET;
     g_net.clientSockets[1] = INVALID_SOCKET;
@@ -362,7 +364,11 @@ void NetSendGameEvent(GameEventType type, uint8_t param)
         { sizeof(GameEventPacket), PKT_GAME_EVENT, static_cast<uint8_t>(g_net.myPlayerId) },
         { type, param }
     };
-    if (g_net.isHost) SendToAll(&packet, sizeof(packet));
+    if (g_net.isHost)
+    {
+        if (type == EVT_STAGE_LOAD) g_clientsLoadingStage = 0x06;
+        SendToAll(&packet, sizeof(packet));
+    }
     else SendToHost(&packet, sizeof(packet));
 }
 
@@ -376,6 +382,21 @@ void NetPollPackets()
         const auto* hdr = (const PacketHeader*)pkt.data();
         const int senderPlayerId = received.senderPlayerId;
         const bool fromHost = !g_net.isHost && senderPlayerId == 0 && hdr->playerId == 0;
+        const bool fromClient = g_net.isHost && senderPlayerId >= 1 && senderPlayerId <= 2 &&
+            hdr->playerId == senderPlayerId;
+
+        // TCP 순서상 로드 확인보다 앞선 패킷은 이전 스테이지에서 보낸 것이다.
+        if (fromClient && !received.disconnected && (g_clientsLoadingStage & (1 << senderPlayerId)))
+        {
+            if (hdr->type == PKT_GAME_EVENT && pkt.size() == sizeof(PacketHeader) + sizeof(GameEventData) &&
+                hdr->size == pkt.size())
+            {
+                const auto* evt = (const GameEventData*)(pkt.data() + sizeof(PacketHeader));
+                if (evt->eventType == EVT_STAGE_READY && evt->param == g_game.stage)
+                    g_clientsLoadingStage &= static_cast<uint8_t>(~(1 << senderPlayerId));
+            }
+            continue;
+        }
 
         switch (hdr->type)
         {
@@ -474,11 +495,13 @@ void NetPollPackets()
                     if (g_net.lobbyMask & (1 << i)) g_net.connectedCount++;
                 break;
             }
+            case EVT_PLAYER_ARRIVED:
             case EVT_PLAYER_DIED:
-                if (g_net.isHost && senderPlayerId >= 1 && senderPlayerId <= 2 &&
-                    hdr->playerId == senderPlayerId && evt->param == senderPlayerId)
+                if (fromClient && evt->param == senderPlayerId)
                     HandleMultiplayerGameEvent(senderPlayerId, *evt);
                 break;
+            case EVT_STAGE_CLEAR:
+            case EVT_STAGE_LOAD:
             case EVT_LIVES_CHANGED:
             case EVT_GAME_OVER:
             case EVT_PLAYER_REVIVED:
@@ -489,9 +512,6 @@ void NetPollPackets()
                 // 로비에서 스테이지를 준비한 뒤 다음 게임 패킷을 처리한다.
                 g_game.multiStartPending = true;
                 return;
-            case EVT_STAGE_CLEAR:
-                if (fromHost) g_game.gameState = GAME_CLEAR;
-                break;
             default:
                 break;
             }
