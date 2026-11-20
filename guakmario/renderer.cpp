@@ -1,4 +1,5 @@
 ﻿#include <tchar.h>
+#include "network.h"  // winsock2.h를 windows.h보다 먼저 포함
 #include "data.h"
 #include "image.h"
 #include "item.h"
@@ -10,6 +11,86 @@
 #include "renderer.h"
 
 using namespace Gdiplus;
+
+void DrawLobbyScreen()
+{
+    Graphics graphics(g_memDC);
+    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    // 로비 이미지의 투명 영역에 이전 화면이나 문구가 남지 않도록 타이틀 배경으로 덮는다.
+    graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    // 클라이언트는 START 버튼이 없으므로 커서를 항상 EXIT에 둔다.
+    const bool cursorOnStart = g_net.isHost && g_game.multi_select == 0;
+    graphics.DrawImage(g_images.title_cursor, cursorOnStart ? 250 : 400, 475, 25, 25);
+
+    // GDI+ 배경과 커서를 그린 뒤 GDI 텍스트를 출력한다.
+    graphics.Flush(FlushIntentionSync);
+    const COLORREF previousColor = SetTextColor(g_memDC, RGB(0, 0, 0));
+    const int previousBkMode = SetBkMode(g_memDC, TRANSPARENT);
+
+    // 접속 인원은 호스트 자신을 포함한 네트워크 상태를 사용한다.
+    TCHAR playerCount[32];
+    _stprintf_s(playerCount, _T("PLAYERS %d / 3"), g_net.connectedCount);
+    const TCHAR* lobbyStatus;
+
+    if (g_net.isHost)
+    {
+        lobbyStatus = g_net.connectedCount == 3
+            ? _T("READY TO START") : _T("WAITING FOR PLAYERS");
+    }
+    else
+    {
+        // 클라이언트는 ACK로 부여된 ID를 기준으로 연결 중과 시작 대기를 구분한다.
+        lobbyStatus = g_net.myPlayerId >= 1 && g_net.myPlayerId <= 2
+            ? _T("WAITING FOR HOST...") : _T("CONNECTING TO HOST...");
+    }
+
+    // 호스트 IP — 호스트는 자기 IP, 클라이언트는 입력한 IP
+    TCHAR hostIp[32];
+    _stprintf_s(hostIp, _T("%S"), g_net.isHost ? g_net.localIp : g_game.ipInputBuf);
+    TextOut(g_memDC, 230, 237, _T("PLAYER 1 (HOST)"), 15);
+    TextOut(g_memDC, 230, 262, hostIp, lstrlen(hostIp));
+
+    // PLAYER 2 · 3 접속 현황 — 클라이언트도 호스트가 보낸 EVT_LOBBY_STATUS로 같은 화면을 본다.
+    for (int id = 1; id <= 2; id++)
+    {
+        TCHAR playerLabel[24];
+        if (id == g_net.myPlayerId && !g_net.isHost)
+            _stprintf_s(playerLabel, _T("PLAYER %d (YOU)"), id + 1);
+        else
+            _stprintf_s(playerLabel, _T("PLAYER %d"), id + 1);
+        TextOut(g_memDC, 230, 323 + (id - 1) * 80, playerLabel, lstrlen(playerLabel));
+        const TCHAR* connection = NetIsPlayerConnected(id) ? _T("CONNECTED") : _T("WAITING");
+        TextOut(g_memDC, 230, 347 + (id - 1) * 80, connection, lstrlen(connection));
+    }
+
+    SetTextColor(g_memDC, RGB(255, 255, 255));
+    if (g_net.isHost)
+        TextOut(g_memDC, 280, 477, _T("START"), 5);   // 게임 시작은 호스트만
+    TextOut(g_memDC, 430, 477, _T("EXIT"), 4);
+
+    // 하단 안내만 작은 글꼴로 출력하고 이후 HUD를 위해 원래 글꼴을 복원한다.
+    HFONT infoFont = CreateFont(18, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+        DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Super Mario Bros. NES"));
+    HGDIOBJ previousFont = nullptr;
+    if (infoFont) previousFont = SelectObject(g_memDC, infoFont);
+
+    const UINT previousTextAlign = SetTextAlign(g_memDC, TA_CENTER | TA_TOP);
+    TextOut(g_memDC, SCREEN_WIDTH / 2, 530, playerCount, lstrlen(playerCount));
+    TextOut(g_memDC, SCREEN_WIDTH / 2, 550, lobbyStatus, lstrlen(lobbyStatus));
+    SetTextAlign(g_memDC, previousTextAlign);
+
+    if (infoFont)
+    {
+        SelectObject(g_memDC, previousFont);
+        DeleteObject(infoFont);
+    }
+
+    // 같은 DC를 사용하는 HUD 출력에 영향을 주지 않도록 텍스트 설정을 복원한다.
+    SetBkMode(g_memDC, previousBkMode);
+    SetTextColor(g_memDC, previousColor);
+}
 
 static void Draw_luigi(const MarioRenderData& p);
 static void Draw_toad(const MarioRenderData& p);
@@ -275,6 +356,27 @@ static void Draw_toad(const MarioRenderData& p)
         flip);
 }
 
+static void DrawPlayerTransformation(MarioRenderData mario)
+{
+    const int bottom = mario.y + mario.height;
+    if ((GetTickCount() / 100) % 2 == 0) mario.form = mario.transformTarget;
+    mario.height = mario.form == FORM_SMALL ? TILE_SIZE : 2 * TILE_SIZE;
+    mario.y = bottom - mario.height;
+    mario.isWalking = false;
+    mario.isJumping = false;
+    mario.isFlying = false;
+    mario.fire_motion = false;
+    mario.tino_motion = false;
+    mario.tino_fire_motion = false;
+
+    switch (mario.charType)
+    {
+    case CHAR_LUIGI: Draw_luigi(mario); break;
+    case CHAR_TOAD:  Draw_toad(mario); break;
+    default:         Draw_mario(mario); break;
+    }
+}
+
 void Draw()
 {
     RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -329,7 +431,11 @@ void Draw()
     const bool isAltChar = (mario.charType == CHAR_LUIGI || mario.charType == CHAR_TOAD);
 
     // mario
-    if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_BIG && mario.form == FORM_SMALL)
+    if (mario.isTransforming && !mario.isDead)
+    {
+        DrawPlayerTransformation(mario);
+    }
+    else if (g_game.gameState == GAME_TRANSFORMING && g_game.transformTarget == FORM_BIG && mario.form == FORM_SMALL)
     {
         if ((GetTickCount() / 100) % 2 == 0)
             DrawSprite(graphics, getChangeImg(false), mario.x, mario.y,
@@ -437,12 +543,20 @@ void Draw()
             if (_ri == g_localPlayerIdx) continue;
             MarioRenderData rm = BuildMarioRenderDataFor(_ri);
             rm.x -= (int)g_game.cameraX;  // 월드 좌표 → 스크린 좌표
+            if (rm.isTransforming && !rm.isDead)
+            {
+                DrawPlayerTransformation(rm);
+                continue;
+            }
             switch (rm.charType)
             {
             case CHAR_LUIGI: Draw_luigi(rm); break;
             case CHAR_TOAD:  Draw_toad(rm);  break;
             default:
-                if (!rm.isDead) Draw_mario(rm);
+                if (rm.isDead)
+                    DrawSprite(graphics, g_images.mario_dead, rm.x, rm.y, rm.width, TILE_SIZE, rm.direction == DIR_LEFT);
+                else
+                    Draw_mario(rm);
                 break;
             }
         }

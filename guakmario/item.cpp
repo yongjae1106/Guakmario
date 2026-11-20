@@ -1,4 +1,5 @@
-﻿#include "item.h"
+﻿#include "network.h" // winsock2 must precede windows.h in item.h
+#include "item.h"
 #include "data.h"
 #include "player.h"
 #include "game.h"
@@ -15,129 +16,50 @@ Shot fireball[MAX_SHOT];
 Shot tinofire[MAX_SHOT];
 Shot_Effect tinofire_effect[MAX_SHOT];
 
-// 마리오와 버섯 충돌 처리 함수
-void HandleMushroomPickup()
+void ApplyItemPickupEffect(ItemType type)
 {
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!mushroom[i].active) continue;
+    Player& player = g_player.mario;
+    if (type == ITEM_UP_MUSHROOM) {
+        PlaySoundBuffer(up_Sound);
+        ++player.life;
+        return;
+    }
+    if (type == ITEM_STAR) {
+        if (!player.star) {
+            PlayBGM("resource\\sound\\bgm\\InvincibilityTheam.wav");
+            player.star = true;
+            g_game.starStartTime = GetTickCount();
+        }
+        return;
+    }
 
-        int mushroomXWorld = mushroom[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
+    MarioForm target;
+    switch (type) {
+    case ITEM_MUSHROOM: target = FORM_BIG; break;
+    case ITEM_FLOWER: target = FORM_FLOWER; break;
+    case ITEM_TINO: target = FORM_TINO; break;
+    default: return;
+    }
 
-        if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
-            mushroomXWorld, mushroom[i].y, mushroom[i].width, mushroom[i].height))
-        {
-            PlaySoundBuffer(powerup_Sound);
-            mushroom[i].active = false;  // 버섯 먹기
-            if (g_player.mario.form == FORM_SMALL && g_game.gameState == GAME_RUNNING)
-            {
-                g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
-                g_game.transformTarget = FORM_BIG;
-                g_game.gameState = GAME_TRANSFORMING;
-                g_game.transformStartTime = GetTickCount();
-            }
-            // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
-            // 예) score += 1000;
+    PlaySoundBuffer(powerup_Sound);
+    if (type == ITEM_MUSHROOM && player.form != FORM_SMALL) return;
+    StartPlayerTransformation(target);
+}
+
+static void HandleLocalItemCollisions(Item (&items)[MAX_ITEMS], ItemType type)
+{
+    for (Item& item : items) {
+        if (!item.active) continue;
+
+        const int screenX = static_cast<int>(item.x - g_game.cameraX);
+        const Player& player = g_player.mario;
+        if (IsColliding(player.x, player.y, player.width, player.height,
+            screenX, item.y, item.width, item.height)) {
+            item.active = false;
+            ApplyItemPickupEffect(type);
         }
     }
 }
-void HandleUpMushroomPickup()
-{
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!up_mushroom[i].active) continue;
-
-        int mushroomXWorld = up_mushroom[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
-
-        if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
-            mushroomXWorld, up_mushroom[i].y, up_mushroom[i].width, up_mushroom[i].height))
-        {
-            PlaySoundBuffer(up_Sound);
-            up_mushroom[i].active = false;  // 버섯 먹기
-            g_player.mario.life++;
-        }
-    }
-}
-void HandleFlowerPickup()
-{
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!flower[i].active) continue;
-
-        int flowerXWorld = flower[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
-
-        if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
-            flowerXWorld, flower[i].y, flower[i].width, flower[i].height))
-        {
-            PlaySoundBuffer(powerup_Sound);
-            flower[i].active = false;  // 먹기
-            if (g_player.mario.form != FORM_FLOWER && g_game.gameState == GAME_RUNNING)
-            {
-                if(g_player.mario.form == FORM_SMALL)
-                {
-                    g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
-                }
-                g_game.transformTarget = FORM_FLOWER;
-                g_game.gameState = GAME_TRANSFORMING;
-                g_game.transformStartTime = GetTickCount();
-            }
-            // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
-            // 예) score += 1000;
-        }
-    }
-}
-void HandleTinoPickup()
-{
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!tino[i].active) continue;
-
-        int tinoXWorld = tino[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
-
-        if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
-            tinoXWorld, tino[i].y, tino[i].width, tino[i].height))
-        {
-            PlaySoundBuffer(powerup_Sound);
-            tino[i].active = false;  // 먹기
-            if (g_player.mario.form != FORM_TINO && g_game.gameState == GAME_RUNNING)
-            {
-                if (g_player.mario.form == FORM_SMALL)
-                {
-                    g_player.mario.y -= TILE_SIZE + 1;       // 위치 맞추기
-                }
-                g_game.transformTarget = FORM_TINO;
-                g_game.gameState = GAME_TRANSFORMING;
-                g_game.transformStartTime = GetTickCount();
-            }
-            // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
-            // 예) score += 1000;
-        }
-    }
-}
-void HandleStarPickup()
-{
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!star[i].active) continue;
-
-        int starXWorld = star[i].x - g_game.cameraX; // 화면 출력할 때 cameraX를 뺏으니, 실제 월드 좌표는 더해줘야 함
-
-        if (IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height,
-            starXWorld, star[i].y, star[i].width, star[i].height))
-        {
-            star[i].active = false;  // 먹기
-            if (!g_player.mario.star)
-            {
-                PlayBGM("resource\\sound\\bgm\\InvincibilityTheam.wav");
-                g_player.mario.star = true;
-                g_game.starStartTime = GetTickCount();
-            }
-            // TODO: 마리오의 상태 변화 (예: 성장, 점수 증가 등)
-            // 예) score += 1000;
-        }
-    }
-}
-
 
 // 버섯 움직임
 void UpdateItems_mushroom()
@@ -285,7 +207,7 @@ void UpdateItems_star()
         int right = (star[i].x + TILE_SIZE - 1) / TILE_SIZE;
         int top = star[i].y / TILE_SIZE;
         int bottom = (star[i].y + TILE_SIZE - 1) / TILE_SIZE;
-        int middle = (g_player.mario.y + g_player.mario.height / 2 - 1) / TILE_SIZE;
+        int middle = (star[i].y + star[i].height / 2 - 1) / TILE_SIZE;
         
         // 2️⃣ 수평 충돌 처리
         if (star[i].vx < 0 && 
@@ -372,74 +294,57 @@ void UpdateItems_tino()
         if (!tino[i].active) continue;
     }
 }
+static void SpawnItem(Item (&items)[MAX_ITEMS], ItemType type, int x, int y, int vx = 0, int vy = 0)
+{
+    const bool online = g_game.isMulti && !g_game.isRenderTest;
+    if (online && !g_net.isHost) return;
+
+    for (uint8_t slot = 0; slot < MAX_ITEMS; ++slot) {
+        Item& item = items[slot];
+        if (item.active || item.motion) continue;
+
+        item = Item(x, y, vx, vy, 30, 30, 0, false, true);
+        if (online) {
+            struct Packet {
+                PacketHeader header;
+                ItemSpawnData spawn;
+            };
+            const Packet packet = {
+                { sizeof(Packet), PKT_ITEM_SPAWN, 0 },
+                { type, slot, 0, ITEM_FLAG_MOTION,
+                  static_cast<int16_t>(x), static_cast<int16_t>(y),
+                  static_cast<int16_t>(vx), static_cast<int16_t>(vy),
+                  static_cast<uint8_t>(item.width), static_cast<uint8_t>(item.height) }
+            };
+            SendToAll(&packet, sizeof(packet));
+        }
+        return;
+    }
+}
+
 void SpawnItem_mushroom(int x, int y)
 {
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!mushroom[i].active)
-        {
-            mushroom[i].x = x;
-            mushroom[i].y = y;
-            mushroom[i].vx = 1; // 기본 속도
-            mushroom[i].motion = true;
-            break;
-        }
-    }
+    SpawnItem(mushroom, ITEM_MUSHROOM, x, y, 1);
 }
+
 void SpawnItem_up_mushroom(int x, int y)
 {
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!up_mushroom[i].active)
-        {
-            up_mushroom[i].x = x;
-            up_mushroom[i].y = y;
-            up_mushroom[i].vx = 1; // 기본 속도
-            up_mushroom[i].motion = true;
-            break;
-        }
-    }
+    SpawnItem(up_mushroom, ITEM_UP_MUSHROOM, x, y, 1);
 }
+
 void SpawnItem_star(int x, int y)
 {
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!star[i].active)
-        {
-            star[i].x = x;
-            star[i].y = y;
-            star[i].vx = 2; // 기본 속도
-            star[i].vy = -15;
-            star[i].motion = true;
-            break;
-        }
-    }
+    SpawnItem(star, ITEM_STAR, x, y, 2, -15);
 }
+
 void SpawnItem_flower(int x, int y)
 {
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!flower[i].active)
-        {
-            flower[i].x = x;
-            flower[i].y = y;
-            flower[i].motion = true;
-            break;
-        }
-    }
+    SpawnItem(flower, ITEM_FLOWER, x, y);
 }
+
 void SpawnItem_tino(int x, int y)
 {
-    for (int i = 0; i < MAX_ITEMS; i++)
-    {
-        if (!tino[i].active)
-        {
-            tino[i].x = x;
-            tino[i].y = y;
-            tino[i].motion = true;
-            break;
-        }
-    }
+    SpawnItem(tino, ITEM_TINO, x, y);
 }
 
 void UpdateAllItems()
@@ -453,9 +358,14 @@ void UpdateAllItems()
 
 void HandleItemCollisions()
 {
-    HandleMushroomPickup();
-    HandleUpMushroomPickup();
-    HandleStarPickup();
-    HandleFlowerPickup();
-    HandleTinoPickup();
+    if (g_game.isMulti && !g_game.isRenderTest) {
+        HandleMultiplayerItemCollisions();
+        return;
+    }
+
+    HandleLocalItemCollisions(mushroom, ITEM_MUSHROOM);
+    HandleLocalItemCollisions(up_mushroom, ITEM_UP_MUSHROOM);
+    HandleLocalItemCollisions(star, ITEM_STAR);
+    HandleLocalItemCollisions(flower, ITEM_FLOWER);
+    HandleLocalItemCollisions(tino, ITEM_TINO);
 }

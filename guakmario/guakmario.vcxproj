@@ -153,6 +153,7 @@
     <ClCompile Include="game.cpp" />
     <ClCompile Include="image.cpp" />
     <ClCompile Include="item.cpp" />
+    <ClCompile Include="item_pickup.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="shot.cpp" />

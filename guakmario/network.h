@@ -68,6 +68,7 @@ enum GameEventType : uint8_t {
     EVT_PLAYER_DIED    = 7, // 플레이어 사망 (클라이언트 → 호스트 → 전체), param = playerId
     EVT_PLAYER_REVIVED = 8, // 플레이어 부활 (호스트 → 전체), param = playerId
     EVT_STAGE_LOAD     = 9, // 스테이지 로드 (호스트 → 전체), param = 스테이지 번호
+    EVT_LOBBY_STATUS   = 10, // 로비 접속 현황 (호스트 → 전체), param = 접속 비트 (bit0 = P1 호스트, bit1 = P2, bit2 = P3)
 };
 
 // 접속 확인 페이로드 (PKT_CONNECT_ACK, 호스트 → 클라이언트)
@@ -106,8 +107,14 @@ struct ItemSpawnData {
 struct ItemPickupData {
     uint8_t itemType, slot;
     uint8_t pickerId;   // 획득 요청자
-    uint8_t approved;   // 요청 0, 호스트 확정 1
+    uint8_t approved;   // 요청/호스트 거절 0, 호스트 확정 1
 };
+
+struct ItemPickupPacket {
+    PacketHeader header;
+    ItemPickupData pickup;
+};
+static_assert(sizeof(ItemPickupPacket) == 8, "Item pickup wire size changed");
 
 // 맵 타일 변경 (PKT_TILE_CHANGE, 호스트 → 전체)
 struct TileChangeData {
@@ -155,15 +162,20 @@ enum MonsterEntryFlags : uint8_t {
     MON_FLAG_FACING_LEFT = 1 << 6,
 };
 
+// 몬스터 한 개체의 전송 상태 — PKT_MONSTER_STATE에서 MonsterStateHeader 뒤에 count개 반복
 struct MonsterEntry {
     uint8_t  slot;
     int16_t  x, y, vx, vy;
     uint8_t  width, height;
     uint8_t  state;     // TurtleState 또는 AngelTurtle state
     uint8_t  flags;     // MonsterEntryFlags
-    uint16_t timerA;    // MON_NORMAL·ANGEL: 사망/숨기 경과 ms, TURTLE: shellTimer, FIREBALL: motion
-    uint16_t timerB;    // TURTLE: damageTimer
+    uint16_t timerA;    // MON_NORMAL·ANGEL: 사망/숨기 경과 ms, TURTLE: SHELL 경과 ms, FIREBALL: motion
+    uint16_t timerB;    // TURTLE: SPINNING 피해 대기 경과 ms (시작 시각 아님)
 };
+
+static_assert(sizeof(MonsterEntry) == 17, "Monster state wire size changed");
+static_assert(sizeof(MonsterStateHeader) == 2, "Monster header wire size changed");
+static_assert(sizeof(PacketHeader) == 4, "Packet header wire size changed");
 
 // 보스 상태 (PKT_BOSS_STATE, 호스트 → 전체)
 enum BossStateFlags : uint8_t {
@@ -247,10 +259,13 @@ struct NetContext {
     bool   isHost;
     int    myPlayerId;          // 0~2 (호스트=0)
     int    connectedCount;      // 현재 접속 인원 (호스트 자신 포함)
+    uint8_t lobbyMask;          // 접속 중인 playerId 비트 (bit0 = P1 호스트) — 클라이언트는 EVT_LOBBY_STATUS로 갱신
     SOCKET listenSock;          // 호스트 전용 listen 소켓
     SOCKET clientSockets[2];    // 호스트 전용 — 클라이언트 소켓 슬롯
     SOCKET hostSocket;          // 클라이언트 전용 — 호스트 연결 소켓
     char   localIp[16];         // 로컬 IP 문자열 (예: "192.168.0.5")
+    bool   waitingForItemPickup;
+    ItemPickupData pendingItemPickup;
 };
 
 extern NetContext g_net;
@@ -263,11 +278,14 @@ extern int       g_sharedLives; // 공용 목숨 — 호스트가 관리, PKT_GA
 
 // 초기화 / 종료
 void NetFetchLocalIp();  // WSAStartup + IP 조회만 (소켓 미생성)
-void NetInit(bool isHost, const char* hostIp = nullptr);
+// 호스트: listen 소켓 준비 / 클라이언트: hostIp로 connect + 수신 스레드 시작
+// 실패 시 false (호스트: 포트 사용 중 등, 클라이언트: IP 형식 오류·접속 실패·시간 초과)
+bool NetInit(bool isHost, const char* hostIp = nullptr);
 void NetShutdown();
 
 // 로비: accept 폴링 (호스트 전용, GAME_LOBBY 루프에서 매 프레임 호출)
 void NetPollAccept();
+bool NetIsPlayerConnected(int playerId);  // 로비 표시용 — 해당 playerId(0~2)가 접속 중인지
 void NetBroadcastGameStart();  // connectedCount == 3 → GAME_START 브로드캐스트 + listen 소켓 닫기
 
 // 수신 큐 소비 (메인 스레드, UpdateGame() 첫 줄에서 호출)
@@ -281,6 +299,10 @@ void SendToAll(const void* data, int size);             // 호스트 전용
 void SendToHost(const void* data, int size);            // 클라이언트 전용
 void SendToOne(int playerId, const void* data, int size); // 특정 플레이어
 
-// 수신 큐 (내부용 — RecvThread에서 호출)
-void PushRecvPacket(std::vector<uint8_t> pkt);
-bool PopRecvPacket(std::vector<uint8_t>& out);
+// B: 종류별 완전 스냅샷 인코딩/디코딩. 실패 시 출력 인자는 유지한다.
+// kind 2는 예약: 빈 스냅샷만 허용. 보스는 별도 PKT_BOSS_STATE 사용.
+// Parse 호출 전 실제 호스트 연결에서 수신했는지 호출자가 확인해야 한다.
+bool BuildMonsterStatePacket(uint8_t kind, const std::vector<MonsterEntry>& states,
+    std::vector<uint8_t>& packet);
+bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
+    std::vector<MonsterEntry>& states);

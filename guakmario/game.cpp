@@ -25,16 +25,14 @@ static void handle_transform(MarioForm targetForm, void (*primary_fn)(), void (*
         else
         {
             fallback_fn();
-            g_game.godstart = GetTickCount();
+            g_player.mario.godStartTime = now;
         }
         g_game.gameState = GAME_RUNNING;  // 다시 정상 진행
     }
 }
 
-void UpdateGame()
+static void UpdateGameState()
 {
-    if (g_game.isMulti && !g_game.isRenderTest) NetPollPackets();
-
     // 변신 모션 (mushroom / flower / tino)
     if (g_game.gameState == GAME_TRANSFORMING)
     {
@@ -124,7 +122,7 @@ void UpdateGame()
     // 무적처리
     if (g_player.mario.god)
     {
-        UpdateGodMode(g_game.godstart);
+        UpdateGodMode(g_player.mario.godStartTime);
     }
     // 스타 무적처리
     else if (g_player.mario.star)
@@ -139,21 +137,48 @@ void UpdateGame()
         g_player.mario.coin = 0;
     }
 
-    UpdateMario_motion();
-    if (g_player.mario.tino_motion) TinoAttack();  // 바이트 모션 동안 매 프레임 히트박스 적용
-    UpdatePlayer();
+    if (g_game.isRenderTest)
+    {
+        const DWORD now = GetTickCount();
+        for (PlayerContext& context : g_allPlayers)
+            UpdatePlayerTransformation(context.mario, now);
+    }
+    else if (g_game.isMulti)
+    {
+        UpdatePlayerTransformation(g_player.mario, GetTickCount());
+    }
+    if (!g_player.mario.isTransforming)
+    {
+        UpdateMario_motion();
+        if (g_player.mario.tino_motion) TinoAttack();  // 바이트 모션 동안 매 프레임 히트박스 적용
+        UpdatePlayer();
+    }
     UpdateAllItems();
     UpdateAllMonsters();
     UpdateAllShots();
 
-    HandleItemCollisions();
-    CheckCoinCollision();
-    HandleAllMonsterCollisions();
+    if (!g_player.mario.isTransforming) HandleItemCollisions();
+    if (!g_player.mario.isTransforming)
+    {
+        CheckCoinCollision();
+        HandleAllMonsterCollisions();
+    }
     HandleShotCollisions();
-    CheckFlagCollision();
-    if (g_game.stage == 3) CheckClearCollision();
+    if (!g_player.mario.isTransforming)
+    {
+        CheckFlagCollision();
+        if (g_game.stage == 3) CheckClearCollision();
+    }
+}
 
-    if (g_game.isMulti && !g_game.isRenderTest) NetFlushSend();
+void UpdateGame()
+{
+    const bool networkGame = g_game.isMulti && !g_game.isRenderTest;
+    if (networkGame) NetPollPackets();
+
+    UpdateGameState();
+
+    if (networkGame && g_game.gameStart) NetFlushSend();
 }
 
 void TickTimer()
@@ -231,6 +256,7 @@ void LoadStage()
     ResetTraps();
     g_player.mario.god = false;
     g_player.mario.star = false;
+    g_player.mario.isTransforming = false;
 
     ResetMonsters();
     g_game.cameraX = 0;

@@ -220,7 +220,7 @@ void UpdateMonsters()
 }
 void HandleMarioMonsterCollision()
 {
-    for (int i = 0; i < g_monsters.monsterCount; i++)
+    for (int i = 0; i < g_monsters.monsterCount && !g_player.mario.isTransforming; i++)
     {
         if (!g_monsters.monsters[i].isAlive || g_monsters.monsters[i].isDead) continue;
 
@@ -436,7 +436,7 @@ void UpdateTurtles()
 }
 void HandleMarioTurtleCollision()
 {
-    for (int i = 0; i < g_monsters.turtleCount; i++)
+    for (int i = 0; i < g_monsters.turtleCount && !g_player.mario.isTransforming; i++)
     {
         if (!g_monsters.turtles[i].isAlive) continue;
 
@@ -564,7 +564,7 @@ void UpdateAngelTurtles()
 }
 void HandleMarioAngelTurtleCollision()
 {
-    for (int i = 0; i < g_monsters.angelTurtleCount; i++)
+    for (int i = 0; i < g_monsters.angelTurtleCount && !g_player.mario.isTransforming; i++)
     {
         if (!g_monsters.angelTurtles[i].isAlive) continue;
 
@@ -771,33 +771,13 @@ void HandleMarioFireballCollision()
 
 void damage_mario()
 {
-    if (g_player.mario.god || g_player.mario.star) return;
+    if (g_player.mario.god || g_player.mario.star || g_player.mario.isTransforming) return;
 
-    if (g_player.mario.form == FORM_BIG)
-    {
-        // 작은 마리오로 변신
-        PlaySoundBuffer(powerdown_Sound);
-        g_player.mario.y += TILE_SIZE + 1;       // 위치 낮추기
-        g_game.transformTarget = FORM_BIG;
-        g_game.gameState = GAME_TRANSFORMING;
-        g_game.transformStartTime = GetTickCount();
-        // 반동 점프 방지를 위해 vy 유지 또는 0으로
-    }
-    else if (g_player.mario.form == FORM_FLOWER)
+    if (g_player.mario.form != FORM_SMALL)
     {
         PlaySoundBuffer(powerdown_Sound);
-        g_game.transformTarget = FORM_FLOWER;
-        g_game.gameState = GAME_TRANSFORMING;
-        g_game.transformStartTime = GetTickCount();
-        // 반동 점프 방지를 위해 vy 유지 또는 0으로
-    }
-    else if (g_player.mario.form == FORM_TINO)
-    {
-        PlaySoundBuffer(powerdown_Sound);
-        g_game.transformTarget = FORM_TINO;
-        g_game.gameState = GAME_TRANSFORMING;
-        g_game.transformStartTime = GetTickCount();
-        // 반동 점프 방지를 위해 vy 유지 또는 0으로
+        const MarioForm target = g_player.mario.form == FORM_BIG ? FORM_SMALL : FORM_BIG;
+        StartPlayerTransformation(target);
     }
     else
     {
@@ -821,6 +801,7 @@ void HandleAllMonsterCollisions()
     HandleMarioMonsterCollision();
     HandleMarioTurtleCollision();
     HandleMarioAngelTurtleCollision();
+    if (g_player.mario.isTransforming) return;
     CheckMarioHazardCollision();
     HandleMarioBowserCollision();
     HandleMarioFireballCollision();
