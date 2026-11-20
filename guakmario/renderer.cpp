@@ -157,7 +157,7 @@ namespace Luigi {
     static const int X_WALK2  = 108;
     static const int X_WALK3  = 141;
     static const int X_JUMP   = 215;
-    static const int X_DEAD   = 520;
+    static const int X_DEAD   = 627;  // Small 행 전용: Dead 칸 (520은 수영 마지막 칸)
     static const int X_ATTACK = 627;  // Fire 행 전용: 불 발사 포즈 (col18)
     static const int SY = 553;  // Small 행 y
     static const int SH = 16;   // Small 프레임 세로
@@ -179,7 +179,7 @@ namespace Toad {
     static const int X_WALK2  = 108;
     static const int X_WALK3  = 141;
     static const int X_JUMP   = 215;
-    static const int X_DEAD   = 520;
+    static const int X_DEAD   = 627;  // Small 행 전용: Dead 칸 (520은 수영 마지막 칸)
     static const int X_ATTACK = 627;  // Fire 행 전용: 불 발사 포즈 (col18)
     static const int SY = 1082; // Small 행 y
     static const int SH = 16;   // Small 프레임 세로
@@ -221,7 +221,7 @@ static void Draw_luigi(const MarioRenderData& p)
 
     // 행(srcY, srcH) 선택
     int srcY, srcH;
-    if (p.form == FORM_SMALL)
+    if (p.isDead || p.form == FORM_SMALL)  // Dead 프레임은 Small 행에만 있음
     {
         srcY = Luigi::SY;
         srcH = Luigi::SH;
@@ -268,7 +268,7 @@ static void Draw_luigi(const MarioRenderData& p)
         srcX = Luigi::X_IDLE   + CONTENT_OX;
 
     const int dstW = p.width;
-    const int dstH = p.height;
+    const int dstH = p.isDead ? TILE_SIZE : p.height;  // 마리오 dead와 동일하게 한 칸 높이
 
     DrawSheetSprite(g, sheet,
         srcX, srcY, CONTENT_W, srcH,
@@ -305,7 +305,7 @@ static void Draw_toad(const MarioRenderData& p)
     }
 
     int srcY, srcH;
-    if (p.form == FORM_SMALL)
+    if (p.isDead || p.form == FORM_SMALL)  // Dead 프레임은 Small 행에만 있음
     {
         srcY = Toad::SY;
         srcH = Toad::SH;
@@ -348,7 +348,7 @@ static void Draw_toad(const MarioRenderData& p)
         srcX = Toad::X_IDLE   + CONTENT_OX;
 
     const int dstW = p.width;
-    const int dstH = p.height;
+    const int dstH = p.isDead ? TILE_SIZE : p.height;  // 마리오 dead와 동일하게 한 칸 높이
 
     DrawSheetSprite(g, sheet,
         srcX, srcY, CONTENT_W, srcH,
