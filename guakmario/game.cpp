@@ -178,6 +178,7 @@ void UpdateGame()
 
     UpdateGameState();
 
+    // 변신,사망 연출로 상태 갱신이 일찍 끝나도 이번 틱의 결과를 전송
     if (networkGame && g_game.gameStart) NetFlushSend();
 }
 
