@@ -57,7 +57,7 @@ void UpdateMario_motion()
     tick_motion(g_player.mario.tino_fire_motion, g_player.mario.motion_timer);
 }
 
-static void SetBlockTile(int row, int col, TileType tile)
+static void SetBlockTile(int row, int col, TileType tile, int hitterId)
 {
     currentMap[row][col] = tile;
     if (g_game.isMulti && !g_game.isRenderTest && g_net.isHost)
@@ -65,14 +65,14 @@ static void SetBlockTile(int row, int col, TileType tile)
         struct Packet { PacketHeader header; TileChangeData change; };
         static_assert(sizeof(Packet) == sizeof(PacketHeader) + sizeof(TileChangeData));
         const Packet packet = {
-            { sizeof(Packet), PKT_TILE_CHANGE, 0 },
+            { sizeof(Packet), PKT_TILE_CHANGE, static_cast<uint8_t>(hitterId) },
             { static_cast<uint8_t>(row), static_cast<uint8_t>(col), static_cast<uint16_t>(tile) }
         };
         SendToAll(&packet, sizeof(packet));
     }
 }
 
-static void HandleBlockHit(int row, int col)
+void HandleBlockHit(int row, int col, int hitterId)
 {
     if (row < 0 || row >= MAP_HEIGHT || col < 0 || col >= MAP_WIDTH) return;
 
@@ -89,16 +89,29 @@ static void HandleBlockHit(int row, int col)
     default: return;
     }
 
+    const bool online = g_game.isMulti && !g_game.isRenderTest;
+    if (online && !g_net.isHost)
+    {
+        struct Packet { PacketHeader header; BlockHitData hit; };
+        static_assert(sizeof(Packet) == sizeof(PacketHeader) + sizeof(BlockHitData));
+        const Packet request = {
+            { sizeof(Packet), PKT_BLOCK_HIT, static_cast<uint8_t>(g_net.myPlayerId) },
+            { static_cast<uint8_t>(row), static_cast<uint8_t>(col) }
+        };
+        SendToHost(&request, sizeof(request));
+        return;
+    }
+
     PlaySoundBuffer(spawn ? powerup_appears_Sound : coin_Sound);
     if (row > 0 && currentMap[row - 1][col] == TILE_COIN)
     {
         PlaySoundBuffer(coin_Sound);
-        SetBlockTile(row - 1, col, TILE_EMPTY);
-        ++g_player.mario.coin;
+        SetBlockTile(row - 1, col, TILE_EMPTY, hitterId);
+        if (hitterId == g_localPlayerIdx) ++g_player.mario.coin;
     }
-    SetBlockTile(row, col, TILE_USED_BLOCK);
+    SetBlockTile(row, col, TILE_USED_BLOCK, hitterId);
     if (spawn) spawn(col * TILE_SIZE, row * TILE_SIZE);
-    else ++g_player.mario.coin;
+    else if (hitterId == g_localPlayerIdx) ++g_player.mario.coin;
 }
 
 void UpdatePlayer()
@@ -169,7 +182,7 @@ void UpdatePlayer()
         g_player.mario.y = (top + 1) * TILE_SIZE;
         g_player.mario.vy = 0;
 
-        HandleBlockHit(top, blockX);
+        HandleBlockHit(top, blockX, g_localPlayerIdx);
 
     }
 

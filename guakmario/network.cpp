@@ -402,16 +402,33 @@ void NetPollPackets()
             }
             break;
         }
+        case PKT_BLOCK_HIT:
+        {
+            if (!g_net.isHost || !g_game.gameStart || !g_game.isMulti ||
+                senderPlayerId < 1 || senderPlayerId > 2 || hdr->playerId != senderPlayerId ||
+                pkt.size() != sizeof(PacketHeader) + sizeof(BlockHitData) || hdr->size != pkt.size()) break;
+            BlockHitData hit;
+            memcpy(&hit, pkt.data() + sizeof(PacketHeader), sizeof(hit));
+            HandleBlockHit(hit.row, hit.col, senderPlayerId);
+            break;
+        }
         case PKT_TILE_CHANGE:
         {
-            if (!fromHost || !g_game.gameStart || !g_game.isMulti ||
+            // 호스트 연결만 신뢰하고, 헤더 ID는 호스트가 승인한 타격자를 나타낸다.
+            if (g_net.isHost || senderPlayerId != 0 || hdr->playerId > 2 ||
+                !g_game.gameStart || !g_game.isMulti ||
                 pkt.size() != sizeof(PacketHeader) + sizeof(TileChangeData) ||
                 hdr->size != pkt.size()) break;
             TileChangeData change;
             memcpy(&change, pkt.data() + sizeof(PacketHeader), sizeof(change));
             if (change.row >= MAP_HEIGHT || change.col >= MAP_WIDTH) break;
             if (change.tile != TILE_USED_BLOCK && change.tile != TILE_EMPTY) break;
-            currentMap[change.row][change.col] = change.tile;
+            int& tile = currentMap[change.row][change.col];
+            if (hdr->playerId == g_localPlayerIdx &&
+                ((tile == TILE_COIN && change.tile == TILE_EMPTY) ||
+                 (tile == TILE_BOX_COIN && change.tile == TILE_USED_BLOCK)))
+                ++g_player.mario.coin;
+            tile = change.tile;
             break;
         }
         case PKT_ITEM_SPAWN:
