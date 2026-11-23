@@ -57,6 +57,35 @@ void UpdateMario_motion()
     tick_motion(g_player.mario.tino_fire_motion, g_player.mario.motion_timer);
 }
 
+static void HandleBlockHit(int row, int col)
+{
+    if (row < 0 || row >= MAP_HEIGHT || col < 0 || col >= MAP_WIDTH) return;
+
+    void (*spawn)(int, int) = nullptr;
+    switch (currentMap[row][col])
+    {
+    case TILE_MYSTERY:         spawn = SpawnItem_mushroom; break;
+    case TILE_BOX_STAR:
+    case TILE_BOX_STAR_HIDDEN: spawn = SpawnItem_star; break;
+    case TILE_BOX_FLOWER:      spawn = SpawnItem_flower; break;
+    case TILE_BOX_TINO:        spawn = SpawnItem_tino; break;
+    case TILE_BOX_UPMUSH:      spawn = SpawnItem_up_mushroom; break;
+    case TILE_BOX_COIN:        break;
+    default: return;
+    }
+
+    PlaySoundBuffer(spawn ? powerup_appears_Sound : coin_Sound);
+    if (row > 0 && currentMap[row - 1][col] == TILE_COIN)
+    {
+        PlaySoundBuffer(coin_Sound);
+        currentMap[row - 1][col] = TILE_EMPTY;
+        ++g_player.mario.coin;
+    }
+    currentMap[row][col] = TILE_USED_BLOCK;
+    if (spawn) spawn(col * TILE_SIZE, row * TILE_SIZE);
+    else ++g_player.mario.coin;
+}
+
 void UpdatePlayer()
 {
     if(g_game.gameState != GAME_VICTORY && g_game.gameState != GAME_CLEAR)
@@ -125,105 +154,7 @@ void UpdatePlayer()
         g_player.mario.y = (top + 1) * TILE_SIZE;
         g_player.mario.vy = 0;
 
-        // 아이템 블럭 머리로 치기
-        if (currentMap[top][blockX] == TILE_MYSTERY)
-        {
-            PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
-            {
-                PlaySoundBuffer(coin_Sound);
-                currentMap[top - 1][blockX] = 0;
-                g_player.mario.coin++;
-            }
-            int itemX = blockX * TILE_SIZE;
-            int itemY = top * TILE_SIZE;
-            currentMap[top][blockX] = TILE_USED_BLOCK;
-            SpawnItem_mushroom(itemX, itemY);
-        }
-        else if (currentMap[top][blockX] == TILE_BOX_STAR)
-        {
-            PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
-            {
-                PlaySoundBuffer(coin_Sound);
-                currentMap[top - 1][blockX] = 0;
-                g_player.mario.coin++;
-            }
-            int itemX = blockX * TILE_SIZE;
-            int itemY = top * TILE_SIZE;
-            currentMap[top][blockX] = TILE_USED_BLOCK;
-            SpawnItem_star(itemX, itemY);
-        }
-        else if (currentMap[top][blockX] == TILE_BOX_FLOWER)
-        {
-            PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
-            {
-                PlaySoundBuffer(coin_Sound);
-                currentMap[top - 1][blockX] = 0;
-                g_player.mario.coin++;
-            }
-            int itemX = blockX * TILE_SIZE;
-            int itemY = top * TILE_SIZE;
-            currentMap[top][blockX] = TILE_USED_BLOCK;
-            SpawnItem_flower(itemX, itemY);
-        }
-        else if (currentMap[top][blockX] == TILE_BOX_TINO)
-        {
-            PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
-            {
-                PlaySoundBuffer(coin_Sound);
-                currentMap[top - 1][blockX] = 0;
-                g_player.mario.coin++;
-            }
-            int itemX = blockX * TILE_SIZE;
-            int itemY = top * TILE_SIZE;
-            currentMap[top][blockX] = TILE_USED_BLOCK;
-            SpawnItem_tino(itemX, itemY);
-        }
-        else if (currentMap[top][blockX] == TILE_BOX_UPMUSH)
-        {
-            PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
-            {
-                PlaySoundBuffer(coin_Sound);
-                currentMap[top - 1][blockX] = 0;
-                g_player.mario.coin++;
-            }
-            int itemX = blockX * TILE_SIZE;
-            int itemY = top * TILE_SIZE;
-            currentMap[top][blockX] = TILE_USED_BLOCK;
-            SpawnItem_up_mushroom(itemX, itemY);
-        }
-        else if (currentMap[top][blockX] == TILE_BOX_COIN)
-        {
-            PlaySoundBuffer(coin_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
-            {
-                PlaySoundBuffer(coin_Sound);
-                currentMap[top - 1][blockX] = 0;
-                g_player.mario.coin++;
-            }
-            int itemX = blockX * TILE_SIZE;
-            int itemY = top * TILE_SIZE;
-            currentMap[top][blockX] = TILE_USED_BLOCK;
-            g_player.mario.coin++;
-        }
-        else if (currentMap[top][blockX] == TILE_BOX_STAR_HIDDEN)
-        {
-            PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
-            {
-                PlaySoundBuffer(coin_Sound);
-                currentMap[top - 1][blockX] = 0;
-                g_player.mario.coin++;
-            }
-            int itemX = blockX * TILE_SIZE;
-            int itemY = top * TILE_SIZE;
-            currentMap[top][blockX] = TILE_USED_BLOCK;
-            SpawnItem_star(itemX, itemY);
-        }
+        HandleBlockHit(top, blockX);
 
     }
 
