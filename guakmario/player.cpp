@@ -57,6 +57,21 @@ void UpdateMario_motion()
     tick_motion(g_player.mario.tino_fire_motion, g_player.mario.motion_timer);
 }
 
+static void SetBlockTile(int row, int col, TileType tile)
+{
+    currentMap[row][col] = tile;
+    if (g_game.isMulti && !g_game.isRenderTest && g_net.isHost)
+    {
+        struct Packet { PacketHeader header; TileChangeData change; };
+        static_assert(sizeof(Packet) == sizeof(PacketHeader) + sizeof(TileChangeData));
+        const Packet packet = {
+            { sizeof(Packet), PKT_TILE_CHANGE, 0 },
+            { static_cast<uint8_t>(row), static_cast<uint8_t>(col), static_cast<uint16_t>(tile) }
+        };
+        SendToAll(&packet, sizeof(packet));
+    }
+}
+
 static void HandleBlockHit(int row, int col)
 {
     if (row < 0 || row >= MAP_HEIGHT || col < 0 || col >= MAP_WIDTH) return;
@@ -78,10 +93,10 @@ static void HandleBlockHit(int row, int col)
     if (row > 0 && currentMap[row - 1][col] == TILE_COIN)
     {
         PlaySoundBuffer(coin_Sound);
-        currentMap[row - 1][col] = TILE_EMPTY;
+        SetBlockTile(row - 1, col, TILE_EMPTY);
         ++g_player.mario.coin;
     }
-    currentMap[row][col] = TILE_USED_BLOCK;
+    SetBlockTile(row, col, TILE_USED_BLOCK);
     if (spawn) spawn(col * TILE_SIZE, row * TILE_SIZE);
     else ++g_player.mario.coin;
 }

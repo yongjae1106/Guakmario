@@ -3,6 +3,7 @@
 #include "player.h"
 #include "game.h"
 #include "item.h"
+#include "map.h"
 #include <queue>
 
 // ============================================================
@@ -399,6 +400,18 @@ void NetPollPackets()
             {
                 ApplyItemPickupResult(pickup);
             }
+            break;
+        }
+        case PKT_TILE_CHANGE:
+        {
+            if (!fromHost || !g_game.gameStart || !g_game.isMulti ||
+                pkt.size() != sizeof(PacketHeader) + sizeof(TileChangeData) ||
+                hdr->size != pkt.size()) break;
+            TileChangeData change;
+            memcpy(&change, pkt.data() + sizeof(PacketHeader), sizeof(change));
+            if (change.row >= MAP_HEIGHT || change.col >= MAP_WIDTH) break;
+            if (change.tile != TILE_USED_BLOCK && change.tile != TILE_EMPTY) break;
+            currentMap[change.row][change.col] = change.tile;
             break;
         }
         case PKT_ITEM_SPAWN:
