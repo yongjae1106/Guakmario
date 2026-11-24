@@ -4,6 +4,7 @@
 #include "game.h"
 #include "item.h"
 #include "map.h"
+#include "sound.h"
 #include <queue>
 
 // ============================================================
@@ -409,7 +410,11 @@ void NetPollPackets()
                 pkt.size() != sizeof(PacketHeader) + sizeof(BlockHitData) || hdr->size != pkt.size()) break;
             BlockHitData hit;
             memcpy(&hit, pkt.data() + sizeof(PacketHeader), sizeof(hit));
-            HandleBlockHit(hit.row, hit.col, senderPlayerId);
+            if (hit.row >= MAP_HEIGHT || hit.col >= MAP_WIDTH) break;
+            if (currentMap[hit.row][hit.col] == TILE_COIN)
+                CollectMapCoin(hit.row, hit.col, senderPlayerId);
+            else
+                HandleBlockHit(hit.row, hit.col, senderPlayerId);
             break;
         }
         case PKT_TILE_CHANGE:
@@ -427,7 +432,10 @@ void NetPollPackets()
             if (hdr->playerId == g_localPlayerIdx &&
                 ((tile == TILE_COIN && change.tile == TILE_EMPTY) ||
                  (tile == TILE_BOX_COIN && change.tile == TILE_USED_BLOCK)))
+            {
+                PlaySoundBuffer(coin_Sound);
                 ++g_player.mario.coin;
+            }
             tile = change.tile;
             break;
         }

@@ -72,6 +72,34 @@ static void SetBlockTile(int row, int col, TileType tile, int hitterId)
     }
 }
 
+static void SendTileRequest(int row, int col)
+{
+    struct Packet { PacketHeader header; BlockHitData hit; };
+    static_assert(sizeof(Packet) == sizeof(PacketHeader) + sizeof(BlockHitData));
+    const Packet request = {
+        { sizeof(Packet), PKT_BLOCK_HIT, static_cast<uint8_t>(g_net.myPlayerId) },
+        { static_cast<uint8_t>(row), static_cast<uint8_t>(col) }
+    };
+    SendToHost(&request, sizeof(request));
+}
+
+void CollectMapCoin(int row, int col, int collectorId)
+{
+    if (row < 0 || row >= MAP_HEIGHT || col < 0 || col >= MAP_WIDTH ||
+        currentMap[row][col] != TILE_COIN) return;
+    if (g_game.isMulti && !g_game.isRenderTest && !g_net.isHost)
+    {
+        SendTileRequest(row, col);
+        return;
+    }
+    SetBlockTile(row, col, TILE_EMPTY, collectorId);
+    if (collectorId == g_localPlayerIdx)
+    {
+        PlaySoundBuffer(coin_Sound);
+        ++g_player.mario.coin;
+    }
+}
+
 void HandleBlockHit(int row, int col, int hitterId)
 {
     if (row < 0 || row >= MAP_HEIGHT || col < 0 || col >= MAP_WIDTH) return;
@@ -92,23 +120,12 @@ void HandleBlockHit(int row, int col, int hitterId)
     const bool online = g_game.isMulti && !g_game.isRenderTest;
     if (online && !g_net.isHost)
     {
-        struct Packet { PacketHeader header; BlockHitData hit; };
-        static_assert(sizeof(Packet) == sizeof(PacketHeader) + sizeof(BlockHitData));
-        const Packet request = {
-            { sizeof(Packet), PKT_BLOCK_HIT, static_cast<uint8_t>(g_net.myPlayerId) },
-            { static_cast<uint8_t>(row), static_cast<uint8_t>(col) }
-        };
-        SendToHost(&request, sizeof(request));
+        SendTileRequest(row, col);
         return;
     }
 
     PlaySoundBuffer(spawn ? powerup_appears_Sound : coin_Sound);
-    if (row > 0 && currentMap[row - 1][col] == TILE_COIN)
-    {
-        PlaySoundBuffer(coin_Sound);
-        SetBlockTile(row - 1, col, TILE_EMPTY, hitterId);
-        if (hitterId == g_localPlayerIdx) ++g_player.mario.coin;
-    }
+    if (row > 0) CollectMapCoin(row - 1, col, hitterId);
     SetBlockTile(row, col, TILE_USED_BLOCK, hitterId);
     if (spawn) spawn(col * TILE_SIZE, row * TILE_SIZE);
     else if (hitterId == g_localPlayerIdx) ++g_player.mario.coin;
