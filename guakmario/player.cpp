@@ -57,6 +57,18 @@ void UpdateMario_motion()
     tick_motion(g_player.mario.tino_fire_motion, g_player.mario.motion_timer);
 }
 
+static int TileColumnAt(int worldX)
+{
+    return worldX < 0 ? -1 : worldX / TILE_SIZE;
+}
+
+static int PlayerCollisionTile(int row, int column)
+{
+    if (!currentMap || row < 0 || row >= MAP_HEIGHT || column < 0 || column >= MAP_WIDTH)
+        return TILE_EMPTY;
+    return currentMap[row][column];
+}
+
 void UpdatePlayer()
 {
     if(g_game.gameState != GAME_VICTORY && g_game.gameState != GAME_CLEAR)
@@ -67,22 +79,26 @@ void UpdatePlayer()
     g_player.mario.x += g_player.mario.vx;
 
     // 좌우 충돌 처리
-    int left = (g_player.mario.x + g_game.cameraX) / TILE_SIZE;
-    int right = (g_player.mario.x + g_player.mario.width - 1 + g_game.cameraX) / TILE_SIZE;
+    int left = TileColumnAt(g_player.mario.x + g_game.cameraX);
+    int right = TileColumnAt(g_player.mario.x + g_player.mario.width - 1 + g_game.cameraX);
     int top = g_player.mario.y / TILE_SIZE;
     int bottom = (g_player.mario.y + g_player.mario.height - 1) / TILE_SIZE;
     int middle = (g_player.mario.y + g_player.mario.height / 2 - 1) / TILE_SIZE;
 
     // 블럭 왼쪽 벽 충돌
     if (!(g_player.mario.y < 0) && g_player.mario.vx < 0 &&
-        (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
+        (isSolidTile(PlayerCollisionTile(top, left)) ||
+         isSolidTile(PlayerCollisionTile(bottom, left)) ||
+         isSolidTile(PlayerCollisionTile(middle, left))))
     {
         g_player.mario.x = left * TILE_SIZE - g_game.cameraX + TILE_SIZE;
     }
 
     // 블럭 오른쪽 벽 충돌
     if (!(g_player.mario.y < 0) && g_player.mario.vx > 0 &&
-        (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right]) || isSolidTile(currentMap[middle][right])))
+        (isSolidTile(PlayerCollisionTile(top, right)) ||
+         isSolidTile(PlayerCollisionTile(bottom, right)) ||
+         isSolidTile(PlayerCollisionTile(middle, right))))
     {
         g_player.mario.x = right * TILE_SIZE - g_game.cameraX - g_player.mario.width;
     }
@@ -94,42 +110,43 @@ void UpdatePlayer()
     g_player.mario.y += g_player.mario.vy;
 
     // y축 충돌 다시 계산
-    left = (g_player.mario.x + g_game.cameraX) / TILE_SIZE;
-    right = (g_player.mario.x + g_player.mario.width - 1 + g_game.cameraX) / TILE_SIZE;
+    left = TileColumnAt(g_player.mario.x + g_game.cameraX);
+    right = TileColumnAt(g_player.mario.x + g_player.mario.width - 1 + g_game.cameraX);
     top = g_player.mario.y / TILE_SIZE;
     bottom = (g_player.mario.y + g_player.mario.height - 1) / TILE_SIZE;
 
     // 아래 충돌
-    if (!(g_player.mario.y < 0) && g_player.mario.vy > 0 && (isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[bottom][right])))
+    const int floorLeft = PlayerCollisionTile(bottom, left);
+    const int floorRight = PlayerCollisionTile(bottom, right);
+    if (!(g_player.mario.y < 0) && g_player.mario.vy > 0 && (isSolidTile(floorLeft) || isSolidTile(floorRight)))
     {
-        if (currentMap[bottom][left] == TILE_LAVA_HEAD || currentMap[bottom][right] == TILE_LAVA_HEAD ||
-            currentMap[bottom][left] == TILE_LAVA_BODY || currentMap[bottom][right] == TILE_LAVA_BODY)
+        if (floorLeft == TILE_LAVA_HEAD || floorRight == TILE_LAVA_HEAD ||
+            floorLeft == TILE_LAVA_BODY || floorRight == TILE_LAVA_BODY)
         {
             dead();
         }
-        int centerX = g_player.mario.x + TILE_SIZE / 2 + g_game.cameraX;
-        int blockX = centerX / TILE_SIZE;
-        
         g_player.mario.y = bottom * TILE_SIZE - g_player.mario.height;
         g_player.mario.vy = 0;
         g_player.mario.isJumping = false;
         g_player.mario.isFlying = false;
     }
     // 위 충돌
-    else if (!(g_player.mario.y < 0) && g_player.mario.vy < 0 && (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[top][right])))
+    else if (!(g_player.mario.y < 0) && g_player.mario.vy < 0 &&
+        (isSolidTile(PlayerCollisionTile(top, left)) || isSolidTile(PlayerCollisionTile(top, right))))
     {
         // 마리오가 정통으로 친 블럭 찾기
         int centerX = g_player.mario.x + TILE_SIZE / 2 + g_game.cameraX;
-        int blockX = centerX / TILE_SIZE;
+        int blockX = TileColumnAt(centerX);
+        const int blockTile = PlayerCollisionTile(top, blockX);
         
         g_player.mario.y = (top + 1) * TILE_SIZE;
         g_player.mario.vy = 0;
 
         // 아이템 블럭 머리로 치기
-        if (currentMap[top][blockX] == TILE_MYSTERY)
+        if (blockTile == TILE_MYSTERY)
         {
             PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
+            if (PlayerCollisionTile(top - 1, blockX) == TILE_COIN)
             {
                 PlaySoundBuffer(coin_Sound);
                 currentMap[top - 1][blockX] = 0;
@@ -140,10 +157,10 @@ void UpdatePlayer()
             currentMap[top][blockX] = TILE_USED_BLOCK;
             SpawnItem_mushroom(itemX, itemY);
         }
-        else if (currentMap[top][blockX] == TILE_BOX_STAR)
+        else if (blockTile == TILE_BOX_STAR)
         {
             PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
+            if (PlayerCollisionTile(top - 1, blockX) == TILE_COIN)
             {
                 PlaySoundBuffer(coin_Sound);
                 currentMap[top - 1][blockX] = 0;
@@ -154,10 +171,10 @@ void UpdatePlayer()
             currentMap[top][blockX] = TILE_USED_BLOCK;
             SpawnItem_star(itemX, itemY);
         }
-        else if (currentMap[top][blockX] == TILE_BOX_FLOWER)
+        else if (blockTile == TILE_BOX_FLOWER)
         {
             PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
+            if (PlayerCollisionTile(top - 1, blockX) == TILE_COIN)
             {
                 PlaySoundBuffer(coin_Sound);
                 currentMap[top - 1][blockX] = 0;
@@ -168,10 +185,10 @@ void UpdatePlayer()
             currentMap[top][blockX] = TILE_USED_BLOCK;
             SpawnItem_flower(itemX, itemY);
         }
-        else if (currentMap[top][blockX] == TILE_BOX_TINO)
+        else if (blockTile == TILE_BOX_TINO)
         {
             PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
+            if (PlayerCollisionTile(top - 1, blockX) == TILE_COIN)
             {
                 PlaySoundBuffer(coin_Sound);
                 currentMap[top - 1][blockX] = 0;
@@ -182,10 +199,10 @@ void UpdatePlayer()
             currentMap[top][blockX] = TILE_USED_BLOCK;
             SpawnItem_tino(itemX, itemY);
         }
-        else if (currentMap[top][blockX] == TILE_BOX_UPMUSH)
+        else if (blockTile == TILE_BOX_UPMUSH)
         {
             PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
+            if (PlayerCollisionTile(top - 1, blockX) == TILE_COIN)
             {
                 PlaySoundBuffer(coin_Sound);
                 currentMap[top - 1][blockX] = 0;
@@ -196,10 +213,10 @@ void UpdatePlayer()
             currentMap[top][blockX] = TILE_USED_BLOCK;
             SpawnItem_up_mushroom(itemX, itemY);
         }
-        else if (currentMap[top][blockX] == TILE_BOX_COIN)
+        else if (blockTile == TILE_BOX_COIN)
         {
             PlaySoundBuffer(coin_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
+            if (PlayerCollisionTile(top - 1, blockX) == TILE_COIN)
             {
                 PlaySoundBuffer(coin_Sound);
                 currentMap[top - 1][blockX] = 0;
@@ -210,10 +227,10 @@ void UpdatePlayer()
             currentMap[top][blockX] = TILE_USED_BLOCK;
             g_player.mario.coin++;
         }
-        else if (currentMap[top][blockX] == TILE_BOX_STAR_HIDDEN)
+        else if (blockTile == TILE_BOX_STAR_HIDDEN)
         {
             PlaySoundBuffer(powerup_appears_Sound);
-            if (currentMap[top - 1][blockX] == TILE_COIN)
+            if (PlayerCollisionTile(top - 1, blockX) == TILE_COIN)
             {
                 PlaySoundBuffer(coin_Sound);
                 currentMap[top - 1][blockX] = 0;
