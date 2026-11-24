@@ -399,6 +399,9 @@ void NetPollPackets()
 
         switch (hdr->type)
         {
+        case PKT_MONSTER_STATE:
+            if (fromHost && g_game.gameStart) ApplyMonsterSnapshot(pkt);
+            break;
         case PKT_PLAYER_STATE:
         {
             if (pkt.size() != sizeof(PacketHeader) + sizeof(PlayerStateData) || hdr->size != pkt.size()) break;

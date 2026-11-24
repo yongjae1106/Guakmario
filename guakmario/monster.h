@@ -81,6 +81,7 @@ struct Fireball
 };
 
 struct MonsterState {
+    int snapshotFrame = 0;
     Monster     monsters[MAX_MONSTERS]       = {};
     int         monsterCount                 = 0;
     Turtle      turtles[MAX_TURTLES]         = {};

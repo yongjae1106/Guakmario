@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "network.h"
 #include "data.h"
 #include "player.h"
 #include "game.h"
@@ -149,7 +150,16 @@ void UpdateMonsters()
         
         // 화면 안에 있는 몬스터만 처리
         int screenX = g_monsters.monsters[i].x - g_game.cameraX;
-        if (screenX + TILE_SIZE < 0 || screenX > SCREEN_WIDTH) continue;
+        if (screenX + TILE_SIZE < 0 || screenX > SCREEN_WIDTH) {
+            if (!IsMultiplayerGame()) continue;
+            bool nearRemotePlayer = false;
+            for (int id = 1; id < g_net.connectedCount && id < 3; ++id) {
+                // 원격 플레이어의 x는 월드 좌표이다.
+                if (abs(g_monsters.monsters[i].x - g_allPlayers[id].mario.x) <= SCREEN_WIDTH / 2 + TILE_SIZE)
+                    nearRemotePlayer = true;
+            }
+            if (!nearRemotePlayer) continue;
+        }
 
 
 
@@ -793,11 +803,154 @@ void damage_mario()
     }
 }
 
+namespace {
+uint16_t ElapsedTimer(DWORD now, DWORD start)
+{
+    const DWORD elapsed = now - start;
+    return static_cast<uint16_t>(elapsed > UINT16_MAX ? UINT16_MAX : elapsed);
+}
+
+MonsterEntry PackMonster(const Entity& entity, int slot)
+{
+    MonsterEntry entry = {};
+    entry.slot = static_cast<uint8_t>(slot);
+    entry.x = static_cast<int16_t>(entity.x);
+    entry.y = static_cast<int16_t>(entity.y);
+    entry.vx = static_cast<int16_t>(entity.vx);
+    entry.vy = static_cast<int16_t>(entity.vy);
+    entry.width = static_cast<uint8_t>(entity.width);
+    entry.height = static_cast<uint8_t>(entity.height);
+    if (entity.isAlive) entry.flags |= MON_FLAG_ALIVE;
+    if (entity.isDead) entry.flags |= MON_FLAG_DEAD;
+    if (entity.active) entry.flags |= MON_FLAG_ACTIVE;
+    if (entity.isFalling) entry.flags |= MON_FLAG_FALLING;
+    return entry;
+}
+
+void BroadcastKind(uint8_t kind, const std::vector<MonsterEntry>& entries)
+{
+    std::vector<uint8_t> packet;
+    if (BuildMonsterStatePacket(kind, entries, packet))
+        SendToAll(packet.data(), static_cast<int>(packet.size()));
+}
+
+void BroadcastMonsterState()
+{
+    const DWORD now = GetTickCount();
+    std::vector<MonsterEntry> entries;
+    for (int i = 0; i < g_monsters.monsterCount; ++i) {
+        const Monster& monster = g_monsters.monsters[i];
+        if (!monster.active) continue;
+        auto entry = PackMonster(monster, i);
+        if (monster.deadStart) entry.timerA = ElapsedTimer(now, monster.deadStart);
+        entries.push_back(entry);
+    }
+    BroadcastKind(MON_NORMAL, entries);
+    entries.clear();
+    for (int i = 0; i < g_monsters.turtleCount; ++i) {
+        const Turtle& turtle = g_monsters.turtles[i];
+        if (!turtle.isAlive) continue;
+        auto entry = PackMonster(turtle, i);
+        entry.state = turtle.turtleState;
+        if (turtle.damage) entry.flags |= MON_FLAG_DAMAGE;
+        if (turtle.direction == DIR_LEFT) entry.flags |= MON_FLAG_FACING_LEFT;
+        if (turtle.turtleState == SHELL) entry.timerA = ElapsedTimer(now, turtle.shellTimer);
+        if (turtle.turtleState == SPINNING) entry.timerB = ElapsedTimer(now, turtle.damageTimer);
+        entries.push_back(entry);
+    }
+    BroadcastKind(MON_TURTLE, entries);
+    entries.clear();
+    BroadcastKind(MON_BROWN_TURTLE, entries);
+    for (int i = 0; i < g_monsters.angelTurtleCount; ++i) {
+        const AngelTurtle& angel = g_monsters.angelTurtles[i];
+        if (!angel.isAlive) continue;
+        auto entry = PackMonster(angel, i);
+        entry.state = static_cast<uint8_t>(angel.state);
+        if (angel.goingUp) entry.flags |= MON_FLAG_GOING_UP;
+        if (angel.state == HIDE) entry.timerA = ElapsedTimer(now, angel.hideStartTime);
+        entries.push_back(entry);
+    }
+    BroadcastKind(MON_ANGEL_TURTLE, entries);
+}
+
+template<class T, size_t N, class ApplyDetails>
+void ReplaceMonsterSlots(T (&slots)[N], int& count, const std::vector<MonsterEntry>& entries,
+    ApplyDetails applyDetails)
+{
+    static_assert(N >= 100, "Snapshot slots must fit the local array");
+    for (int i = 0; i < count; ++i) {
+        slots[i].active = false;
+        slots[i].isAlive = false;
+        slots[i].isDead = false;
+    }
+    count = 0;
+    for (const auto& entry : entries) {
+        auto& entity = slots[entry.slot];
+        entity.x = entry.x;
+        entity.y = entry.y;
+        entity.vx = entry.vx;
+        entity.vy = entry.vy;
+        entity.width = entry.width;
+        entity.height = entry.height;
+        entity.active = (entry.flags & MON_FLAG_ACTIVE) != 0;
+        entity.isAlive = (entry.flags & MON_FLAG_ALIVE) != 0;
+        entity.isDead = (entry.flags & MON_FLAG_DEAD) != 0;
+        entity.isFalling = (entry.flags & MON_FLAG_FALLING) != 0;
+        applyDetails(entity, entry);
+        if (entry.slot >= count) count = entry.slot + 1;
+    }
+}
+}
+
+void ApplyMonsterSnapshot(const std::vector<uint8_t>& packet)
+{
+    uint8_t kind;
+    std::vector<MonsterEntry> entries;
+    if (!ParseMonsterStatePacket(packet, kind, entries)) return;
+    const DWORD now = GetTickCount();
+    switch (kind) {
+    case MON_NORMAL:
+        ReplaceMonsterSlots(g_monsters.monsters, g_monsters.monsterCount, entries,
+            [now](Monster& m, const MonsterEntry& e) {
+                m.deadStart = !m.isAlive || m.isDead ? now - e.timerA : 0;
+            });
+        break;
+    case MON_TURTLE:
+        ReplaceMonsterSlots(g_monsters.turtles, g_monsters.turtleCount, entries,
+            [now](Turtle& t, const MonsterEntry& e) {
+                t.turtleState = static_cast<TurtleState>(e.state);
+                t.direction = (e.flags & MON_FLAG_FACING_LEFT) ? DIR_LEFT : DIR_RIGHT;
+                t.damage = (e.flags & MON_FLAG_DAMAGE) != 0;
+                t.shellTimer = now - e.timerA;
+                t.damageTimer = now - e.timerB;
+            });
+        break;
+    case MON_BROWN_TURTLE:
+        g_monsters.brownTurtleCount = 0;
+        break;
+    case MON_ANGEL_TURTLE:
+        ReplaceMonsterSlots(g_monsters.angelTurtles, g_monsters.angelTurtleCount, entries,
+            [now](AngelTurtle& a, const MonsterEntry& e) {
+                a.state = e.state;
+                a.goingUp = (e.flags & MON_FLAG_GOING_UP) != 0;
+                a.hideStartTime = now - e.timerA;
+            });
+        break;
+    }
+}
+
 void UpdateAllMonsters()
 {
-    UpdateMonsters();
-    UpdateTurtles();
-    UpdateAngelTurtles();
+    const bool multiplayer = IsMultiplayerGame();
+    if (!multiplayer || g_net.isHost) {
+        UpdateMonsters();
+        UpdateTurtles();
+        UpdateAngelTurtles();
+        if (multiplayer && ++g_monsters.snapshotFrame == 5) {
+            g_monsters.snapshotFrame = 0;
+            BroadcastMonsterState();
+        }
+    }
     UpdateBowser();
     UpdateFireballs();
     UpdateFireTraps();
