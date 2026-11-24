@@ -33,6 +33,7 @@ struct Turtle : Entity
     TurtleState turtleState = NORMAL;
     int shellTimer = 0;
     int damageTimer = 0;
+    DWORD lastNetworkStomp = 0;
 };
 
 //angel turtle

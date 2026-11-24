@@ -1,3 +1,4 @@
+#include "network.h"
 #include "item.h"
 #include "data.h"
 #include "renderer.h"
@@ -27,9 +28,7 @@ void HandleFireballHit()
                     fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    g_monsters.monsters[j].vy = -15;
-                    g_monsters.monsters[j].isDead = true;
-                    g_monsters.monsters[j].isFalling = true;
+                    SendMonsterHit(MON_NORMAL, j, HIT_FIREBALL);
                     fireball[i].active = false;
                     break; // 이미 충돌했으면 더 검사 X
                 }
@@ -45,9 +44,7 @@ void HandleFireballHit()
                     fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    g_monsters.turtles[j].vy = -15;
-                    g_monsters.turtles[j].isDead = true;
-                    g_monsters.turtles[j].isFalling = true;
+                    SendMonsterHit(MON_TURTLE, j, HIT_FIREBALL);
                     fireball[i].active = false;
                     break;
                 }
@@ -62,9 +59,7 @@ void HandleFireballHit()
                     fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    g_monsters.angelTurtles[j].vy = -15;
-                    g_monsters.angelTurtles[j].isDead = true;
-                    g_monsters.angelTurtles[j].isFalling = true;
+                    SendMonsterHit(MON_ANGEL_TURTLE, j, HIT_FIREBALL);
                     fireball[i].active = false;
                     break;
                 }
@@ -78,7 +73,7 @@ void HandleFireballHit()
                 fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
             {
                 PlaySoundBuffer(bump_Sound);
-                g_monsters.bowser.hp--;
+                SendMonsterHit(MON_BOSS, 0, HIT_FIREBALL);
                 fireball[i].active = false;
             }
         }
@@ -103,9 +98,7 @@ void HandleTinoFireHit()
                     tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    g_monsters.monsters[j].vy = -15;
-                    g_monsters.monsters[j].isDead = true;
-                    g_monsters.monsters[j].isFalling = true;
+                    SendMonsterHit(MON_NORMAL, j, HIT_TINOFIRE);
                     OnMonsterHit(g_monsters.monsters[j].x, g_monsters.monsters[j].y);
                     break; // 이미 충돌했으면 더 검사 X
                 }
@@ -121,9 +114,7 @@ void HandleTinoFireHit()
                     tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    g_monsters.turtles[j].vy = -15;
-                    g_monsters.turtles[j].isDead = true;
-                    g_monsters.turtles[j].isFalling = true;
+                    SendMonsterHit(MON_TURTLE, j, HIT_TINOFIRE);
                     OnMonsterHit(g_monsters.turtles[j].x, g_monsters.turtles[j].y);
                     break;
                 }
@@ -138,9 +129,7 @@ void HandleTinoFireHit()
                     tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    g_monsters.angelTurtles[j].vy = -15;
-                    g_monsters.angelTurtles[j].isDead = true;
-                    g_monsters.angelTurtles[j].isFalling = true;
+                    SendMonsterHit(MON_ANGEL_TURTLE, j, HIT_TINOFIRE);
                     OnMonsterHit(g_monsters.angelTurtles[j].x, g_monsters.angelTurtles[j].y);
                     break;
                 }
@@ -155,7 +144,7 @@ void HandleTinoFireHit()
             {
                 PlaySoundBuffer(kick_Sound);
                 OnMonsterHit(g_monsters.bowser.x, g_monsters.bowser.y);
-                g_monsters.bowser.hp -= 5;
+                SendMonsterHit(MON_BOSS, 0, HIT_TINOFIRE);
                 g_monsters.bowser.ignoreTinoFire = true;
             }
         }
@@ -194,9 +183,7 @@ void TinoAttack()
                 biteX, biteY, biteWidth, biteHeight))
             {
                 PlaySoundBuffer(kick_Sound);
-                g_monsters.monsters[j].isDead    = true;
-                g_monsters.monsters[j].isFalling = true;
-                g_monsters.monsters[j].vy        = TINO_BITE_KNOCKBACK_VY;
+                SendMonsterHit(MON_NORMAL, j, HIT_TINOBITE);
             }
         }
     }
@@ -210,9 +197,7 @@ void TinoAttack()
                 biteX, biteY, biteWidth, biteHeight))
             {
                 PlaySoundBuffer(kick_Sound);
-                g_monsters.turtles[j].isDead    = true;
-                g_monsters.turtles[j].isFalling = true;
-                g_monsters.turtles[j].vy        = TINO_BITE_KNOCKBACK_VY;
+                SendMonsterHit(MON_TURTLE, j, HIT_TINOBITE);
             }
         }
     }
@@ -226,9 +211,7 @@ void TinoAttack()
                 biteX, biteY, biteWidth, biteHeight))
             {
                 PlaySoundBuffer(kick_Sound);
-                g_monsters.angelTurtles[j].isDead    = true;
-                g_monsters.angelTurtles[j].isFalling = true;
-                g_monsters.angelTurtles[j].vy        = TINO_BITE_KNOCKBACK_VY;
+                SendMonsterHit(MON_ANGEL_TURTLE, j, HIT_TINOBITE);
                 break;
             }
         }
@@ -241,7 +224,7 @@ void TinoAttack()
             biteX, biteY, biteWidth, biteHeight) && !g_monsters.bowser.ignoreTinoBite)
         {
             PlaySoundBuffer(kick_Sound);
-            g_monsters.bowser.hp -= 10;
+            SendMonsterHit(MON_BOSS, 0, HIT_TINOBITE);
             g_monsters.bowser.ignoreTinoBite = true;
         }
     }

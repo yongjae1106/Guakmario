@@ -228,6 +228,89 @@ void UpdateMonsters()
 
     }
 }
+void SendMonsterHit(MonsterKind kind, int slot, HitType hitType)
+{
+    if (slot < 0 || slot >= MAX_MONSTERS) return;
+    const MonsterHitData hit = { kind, static_cast<uint8_t>(slot), hitType };
+    if (!IsMultiplayerGame() || g_net.isHost) {
+        HandleMonsterHit(g_localPlayerIdx, hit);
+        return;
+    }
+    const MonsterHitPacket packet = {
+        { sizeof(MonsterHitPacket), PKT_MONSTER_HIT, static_cast<uint8_t>(g_localPlayerIdx) }, hit
+    };
+    SendToHost(&packet, sizeof(packet));
+}
+
+void HandleMonsterHit(int senderId, const MonsterHitData& hit)
+{
+    if (senderId < 0 || senderId >= 3 || hit.hitType > HIT_SHELL) return;
+    // 등껍질끼리의 물리 충돌은 호스트의 UpdateTurtles에서 직접 판정한다.
+    if (hit.hitType == HIT_SHELL) return;
+    Entity* target = nullptr;
+    switch (hit.kind) {
+    case MON_NORMAL:
+        if (hit.slot < g_monsters.monsterCount) target = &g_monsters.monsters[hit.slot];
+        break;
+    case MON_TURTLE:
+        if (hit.slot < g_monsters.turtleCount) target = &g_monsters.turtles[hit.slot];
+        break;
+    case MON_ANGEL_TURTLE:
+        if (hit.slot < g_monsters.angelTurtleCount) target = &g_monsters.angelTurtles[hit.slot];
+        break;
+    case MON_BOSS:
+        if (hit.slot == 0) target = &g_monsters.bowser;
+        break;
+    }
+    if (!target || !target->isAlive || target->isDead) return;
+    const Player& attacker = g_allPlayers[senderId].mario;
+    const int attackerX = attacker.x + (senderId == g_localPlayerIdx ? static_cast<int>(g_game.cameraX) : 0);
+    if (senderId != g_localPlayerIdx && (hit.hitType == HIT_STOMP ||
+        hit.hitType == HIT_STAR || hit.hitType == HIT_TINOBITE)) {
+        // 수신된 플레이어 위치와 스냅샷 사이의 이동 오차를 한 타일 허용한다.
+        const int reach = TILE_SIZE + (hit.hitType == HIT_TINOBITE ? TINO_BITE_WIDTH : 0);
+        if (attackerX + attacker.width + reach < target->x || target->x + target->width + reach < attackerX ||
+            attacker.y + attacker.height + TILE_SIZE < target->y || target->y + target->height + TILE_SIZE < attacker.y)
+            return;
+    }
+    if (hit.hitType == HIT_STOMP) {
+        if (hit.kind == MON_NORMAL) target->isAlive = false;
+        else if (hit.kind == MON_ANGEL_TURTLE) {
+            AngelTurtle& angel = g_monsters.angelTurtles[hit.slot];
+            if (angel.state == HIDE) return;
+            angel.state = HIDE;
+            angel.vy = 2;
+            angel.hideStartTime = GetTickCount();
+        } else if (hit.kind == MON_TURTLE) {
+            Turtle& turtle = g_monsters.turtles[hit.slot];
+            const DWORD now = GetTickCount();
+            if (IsMultiplayerGame() && turtle.lastNetworkStomp && now - turtle.lastNetworkStomp < 100) return;
+            turtle.lastNetworkStomp = now;
+            if (turtle.turtleState == SHELL) {
+                turtle.turtleState = SPINNING;
+                turtle.vx = attackerX + attacker.width / 2 < turtle.x + turtle.width / 2 ? 8 : -8;
+                turtle.damage = false;
+                turtle.damageTimer = now;
+            } else {
+                turtle.turtleState = SHELL;
+                turtle.vx = 0;
+                turtle.shellTimer = now;
+            }
+        }
+        return;
+    }
+    if (hit.kind == MON_BOSS && hit.hitType != HIT_STAR) {
+        if (g_monsters.bowser.hp <= 0) return;
+        if (hit.hitType == HIT_FIREBALL) --g_monsters.bowser.hp;
+        if (hit.hitType == HIT_TINOFIRE) g_monsters.bowser.hp -= 5;
+        if (hit.hitType == HIT_TINOBITE) g_monsters.bowser.hp -= 10;
+        return;
+    }
+    target->vy = hit.hitType == HIT_TINOBITE ? TINO_BITE_KNOCKBACK_VY : -15;
+    target->isDead = true;
+    target->isFalling = true;
+}
+
 void HandleMarioMonsterCollision()
 {
     for (int i = 0; i < g_monsters.monsterCount && !g_player.mario.isTransforming; i++)
@@ -249,7 +332,7 @@ void HandleMarioMonsterCollision()
             g_player.mario.vy > 0)
         {
             PlaySoundBuffer(stomp_Sound);
-            g_monsters.monsters[i].isAlive = false;
+            SendMonsterHit(MON_NORMAL, i, HIT_STOMP);
             g_player.mario.vy = -10;
         }
         // 측면 충돌
@@ -262,9 +345,7 @@ void HandleMarioMonsterCollision()
             if (g_player.mario.star)
             {
                 PlaySoundBuffer(kick_Sound);
-                g_monsters.monsters[i].vy = -15;
-                g_monsters.monsters[i].isDead = true;
-                g_monsters.monsters[i].isFalling = true;
+                SendMonsterHit(MON_NORMAL, i, HIT_STAR);
             }
             else
             {
@@ -464,29 +545,8 @@ void HandleMarioTurtleCollision()
             marioRight > turtleLeft && marioLeft < turtleRight &&
             g_player.mario.vy > 0)
         {
-            if (g_monsters.turtles[i].turtleState == NORMAL) // 걷는 상태일 때
-            {
-                PlaySoundBuffer(stomp_Sound);
-                g_monsters.turtles[i].turtleState = SHELL;
-                g_monsters.turtles[i].vx = 0;
-                g_monsters.turtles[i].shellTimer = GetTickCount();
-            }
-            else if (g_monsters.turtles[i].turtleState == SHELL) // 껍데기 상태를 걷어차기
-            {
-                PlaySoundBuffer(kick_Sound);
-                int marioCenter = g_player.mario.x + g_player.mario.width / 2;
-                int turtleCenter = (g_monsters.turtles[i].x - g_game.cameraX) + g_monsters.turtles[i].width / 2;
-
-                g_monsters.turtles[i].turtleState = SPINNING;
-                g_monsters.turtles[i].vx = (marioCenter < turtleCenter) ? 8 : -8;
-            }
-            else if (g_monsters.turtles[i].turtleState == SPINNING) // spinning 중인 상태를 밟으면
-            {
-                PlaySoundBuffer(stomp_Sound);
-                g_monsters.turtles[i].turtleState = SHELL;
-                g_monsters.turtles[i].vx = 0;
-            }
-
+            PlaySoundBuffer(g_monsters.turtles[i].turtleState == SHELL ? kick_Sound : stomp_Sound);
+            SendMonsterHit(MON_TURTLE, i, HIT_STOMP);
             g_player.mario.vy = -10;  // 반동 점프
         }
 
@@ -505,9 +565,7 @@ void HandleMarioTurtleCollision()
                 if (g_player.mario.star)
                 {
                     PlaySoundBuffer(kick_Sound);
-                    g_monsters.turtles[i].vy = -15;
-                    g_monsters.turtles[i].isDead = true;
-                    g_monsters.turtles[i].isFalling = true;
+                    SendMonsterHit(MON_TURTLE, i, HIT_STAR);
                 }
                 else
                 {
@@ -519,20 +577,12 @@ void HandleMarioTurtleCollision()
                 if (g_player.mario.star)
                 {
                     PlaySoundBuffer(kick_Sound);
-                    g_monsters.turtles[i].vy = -15;
-                    g_monsters.turtles[i].isDead = true;
-                    g_monsters.turtles[i].isFalling = true;
+                    SendMonsterHit(MON_TURTLE, i, HIT_STAR);
                 }
                 else
                 {
                     PlaySoundBuffer(kick_Sound);
-                    g_monsters.turtles[i].damage = false;
-                    g_monsters.turtles[i].damageTimer = GetTickCount();
-                    int marioCenter = g_player.mario.x + g_player.mario.width / 2;
-                    int turtleCenter = (g_monsters.turtles[i].x - g_game.cameraX) + g_monsters.turtles[i].width / 2;
-
-                    g_monsters.turtles[i].turtleState = SPINNING;
-                    g_monsters.turtles[i].vx = (marioCenter < turtleCenter) ? 8 : -8;
+                    SendMonsterHit(MON_TURTLE, i, HIT_STOMP);
                 }
             }
         }
@@ -595,9 +645,7 @@ void HandleMarioAngelTurtleCollision()
             marioLeft < turtleRight) {
 
             PlaySoundBuffer(stomp_Sound);
-            g_monsters.angelTurtles[i].state = HIDE;
-            g_monsters.angelTurtles[i].vy = 2;
-            g_monsters.angelTurtles[i].hideStartTime = GetTickCount();
+            SendMonsterHit(MON_ANGEL_TURTLE, i, HIT_STOMP);
 
             g_player.mario.vy = -15;
         }
@@ -755,9 +803,7 @@ void HandleMarioBowserCollision()
         if (g_player.mario.star)
         {
             PlaySoundBuffer(kick_Sound);
-            g_monsters.bowser.vy = -15;
-            g_monsters.bowser.isDead = true;
-            g_monsters.bowser.isFalling = true;
+            SendMonsterHit(MON_BOSS, 0, HIT_STAR);
         }
         else
         {

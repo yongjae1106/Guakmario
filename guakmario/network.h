@@ -148,6 +148,12 @@ struct MonsterHitData {
     uint8_t hitType;    // HitType
 };
 
+struct MonsterHitPacket {
+    PacketHeader header;
+    MonsterHitData hit;
+};
+static_assert(sizeof(MonsterHitPacket) == 7, "Monster hit wire size changed");
+
 // 몬스터 상태 (PKT_MONSTER_STATE, 호스트 → 전체) — 종류별 1패킷, 활성 개체만
 // 패킷에 없는 슬롯은 해당 종류의 비활성으로 처리
 struct MonsterStateHeader {
@@ -294,6 +300,8 @@ void NetBroadcastGameStart();  // connectedCount == 3 → GAME_START 브로드�
 // 수신 큐 소비 (메인 스레드, UpdateGame() 첫 줄에서 호출)
 void NetPollPackets();
 void ApplyMonsterSnapshot(const std::vector<uint8_t>& packet);
+void SendMonsterHit(MonsterKind kind, int slot, HitType hitType);
+void HandleMonsterHit(int senderId, const MonsterHitData& hit);
 
 // 자신의 플레이어 상태 직렬화 → 송신 (UpdateGame() 마지막에 호출)
 void NetFlushSend();

@@ -399,6 +399,14 @@ void NetPollPackets()
 
         switch (hdr->type)
         {
+        case PKT_MONSTER_HIT:
+            if (fromClient && g_game.gameStart && g_game.gameState == GAME_RUNNING &&
+                pkt.size() == sizeof(MonsterHitPacket) && hdr->size == pkt.size()) {
+                MonsterHitPacket request;
+                memcpy(&request, pkt.data(), sizeof(request));
+                HandleMonsterHit(senderPlayerId, request.hit);
+            }
+            break;
         case PKT_MONSTER_STATE:
             if (fromHost && g_game.gameStart) ApplyMonsterSnapshot(pkt);
             break;
