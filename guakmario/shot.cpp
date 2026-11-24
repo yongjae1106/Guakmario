@@ -1,3 +1,4 @@
+#include "network.h"
 #include "item.h"
 #include "data.h"
 #include "renderer.h"
@@ -333,6 +334,22 @@ void UpdateShot_tinofire_effect()
         }
     }
 }
+static void SendShotSpawn(ShotType type, int slot, const Shot& shot)
+{
+    if (!g_game.isMulti || g_game.isRenderTest || g_net.myPlayerId < 0 || g_net.myPlayerId > 2) return;
+    struct Packet { PacketHeader header; ShotSpawnData spawn; };
+    static_assert(sizeof(Packet) == sizeof(PacketHeader) + sizeof(ShotSpawnData));
+    const Packet packet = {
+        { sizeof(Packet), PKT_SHOT_SPAWN, static_cast<uint8_t>(g_net.myPlayerId) },
+        { type, static_cast<uint8_t>(slot), static_cast<uint8_t>(shot.direction),
+          static_cast<int16_t>(shot.x), static_cast<int16_t>(shot.y),
+          static_cast<int16_t>(shot.vx), static_cast<int16_t>(shot.vy),
+          static_cast<uint8_t>(shot.width), static_cast<uint8_t>(shot.height) }
+    };
+    if (g_net.isHost) SendToAll(&packet, sizeof(packet));
+    else SendToHost(&packet, sizeof(packet));
+}
+
 void SpawnFireball(int x, int y)
 {
     static int fireball_count = 0;
@@ -348,6 +365,8 @@ void SpawnFireball(int x, int y)
     fireball[fireball_count].width = 10;
     fireball[fireball_count].height = 10;
     fireball[fireball_count].active = true;
+    fireball[fireball_count].direction = g_player.mario.direction;
+    SendShotSpawn(SHOT_FIREBALL, fireball_count, fireball[fireball_count]);
     fireball_count++;
 }
 void SpawnTinoFire(int x, int y)
@@ -370,6 +389,7 @@ void SpawnTinoFire(int x, int y)
     tinofire[tinofire_count].height = TILE_SIZE * 2;
     tinofire[tinofire_count].active = true;
     tinofire[tinofire_count].fade = false;
+    SendShotSpawn(SHOT_TINOFIRE, tinofire_count, tinofire[tinofire_count]);
     tinofire_count++;
 }
 void UpdateAllShots()
