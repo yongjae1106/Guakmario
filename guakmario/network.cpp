@@ -9,9 +9,8 @@
 //  전역 변수 정의
 // ============================================================
 
-static constexpr int INITIAL_SHARED_LIVES = 3;
 NetContext g_net       = {};
-int        g_sharedLives = INITIAL_SHARED_LIVES;
+int        g_sharedLives = PLAYER_INITIAL_LIFE;
 static uint8_t g_clientsLoadingStage = 0;
 
 
@@ -135,7 +134,7 @@ bool NetInit(bool isHost, const char* hostIp)
     g_net.clientSockets[0] = INVALID_SOCKET;
     g_net.clientSockets[1] = INVALID_SOCKET;
     g_net.hostSocket      = INVALID_SOCKET;
-    if (isHost) g_sharedLives = INITIAL_SHARED_LIVES;
+    if (isHost) g_sharedLives = PLAYER_INITIAL_LIFE;
 
     // 수신 큐 크리티컬 섹션 초기화 (최초 1회)
     if (!g_recvCSInit)
