@@ -408,12 +408,12 @@ void NetPollPackets()
             if (!g_game.gameStart || !g_game.isMulti || g_game.isRenderTest ||
                 pkt.size() != sizeof(PacketHeader) + sizeof(ShotSpawnData) ||
                 hdr->size != pkt.size()) break;
-            if (!g_net.isHost || senderPlayerId < 1 || senderPlayerId > 2 ||
-                hdr->playerId != senderPlayerId) break;
+            if (g_net.isHost) {
+                if (senderPlayerId < 1 || senderPlayerId > 2 || hdr->playerId != senderPlayerId) break;
+            } else if (senderPlayerId != 0) break;
             ShotSpawnData spawn;
             memcpy(&spawn, pkt.data() + sizeof(PacketHeader), sizeof(spawn));
-            if (spawn.shotType > SHOT_TINOFIRE || spawn.slot >= MAX_SHOT ||
-                spawn.direction > DIR_RIGHT || !spawn.width || !spawn.height) break;
+            if (!ApplyShotSpawn(hdr->playerId, spawn) || !g_net.isHost) break;
             for (int target = 1; target <= 2; ++target)
                 if (target != senderPlayerId) SendToOne(target, pkt.data(), (int)pkt.size());
             break;
