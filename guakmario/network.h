@@ -33,7 +33,9 @@ struct PlayerStateData {
     uint16_t motionTimer;       // 공격 모션 프레임
     uint8_t  tinoCooldownZ, tinoCooldownSpace;
     uint16_t flags;             // PlayerStateFlags
+    uint32_t tinoBiteId;        // 발동할 때마다 증가하는 티노 물기 식별자
 };
+static_assert(sizeof(PlayerStateData) == 27, "Player state wire size changed");
 
 // PlayerStateData.flags 비트 정의
 enum PlayerStateFlags : uint16_t {

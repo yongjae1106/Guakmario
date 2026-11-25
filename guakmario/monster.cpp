@@ -273,12 +273,9 @@ void HandleMonsterHit(int senderId, const MonsterHitData& hit)
     case MON_ANGEL_TURTLE:
         if (hit.slot < g_monsters.angelTurtleCount) target = &g_monsters.angelTurtles[hit.slot];
         break;
-    case MON_BOSS:
-        if (hit.slot == 0) target = &g_monsters.bowser;
-        break;
     }
     if (!target || !target->isAlive || target->isDead) return;
-    if (hit.kind != MON_BOSS && (hit.hitType == HIT_FIREBALL || hit.hitType == HIT_TINOFIRE))
+    if (hit.hitType == HIT_FIREBALL || hit.hitType == HIT_TINOFIRE)
     {
         const ShotType type = hit.hitType == HIT_FIREBALL ? SHOT_FIREBALL : SHOT_TINOFIRE;
         Shot* shot = FindActivePlayerShot(senderId, type, hit.shotId);
@@ -324,13 +321,6 @@ void HandleMonsterHit(int senderId, const MonsterHitData& hit)
                 turtle.shellTimer = now;
             }
         }
-        return;
-    }
-    if (hit.kind == MON_BOSS && hit.hitType != HIT_STAR) {
-        if (g_monsters.bowser.hp <= 0) return;
-        if (hit.hitType == HIT_FIREBALL) --g_monsters.bowser.hp;
-        if (hit.hitType == HIT_TINOFIRE) g_monsters.bowser.hp -= 5;
-        if (hit.hitType == HIT_TINOBITE) g_monsters.bowser.hp -= 10;
         return;
     }
     target->vy = hit.hitType == HIT_TINOBITE ? TINO_BITE_KNOCKBACK_VY : -15;
@@ -832,7 +822,55 @@ void UpdateFireballs()
     }
 }
 
-// 마리오 보서 충돌처리
+bool ApplyBowserHit(HitType type)
+{
+    Bowser& bowser = g_monsters.bowser;
+    if (g_game.stage != CASTLE_STAGE || !bowser.isAlive || bowser.isDead || bowser.hp <= 0 ||
+        (IsMultiplayerGame() && (!g_net.isHost || !g_game.gameStart || g_game.gameState != GAME_RUNNING)))
+        return false;
+
+    int damage = 0;
+    switch (type)
+    {
+    case HIT_FIREBALL: damage = 1; break;
+    case HIT_TINOFIRE: damage = 5; break;
+    case HIT_TINOBITE: damage = 10; break;
+    case HIT_STAR:
+        damage = bowser.hp;
+        bowser.vy = -15;
+        break;
+    default: return false;
+    }
+    bowser.hp = damage >= bowser.hp ? 0 : bowser.hp - damage;
+    PlaySoundBuffer(type == HIT_FIREBALL ? bump_Sound : kick_Sound);
+    return true;
+}
+
+void HandleBowserPlayerAttacks()
+{
+    if (IsMultiplayerGame() && !g_net.isHost) return;
+    Bowser& bowser = g_monsters.bowser;
+    if (!bowser.isAlive || bowser.isDead || bowser.hp <= 0) return;
+
+    for (int id = 0; id < 3; ++id)
+    {
+        const bool local = id == g_localPlayerIdx;
+        if (!local && !IsMultiplayerGame()) continue;
+        const Player& attacker = g_allPlayers[id].mario;
+        if (attacker.isDead || attacker.gameover || attacker.isTransforming) continue;
+
+        const int worldX = attacker.x + (local ? static_cast<int>(g_game.cameraX) : 0);
+        if (attacker.star && IsColliding(worldX, attacker.y, attacker.width, attacker.height,
+            bowser.x, bowser.y, bowser.width, bowser.height) && ApplyBowserHit(HIT_STAR)) return;
+
+        if (attacker.form != FORM_TINO || !attacker.tino_motion || attacker.tinoBiteId == 0 ||
+            attacker.tinoBiteId == bowser.lastBiteHits[id]) continue;
+        const int biteX = attacker.direction == DIR_LEFT ? worldX - TINO_BITE_WIDTH : worldX + attacker.width;
+        if (IsColliding(biteX, attacker.y + TINO_BITE_Y_OFFSET, TINO_BITE_WIDTH, TINO_BITE_HEIGHT,
+            bowser.x, bowser.y, bowser.width, bowser.height) && ApplyBowserHit(HIT_TINOBITE))
+            bowser.lastBiteHits[id] = attacker.tinoBiteId;
+    }
+}
 
 void HandleMarioBowserCollision()
 {
@@ -844,16 +882,7 @@ void HandleMarioBowserCollision()
         bowserX, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height) &&
         !g_monsters.bowser.isDead) 
     {
-        // 스타 파워면 튕겨내기 처리
-        if (g_player.mario.star)
-        {
-            PlaySoundBuffer(kick_Sound);
-            SendMonsterHit(MON_BOSS, 0, HIT_STAR);
-        }
-        else
-        {
-            damage_mario();
-        }
+        damage_mario();
     }
 }
 void HandleMarioFireballCollision()

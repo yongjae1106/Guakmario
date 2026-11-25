@@ -1,15 +1,21 @@
 #include "network.h"
 #include "item.h"
 #include "data.h"
-#include "renderer.h"
 #include "player.h"
 #include "game.h"
 #include "map.h"
 #include "collision.h"
-#include "image.h"
 #include "sound.h"
 #include "monster.h"
 #include "config.h"
+
+static bool ShotHitsBowser(const Shot& shot)
+{
+    const Bowser& bowser = g_monsters.bowser;
+    return shot.active && bowser.isAlive && !bowser.isDead &&
+        IsColliding(bowser.x, bowser.y, bowser.width, bowser.height,
+            shot.x, shot.y, shot.width, shot.height);
+}
 
 void HandleFireballHit()
 {
@@ -65,24 +71,10 @@ void HandleFireballHit()
                 }
             }
         }
-
-        int bowserScreenX = g_monsters.bowser.x - g_game.cameraX;
-        if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive && fireball[i].active)
-        {
-            if (IsColliding(bowserScreenX, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
-                fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
-            {
-                PlaySoundBuffer(bump_Sound);
-                SendMonsterHit(MON_BOSS, 0, HIT_FIREBALL);
-                fireball[i].active = false;
-            }
-        }
     }
 }
 void HandleTinoFireHit()
 {
-    Graphics graphics(g_memDC);
-    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
     for (int i = 0; i < MAX_SHOT; i++)
     {
         if (!tinofire[i].active) continue;
@@ -133,19 +125,6 @@ void HandleTinoFireHit()
                     OnMonsterHit(g_monsters.angelTurtles[j].x, g_monsters.angelTurtles[j].y);
                     break;
                 }
-            }
-        }
-
-        int bowserScreenX = g_monsters.bowser.x - g_game.cameraX;
-        if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive && tinofire[i].active)
-        {
-            if (IsColliding(bowserScreenX, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
-                tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height) && !g_monsters.bowser.ignoreTinoFire)
-            {
-                PlaySoundBuffer(kick_Sound);
-                OnMonsterHit(g_monsters.bowser.x, g_monsters.bowser.y);
-                SendMonsterHit(MON_BOSS, 0, HIT_TINOFIRE);
-                g_monsters.bowser.ignoreTinoFire = true;
             }
         }
     }
@@ -216,19 +195,8 @@ void TinoAttack()
             }
         }
     }
-
-    int bowserScreenX = g_monsters.bowser.x - g_game.cameraX;
-    if (!g_monsters.bowser.isDead && g_monsters.bowser.isAlive)
-    {
-        if (IsColliding(bowserScreenX, g_monsters.bowser.y, g_monsters.bowser.width, g_monsters.bowser.height,
-            biteX, biteY, biteWidth, biteHeight) && !g_monsters.bowser.ignoreTinoBite)
-        {
-            PlaySoundBuffer(kick_Sound);
-            SendMonsterHit(MON_BOSS, 0, HIT_TINOBITE);
-            g_monsters.bowser.ignoreTinoBite = true;
-        }
-    }
 }
+
 static bool IsSolidShotTile(int row, int column)
 {
     return currentMap && row >= 0 && row < MAP_HEIGHT && column >= 0 && column < MAP_WIDTH &&
@@ -446,8 +414,40 @@ void UpdateAllShots()
         }
     UpdateShot_tinofire_effect();
 }
+
+static void HandleBowserShotHits(int owner, Shot (&fireballs)[MAX_SHOT], Shot (&tinoFires)[MAX_SHOT])
+{
+    for (Shot& shot : fireballs)
+    {
+        if (ShotHitsBowser(shot) && ApplyBowserHit(HIT_FIREBALL))
+            DespawnPlayerFireball(owner, shot);
+    }
+    for (Shot& shot : tinoFires)
+    {
+        if (!shot.hitBowser && ShotHitsBowser(shot) && ApplyBowserHit(HIT_TINOFIRE))
+        {
+            shot.hitBowser = true;
+            OnMonsterHit(g_monsters.bowser.x, g_monsters.bowser.y);
+        }
+    }
+}
+
 void HandleShotCollisions()
 {
     HandleFireballHit();
     HandleTinoFireHit();
+    const bool online = IsMultiplayerGame();
+    if (online && !g_net.isHost) return;
+
+    HandleBowserPlayerAttacks();
+    HandleBowserShotHits(g_localPlayerIdx, fireball, tinofire);
+    if (online)
+    {
+        for (int owner = 0; owner < 3; ++owner)
+        {
+            if (owner == g_localPlayerIdx) continue;
+            RemoteShots& pool = remoteShots[owner];
+            HandleBowserShotHits(owner, pool.fireballs, pool.tinoFires);
+        }
+    }
 }

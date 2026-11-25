@@ -621,6 +621,7 @@ void NetFlushSend()
     ps->motionTimer       = (uint16_t)me.motion_timer;
     ps->tinoCooldownZ     = (uint8_t)me.tino_cooldown_z;
     ps->tinoCooldownSpace = (uint8_t)me.tino_cooldown_space;
+    ps->tinoBiteId        = me.tinoBiteId;
     ps->flags             = 0;
     if (me.isJumping)        ps->flags |= FLAG_JUMPING;
     if (me.isFlying)         ps->flags |= FLAG_FLYING;

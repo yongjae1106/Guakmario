@@ -17,6 +17,11 @@ void ApplyItemSpawn(const ItemSpawnData&) {}
 void HandleMonsterHit(int, const MonsterHitData&) {}
 void ApplyMonsterSnapshot(const std::vector<uint8_t>&) {}
 void ApplyBossSnapshot(const std::vector<uint8_t>&) {}
+bool IsMultiplayerGame() { return false; }
+void HandleRemoteTileHit(int, const BlockHitData&) {}
+void ApplyTileChange(int, const TileChangeData&) {}
+bool ApplyShotSpawn(int, const ShotSpawnData&) { return false; }
+void ApplyFireballDespawn(int, uint32_t) {}
 
 static void TestBossStatePacket()
 {

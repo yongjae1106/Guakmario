@@ -333,8 +333,10 @@ void resurrection()
 void ResetMario(int life, int coin)
 {
     const CharacterType charType = g_game.isMulti ? g_player.mario.charType : CHAR_MARIO;
+    const uint32_t tinoBiteId = g_player.mario.tinoBiteId;
     g_player.mario = {};
     g_player.mario.charType = charType;
+    g_player.mario.tinoBiteId = tinoBiteId;
     g_player.mario.x = 100;
     g_player.mario.y = 300;
     g_player.mario.life = life;
@@ -387,6 +389,7 @@ bool ApplyRemotePlayerState(int playerId, const PlayerStateData& state)
     p.motion_timer = state.motionTimer;
     p.tino_cooldown_z = state.tinoCooldownZ;
     p.tino_cooldown_space = state.tinoCooldownSpace;
+    p.tinoBiteId = state.tinoBiteId;
     p.direction = (state.flags & FLAG_FACING_RIGHT) ? DIR_RIGHT : DIR_LEFT;
     p.isJumping = (state.flags & FLAG_JUMPING)          != 0;
     p.isFlying = (state.flags & FLAG_FLYING)           != 0;

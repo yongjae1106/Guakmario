@@ -53,8 +53,7 @@ struct AngelTurtle : Entity
 struct Bowser : Entity
 {
     int hp = 0;
-    bool ignoreTinoFire = false;
-    bool ignoreTinoBite = false;
+    uint32_t lastBiteHits[3] = {};
     bool isJumping = false;
     bool isFiring = false;
     int fireTimer = 0;// 추가: 불 공격 중인지 여부
@@ -114,6 +113,9 @@ void HandleMarioAngelTurtleCollision();
 
 void UpdateBowser();
 void FinishBowserDefeat();
+enum HitType : uint8_t;
+bool ApplyBowserHit(HitType type);
+void HandleBowserPlayerAttacks();
 void UpdateFireballs();
 void HandleMarioBowserCollision();
 void HandleMarioFireballCollision();

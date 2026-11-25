@@ -35,6 +35,7 @@ struct Shot
     bool active;
     bool fade;
     uint32_t spawnId;
+    bool hitBowser = false;
 };
 struct Shot_Effect
 {

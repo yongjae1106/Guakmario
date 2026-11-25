@@ -1,6 +1,8 @@
 #pragma once
+#include <stdint.h>
 #include "data.h"
 #include "config.h"
+#include <stdint.h>
 
 struct Player
 {
@@ -14,6 +16,7 @@ struct Player
     int motion_timer = 0;
     int tino_cooldown_z = 0;
     int tino_cooldown_space = 0;
+    uint32_t tinoBiteId = 0;
     bool isJumping = false;
     bool isFlying = false;
     bool isWalking = false;
