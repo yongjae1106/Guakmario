@@ -1432,17 +1432,6 @@ static void Draw_Monsters()
             else if (g_game.stage == 3)
                 graphics.DrawImage(g_images.monster3_dead, screenX, screenY, TILE_SIZE, TILE_SIZE);
 
-            // 밟기 사망(isAlive=false): 300ms 후 숨김
-            // 날아가기 사망(isDead=true, isAlive=true): UpdateMonsters에서 화면 밖 감지 후 숨김
-            if (!g_monsters.monsters[i].isAlive)
-            {
-                DWORD now = GetTickCount();
-                if (g_monsters.monsters[i].deadStart == 0)
-                    g_monsters.monsters[i].deadStart = now;
-                if (now - g_monsters.monsters[i].deadStart >= 300)
-                    g_monsters.monsters[i].active = false;
-            }
-
             continue;
         }
 

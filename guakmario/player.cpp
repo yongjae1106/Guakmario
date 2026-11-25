@@ -69,6 +69,15 @@ static int PlayerCollisionTile(int row, int column)
     return currentMap[row][column];
 }
 
+int CameraXForPlayer(int worldX)
+{
+    const int desired = worldX - SCREEN_WIDTH / 2;
+    constexpr int rightEdge = MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH;
+    if (desired < 0) return 0;
+    if (desired > rightEdge) return rightEdge;
+    return desired;
+}
+
 void UpdatePlayer()
 {
     if(g_game.gameState != GAME_VICTORY && g_game.gameState != GAME_CLEAR)
@@ -245,26 +254,14 @@ void UpdatePlayer()
     }
 
 
-    // 마리오 왼쪽 벽 충돌
-    if (g_player.mario.x < 0)
-    {
-        g_player.mario.x = 0;
-    }
-    // 카메라 이동
-    if (g_player.mario.x > SCREEN_WIDTH / 2)
-    {
-        g_game.cameraX += g_player.mario.vx;
-        g_player.mario.x = SCREEN_WIDTH / 2;
-    }
-    if (g_player.mario.x < SCREEN_WIDTH / 2 && g_game.cameraX > 0)
-    {
-        g_game.cameraX += g_player.mario.vx;
-        g_player.mario.x = SCREEN_WIDTH / 2;
-    }
-
-    if (g_game.cameraX < 0) g_game.cameraX = 0;
-    if (g_game.cameraX > MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH)
-        g_game.cameraX = MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH;
+    // 벽 충돌로 보정된 월드 위치를 유지하면서 카메라를 이동한다.
+    int worldX = g_player.mario.x + static_cast<int>(g_game.cameraX);
+    const int rightEdge = MAP_WIDTH * TILE_SIZE - g_player.mario.width;
+    if (worldX < 0) worldX = 0;
+    if (worldX > rightEdge) worldX = rightEdge;
+    const int cameraX = CameraXForPlayer(worldX);
+    g_game.cameraX = cameraX;
+    g_player.mario.x = worldX - cameraX;
 
     if (g_player.mario.y > PLAYER_FALL_DEATH_Y)
     {

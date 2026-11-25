@@ -59,6 +59,7 @@ MarioRenderData BuildMarioRenderData();
 MarioRenderData BuildMarioRenderDataFor(int idx);  // 렌더 테스트용 — 임의 슬롯 빌드
 
 void movePlayer();
+int CameraXForPlayer(int worldX);
 void UpdatePlayer();
 void StartPlayerTransformation(MarioForm target);
 void UpdatePlayerTransformation(Player& player, DWORD now);

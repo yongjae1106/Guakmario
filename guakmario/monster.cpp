@@ -118,11 +118,37 @@ void InitBowser()
 
 //monster
 // 충돌처리
+static int MonsterCollisionTile(int row, int column)
+{
+    if (row < 0 || row >= MAP_HEIGHT || column < 0 || column >= MAP_WIDTH) return TILE_EMPTY;
+    return currentMap[row][column];
+}
+
 void UpdateMonsters()
 {
+    const DWORD now = GetTickCount();
+    int cameras[3] = { static_cast<int>(g_game.cameraX) };
+    int cameraCount = 1;
+    if (IsMultiplayerGame())
+    {
+        for (int id = 1; id < 3; ++id)
+        {
+            if (g_net.clientSockets[id - 1] != INVALID_SOCKET)
+                cameras[cameraCount++] = CameraXForPlayer(g_allPlayers[id].mario.x);
+        }
+    }
+
     for (int i = 0; i < g_monsters.monsterCount; i++)
     {
-        if (!g_monsters.monsters[i].isAlive) continue;
+        Monster& monster = g_monsters.monsters[i];
+        if (!monster.active) continue;
+        if (!monster.isAlive)
+        {
+            // 밟힌 몬스터의 표시 시간도 상태를 계산하는 쪽에서 관리한다.
+            if (monster.deadStart == 0) monster.deadStart = now;
+            if (now - monster.deadStart >= 300) monster.active = false;
+            continue;
+        }
 
         if (g_monsters.monsters[i].isFalling)
         {
@@ -130,26 +156,25 @@ void UpdateMonsters()
             g_monsters.monsters[i].vy += 1;
             if (g_monsters.monsters[i].vy > 10) g_monsters.monsters[i].vy = 10;
             g_monsters.monsters[i].y += g_monsters.monsters[i].vy;
-            if (g_monsters.monsters[i].isDead && g_monsters.monsters[i].y > SCREEN_HEIGHT + 100)
-                g_monsters.monsters[i].isAlive = false;  // 화면 밖 낙하 완료 → 정리
+            if (monster.y > SCREEN_HEIGHT + 100)
+            {
+                monster.isAlive = false;
+                monster.active = false;
+            }
             continue;
         }
         
-        // 화면 안에 있는 몬스터만 처리
-        int screenX = g_monsters.monsters[i].x - g_game.cameraX;
-        if (screenX + TILE_SIZE < 0 || screenX > SCREEN_WIDTH) {
-            if (!IsMultiplayerGame()) continue;
-            bool nearRemotePlayer = false;
-            for (int id = 1; id < g_net.connectedCount && id < 3; ++id) {
-                // 원격 플레이어의 x는 월드 좌표이다.
-                if (abs(g_monsters.monsters[i].x - g_allPlayers[id].mario.x) <= SCREEN_WIDTH / 2 + TILE_SIZE)
-                    nearRemotePlayer = true;
+        bool visible = false;
+        for (int camera = 0; camera < cameraCount; ++camera)
+        {
+            const int screenX = monster.x - cameras[camera];
+            if (screenX + TILE_SIZE > 0 && screenX < SCREEN_WIDTH)
+            {
+                visible = true;
+                break;
             }
-            if (!nearRemotePlayer) continue;
         }
-
-
-
+        if (!visible) continue;
 
         // 화면 밖 처리 (낙하 체크)
         if (g_game.stage > 1)
@@ -184,13 +209,15 @@ void UpdateMonsters()
 
         // 벽 또는 낭떠러지 감지 시 방향 전환
         if (g_monsters.monsters[i].vx < 0 &&
-            (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
+            (isSolidTile(MonsterCollisionTile(top, left)) || isSolidTile(MonsterCollisionTile(bottom, left)) ||
+             isSolidTile(MonsterCollisionTile(middle, left))))
         {
             g_monsters.monsters[i].x = (left + 1) * TILE_SIZE; // 위치 조정
             g_monsters.monsters[i].vx = -g_monsters.monsters[i].vx;      // 방향 반전
         }
         else if (g_monsters.monsters[i].vx > 0 &&
-            (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right]) || isSolidTile(currentMap[middle][right])))
+            (isSolidTile(MonsterCollisionTile(top, right)) || isSolidTile(MonsterCollisionTile(bottom, right)) ||
+             isSolidTile(MonsterCollisionTile(middle, right))))
         {
             g_monsters.monsters[i].x = right * TILE_SIZE - g_monsters.monsters[i].width; // 위치 조정
             g_monsters.monsters[i].vx = -g_monsters.monsters[i].vx;                       // 방향 반전
@@ -200,7 +227,7 @@ void UpdateMonsters()
         int underX = (g_monsters.monsters[i].x + TILE_SIZE / 2) / TILE_SIZE;
         int underY = (g_monsters.monsters[i].y + TILE_SIZE) / TILE_SIZE;
 
-        if (underX < 0 || underX >= MAP_WIDTH || underY >= MAP_HEIGHT || currentMap[underY][underX] == TILE_EMPTY)
+        if (MonsterCollisionTile(underY, underX) == TILE_EMPTY)
         {
             g_monsters.monsters[i].vy += 1;
             if (g_monsters.monsters[i].vy > 10) g_monsters.monsters[i].vy = 10;
@@ -355,7 +382,7 @@ void UpdateTurtles()
             int underX = (g_monsters.turtles[i].x + TILE_SIZE / 2) / TILE_SIZE;
             int underY = (g_monsters.turtles[i].y + TILE_SIZE) / TILE_SIZE;
 
-            if (underX < 0 || underX >= MAP_WIDTH || underY >= MAP_HEIGHT || currentMap[underY][underX] == TILE_EMPTY)
+            if (MonsterCollisionTile(underY, underX) == TILE_EMPTY)
             {
                 g_monsters.turtles[i].vy += 1;
                 if (g_monsters.turtles[i].vy > 10) g_monsters.turtles[i].vy = 10;
@@ -379,6 +406,8 @@ void UpdateTurtles()
             g_monsters.turtles[i].vy += 1;
             if (g_monsters.turtles[i].vy > 10) g_monsters.turtles[i].vy = 10;
             g_monsters.turtles[i].y += g_monsters.turtles[i].vy;
+            if (g_monsters.turtles[i].y > SCREEN_HEIGHT)
+                g_monsters.turtles[i].isAlive = false;
             continue;
         }
         g_monsters.turtles[i].direction = g_monsters.turtles[i].vx > 0 ? DIR_RIGHT : DIR_LEFT;
@@ -411,7 +440,7 @@ void UpdateTurtles()
         int underX = (g_monsters.turtles[i].x + TILE_SIZE / 2) / TILE_SIZE;
         int underY = (g_monsters.turtles[i].y + TILE_SIZE) / TILE_SIZE;
 
-        if (underX < 0 || underX >= MAP_WIDTH || underY >= MAP_HEIGHT || currentMap[underY][underX] == TILE_EMPTY)
+        if (MonsterCollisionTile(underY, underX) == TILE_EMPTY)
         {
             g_monsters.turtles[i].vy += 1;
             if (g_monsters.turtles[i].vy > 10) g_monsters.turtles[i].vy = 10;
@@ -434,14 +463,17 @@ void UpdateTurtles()
         int bottom = (g_monsters.turtles[i].y + TILE_SIZE - 1) / TILE_SIZE;
         int middle = (g_monsters.turtles[i].y + g_monsters.turtles[i].height / 2 - 1) / TILE_SIZE;
 
-        if (g_monsters.turtles[i].vx < 0 &&
-            (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
+        const bool leftWall = isSolidTile(MonsterCollisionTile(top, left)) ||
+            isSolidTile(MonsterCollisionTile(bottom, left)) || isSolidTile(MonsterCollisionTile(middle, left));
+        const bool rightWall = isSolidTile(MonsterCollisionTile(top, right)) ||
+            isSolidTile(MonsterCollisionTile(bottom, right)) || isSolidTile(MonsterCollisionTile(middle, right));
+
+        if (g_monsters.turtles[i].vx < 0 && leftWall)
         {
             g_monsters.turtles[i].x = (left + 1) * TILE_SIZE;
             g_monsters.turtles[i].vx = -g_monsters.turtles[i].vx;
         }
-        else if (g_monsters.turtles[i].vx > 0 &&
-            (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right]) || isSolidTile(currentMap[middle][right])))
+        else if (g_monsters.turtles[i].vx > 0 && rightWall)
         {
             g_monsters.turtles[i].x = right * TILE_SIZE - g_monsters.turtles[i].width;
             g_monsters.turtles[i].vx = -g_monsters.turtles[i].vx;
@@ -497,14 +529,12 @@ void UpdateTurtles()
             }
 
             // (3) 벽과 충돌 시 방향 전환
-            if (g_monsters.turtles[i].vx < 0 &&
-                (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
+            if (g_monsters.turtles[i].vx < 0 && leftWall)
             {
                 g_monsters.turtles[i].x = (left + 1) * TILE_SIZE;
                 g_monsters.turtles[i].vx = -g_monsters.turtles[i].vx;
             }
-            else if (g_monsters.turtles[i].vx > 0 &&
-                (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right]) || isSolidTile(currentMap[middle][right])))
+            else if (g_monsters.turtles[i].vx > 0 && rightWall)
             {
                 g_monsters.turtles[i].x = right * TILE_SIZE - g_monsters.turtles[i].width;
                 g_monsters.turtles[i].vx = -g_monsters.turtles[i].vx;
