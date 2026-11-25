@@ -86,6 +86,7 @@ struct ShotSpawnData {
     uint8_t shotType, slot, direction;
     int16_t x, y, vx, vy;
     uint8_t width, height;
+    uint32_t spawnId;
 };
 
 // 아이템 생성 (PKT_ITEM_SPAWN, 호스트 → 전체)
@@ -145,13 +146,14 @@ struct MonsterHitData {
     uint8_t kind;       // MonsterKind
     uint8_t slot;
     uint8_t hitType;    // HitType
+    uint32_t shotId;    // 투사체 생성 식별자, 그 외 타격은 0
 };
 
 struct MonsterHitPacket {
     PacketHeader header;
     MonsterHitData hit;
 };
-static_assert(sizeof(MonsterHitPacket) == 7, "Monster hit wire size changed");
+static_assert(sizeof(MonsterHitPacket) == 11, "Monster hit wire size changed");
 
 // 몬스터 상태 (PKT_MONSTER_STATE, 호스트 → 전체) — 종류별 1패킷, 활성 개체만
 // 패킷에 없는 슬롯은 해당 종류의 비활성으로 처리
@@ -260,6 +262,7 @@ enum PacketType : uint8_t {
     PKT_BOSS_STATE    = 12, // 보스 상태 (호스트 → 전체, 5프레임마다)
     PKT_HAZARD_STATE  = 13, // 함정 상태 (호스트 → 전체, 5프레임마다)
     PKT_GAME_SYNC     = 14, // 스테이지·시간·목숨 (호스트 → 전체, 1초마다)
+    PKT_FIREBALL_DESPAWN = 15, // 플레이어 화염탄 명중 후 제거 (호스트 → 전체)
 };
 
 
@@ -304,7 +307,7 @@ void NetBroadcastGameStart();  // connectedCount == 3 → GAME_START 브로드�
 void NetPollPackets();
 void ApplyMonsterSnapshot(const std::vector<uint8_t>& packet);
 void ApplyBossSnapshot(const std::vector<uint8_t>& packet);
-void SendMonsterHit(MonsterKind kind, int slot, HitType hitType);
+void SendMonsterHit(MonsterKind kind, int slot, HitType hitType, uint32_t shotId = 0);
 void HandleMonsterHit(int senderId, const MonsterHitData& hit);
 
 // 자신의 플레이어 상태 직렬화 → 송신 (UpdateGame() 마지막에 호출)

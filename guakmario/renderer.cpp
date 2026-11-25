@@ -1250,30 +1250,28 @@ static void Draw_item()
     }
 
 }
-static void Draw_fireball()
+static void DrawShotPool(Graphics& graphics, const Shot* fireballs, const Shot* tinoFires,
+                         const Shot_Effect* effects)
 {
-    Graphics graphics(g_memDC);
-    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
-
     for (int i = 0; i < MAX_SHOT; i++)
     {
         // flower fire
-        if (!fireball[i].active) continue;
-        int screenX = fireball[i].x - g_game.cameraX;
-        int screenY = fireball[i].y;
-        if (fireball[i].motion == 0)
+        if (!fireballs[i].active) continue;
+        int screenX = fireballs[i].x - g_game.cameraX;
+        int screenY = fireballs[i].y;
+        if (fireballs[i].motion == 0)
         {
             graphics.DrawImage(g_images.shot_fireball_1, screenX, screenY, 20, 20);
         }
-        else if (fireball[i].motion == 1)
+        else if (fireballs[i].motion == 1)
         {
             graphics.DrawImage(g_images.shot_fireball_2, screenX, screenY, 20, 20);
         }
-        else if (fireball[i].motion == 2)
+        else if (fireballs[i].motion == 2)
         {
             graphics.DrawImage(g_images.shot_fireball_3, screenX, screenY, 20, 20);
         }
-        else if (fireball[i].motion == 3)
+        else if (fireballs[i].motion == 3)
         {
             graphics.DrawImage(g_images.shot_fireball_4, screenX, screenY, 20, 20);
         }
@@ -1282,29 +1280,29 @@ static void Draw_fireball()
     for (int i = 0; i < MAX_SHOT; i++)
     {
         // tino fire
-        if (tinofire_effect[i].active)
+        if (effects && effects[i].active)
         {
-            int screenX = tinofire_effect[i].x - g_game.cameraX;
-            int screenY = tinofire_effect[i].y;
-            if(tinofire_effect[i].timer < 5)
+            int screenX = effects[i].x - g_game.cameraX;
+            int screenY = effects[i].y;
+            if(effects[i].timer < 5)
             {
                 graphics.DrawImage(g_images.tino_mario_fire_fade_1, screenX, screenY - 40, TILE_SIZE * 2, TILE_SIZE * 2);
             }
-            else if (tinofire_effect[i].timer < 10)
+            else if (effects[i].timer < 10)
             {
                 graphics.DrawImage(g_images.tino_mario_fire_fade_2, screenX, screenY - 40, TILE_SIZE * 2, TILE_SIZE * 2);
             }
-            else if (tinofire_effect[i].timer < 15)
+            else if (effects[i].timer < 15)
             {
                 graphics.DrawImage(g_images.tino_mario_fire_fade_3, screenX, screenY - 40, TILE_SIZE * 2, TILE_SIZE * 2);
             }
         }
-        if (!tinofire[i].active) continue;
-        int screenX = tinofire[i].x - g_game.cameraX;
-        int screenY = tinofire[i].y;
-        if (tinofire[i].direction == DIR_LEFT)
+        if (!tinoFires[i].active) continue;
+        int screenX = tinoFires[i].x - g_game.cameraX;
+        int screenY = tinoFires[i].y;
+        if (tinoFires[i].direction == DIR_LEFT)
         {
-            if (tinofire[i].motion < 3)
+            if (tinoFires[i].motion < 3)
             {
                 graphics.DrawImage(g_images.tino_mario_fire_1, screenX, screenY, TILE_SIZE * 2, TILE_SIZE * 2);
             }
@@ -1313,9 +1311,9 @@ static void Draw_fireball()
                 graphics.DrawImage(g_images.tino_mario_fire_2, screenX, screenY, TILE_SIZE * 2, TILE_SIZE * 2);
             }
         }
-        else if (tinofire[i].direction == DIR_RIGHT)
+        else if (tinoFires[i].direction == DIR_RIGHT)
         {
-            if (tinofire[i].motion < 3)
+            if (tinoFires[i].motion < 3)
             {
                 graphics.DrawImage(g_images.tino_mario_fire_R_1, screenX, screenY, TILE_SIZE * 2, TILE_SIZE * 2);
             }
@@ -1325,6 +1323,15 @@ static void Draw_fireball()
             }
         }
     }
+}
+static void Draw_fireball()
+{
+    Graphics graphics(g_memDC);
+    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    DrawShotPool(graphics, fireball, tinofire, tinofire_effect);
+    if (IsMultiplayerGame())
+        for (const auto& pool : remoteShots)
+            DrawShotPool(graphics, pool.fireballs, pool.tinoFires, nullptr);
 }
 void Draw_information()
 {

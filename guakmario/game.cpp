@@ -603,6 +603,7 @@ void ResetMonsters()
 }
 void ResetItems()
 {
+    for (RemoteShots& pool : remoteShots) pool = {};
     for (int i = 0; i < MAX_ITEMS; i++) // 아이템 초기화
     {
         mushroom[i].active = false;

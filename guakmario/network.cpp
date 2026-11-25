@@ -487,6 +487,29 @@ void NetPollPackets()
             ApplyItemSpawn(spawn);
             break;
         }
+        case PKT_SHOT_SPAWN:
+        {
+            if (!IsMultiplayerGame() || !g_game.gameStart || g_game.gameState != GAME_RUNNING ||
+                pkt.size() != sizeof(PacketHeader) + sizeof(ShotSpawnData) || hdr->size != pkt.size()) break;
+            if (g_net.isHost ? !fromClient : senderPlayerId != 0) break;
+
+            ShotSpawnData spawn;
+            memcpy(&spawn, pkt.data() + sizeof(PacketHeader), sizeof(spawn));
+            if (!ApplyShotSpawn(hdr->playerId, spawn) || !g_net.isHost) break;
+            for (int target = 1; target <= 2; ++target)
+                if (target != senderPlayerId) SendToOne(target, pkt.data(), static_cast<int>(pkt.size()));
+            break;
+        }
+        case PKT_FIREBALL_DESPAWN:
+        {
+            if (g_net.isHost || senderPlayerId != 0 || hdr->playerId >= 3 ||
+                !IsMultiplayerGame() || !g_game.gameStart ||
+                pkt.size() != sizeof(PacketHeader) + sizeof(uint32_t) || hdr->size != pkt.size()) break;
+            uint32_t spawnId;
+            memcpy(&spawnId, pkt.data() + sizeof(PacketHeader), sizeof(spawnId));
+            ApplyFireballDespawn(hdr->playerId, spawnId);
+            break;
+        }
         case PKT_GAME_EVENT:
         {
             if (pkt.size() != sizeof(PacketHeader) + sizeof(GameEventData) || hdr->size != pkt.size()) break;

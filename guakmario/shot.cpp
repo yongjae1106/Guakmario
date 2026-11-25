@@ -28,7 +28,7 @@ void HandleFireballHit()
                     fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    SendMonsterHit(MON_NORMAL, j, HIT_FIREBALL);
+                    SendMonsterHit(MON_NORMAL, j, HIT_FIREBALL, fireball[i].spawnId);
                     fireball[i].active = false;
                     break; // 이미 충돌했으면 더 검사 X
                 }
@@ -44,7 +44,7 @@ void HandleFireballHit()
                     fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    SendMonsterHit(MON_TURTLE, j, HIT_FIREBALL);
+                    SendMonsterHit(MON_TURTLE, j, HIT_FIREBALL, fireball[i].spawnId);
                     fireball[i].active = false;
                     break;
                 }
@@ -59,7 +59,7 @@ void HandleFireballHit()
                     fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    SendMonsterHit(MON_ANGEL_TURTLE, j, HIT_FIREBALL);
+                    SendMonsterHit(MON_ANGEL_TURTLE, j, HIT_FIREBALL, fireball[i].spawnId);
                     fireball[i].active = false;
                     break;
                 }
@@ -98,7 +98,7 @@ void HandleTinoFireHit()
                     tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    SendMonsterHit(MON_NORMAL, j, HIT_TINOFIRE);
+                    SendMonsterHit(MON_NORMAL, j, HIT_TINOFIRE, tinofire[i].spawnId);
                     OnMonsterHit(g_monsters.monsters[j].x, g_monsters.monsters[j].y);
                     break; // 이미 충돌했으면 더 검사 X
                 }
@@ -114,7 +114,7 @@ void HandleTinoFireHit()
                     tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    SendMonsterHit(MON_TURTLE, j, HIT_TINOFIRE);
+                    SendMonsterHit(MON_TURTLE, j, HIT_TINOFIRE, tinofire[i].spawnId);
                     OnMonsterHit(g_monsters.turtles[j].x, g_monsters.turtles[j].y);
                     break;
                 }
@@ -129,7 +129,7 @@ void HandleTinoFireHit()
                     tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
                 {
                     PlaySoundBuffer(kick_Sound);
-                    SendMonsterHit(MON_ANGEL_TURTLE, j, HIT_TINOFIRE);
+                    SendMonsterHit(MON_ANGEL_TURTLE, j, HIT_TINOFIRE, tinofire[i].spawnId);
                     OnMonsterHit(g_monsters.angelTurtles[j].x, g_monsters.angelTurtles[j].y);
                     break;
                 }
@@ -229,76 +229,69 @@ void TinoAttack()
         }
     }
 }
-void UpdateShot_fireball()
+static bool IsSolidShotTile(int row, int column)
 {
-    for (int i = 0; i < MAX_SHOT; i++)
-    {
-        if (!fireball[i].active) continue;
-        fireball[i].motion++;
-        if (fireball[i].motion > 3)
-        {
-            fireball[i].motion = 0;
-        }
-
-        fireball[i].x += fireball[i].vx;    // 수평이동
-
-        // 충돌 계산
-        int left = fireball[i].x / TILE_SIZE;
-        int right = (fireball[i].x + fireball[i].width - 1) / TILE_SIZE;
-        int top = fireball[i].y / TILE_SIZE;
-        int bottom = (fireball[i].y + fireball[i].height - 1) / TILE_SIZE;
-        int middle = (fireball[i].y + 30 / 2 - 1) / TILE_SIZE;
-
-        // 2️⃣ 수평 충돌 처리
-        if (fireball[i].vx < 0 &&
-            (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
-        {
-            fireball[i].active = false;
-            fireball[i].fade = true;
-        }
-        else if (fireball[i].vx > 0 &&
-            (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right]) || isSolidTile(currentMap[middle][right])))
-        {
-            fireball[i].active = false;
-            fireball[i].fade = true;
-        }
-
-        // 3️⃣ 수직 낙하 (중력)
-        fireball[i].vy += 1;
-        if (fireball[i].vy > 10) fireball[i].vy = 5;
-        fireball[i].y += fireball[i].vy;
-
-        left = fireball[i].x / TILE_SIZE;
-        right = (fireball[i].x + TILE_SIZE - 1) / TILE_SIZE;
-        top = fireball[i].y / TILE_SIZE;
-        bottom = (fireball[i].y + TILE_SIZE - 1) / TILE_SIZE;
-
-        // 아래 충돌 처리
-        if (fireball[i].vy > 0 && (isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[bottom][right])))
-        {
-            fireball[i].y = bottom * TILE_SIZE - fireball[i].height - 10;
-            fireball[i].vy = -9;
-        }
-    }
+    return currentMap && row >= 0 && row < MAP_HEIGHT && column >= 0 && column < MAP_WIDTH &&
+        isSolidTile(currentMap[row][column]);
 }
-void UpdateShot_tinofire()
+
+static int ShotTileAt(int position)
 {
-    for (int i = 0; i < MAX_SHOT; i++)
+    return position < 0 ? -1 : position / TILE_SIZE;
+}
+
+static void UpdateFireballs(Shot (&shots)[MAX_SHOT])
+{
+    for (Shot& shot : shots)
     {
-        if (!tinofire[i].active) continue;
-        tinofire[i].motion++;
-        tinofire[i].duration++;
-        if (tinofire[i].motion > 6)
+        if (!shot.active) continue;
+        shot.motion = (shot.motion + 1) % 4;
+        shot.x += shot.vx;
+        if (shot.x < 0 || shot.x >= MAP_WIDTH * TILE_SIZE)
         {
-            tinofire[i].motion = 0;
+            shot.active = false;
+            continue;
         }
-        if (tinofire[i].duration == 100)
+        const int left = ShotTileAt(shot.x);
+        const int edge = shot.vx < 0 ? left : ShotTileAt(shot.x + shot.width - 1);
+        if (IsSolidShotTile(ShotTileAt(shot.y), edge) ||
+            IsSolidShotTile(ShotTileAt(shot.y + shot.height - 1), edge) ||
+            IsSolidShotTile(ShotTileAt(shot.y + 30 / 2 - 1), edge))
         {
-            tinofire[i].active = false;
+            shot.active = false;
+            shot.fade = true;
             continue;
         }
 
-        tinofire[i].x += tinofire[i].vx;    // 수평이동
+        if (++shot.vy > 10) shot.vy = 5;
+        shot.y += shot.vy;
+        if (shot.y >= MAP_HEIGHT * TILE_SIZE)
+        {
+            shot.active = false;
+            continue;
+        }
+        const int right = ShotTileAt(shot.x + TILE_SIZE - 1);
+        const int bottom = ShotTileAt(shot.y + TILE_SIZE - 1);
+        if (shot.vy > 0 && (IsSolidShotTile(bottom, left) || IsSolidShotTile(bottom, right)))
+        {
+            shot.y = bottom * TILE_SIZE - shot.height - 10;
+            shot.vy = -9;
+        }
+    }
+}
+
+static void UpdateTinoFires(Shot (&shots)[MAX_SHOT])
+{
+    for (Shot& shot : shots)
+    {
+        if (!shot.active) continue;
+        shot.motion = (shot.motion + 1) % 7;
+        if (++shot.duration >= 100)
+        {
+            shot.active = false;
+            continue;
+        }
+        shot.x += shot.vx;
     }
 }
 void UpdateShot_tinofire_effect()
@@ -316,49 +309,141 @@ void UpdateShot_tinofire_effect()
         }
     }
 }
+RemoteShots remoteShots[3] = {};
+
+constexpr int PlayerShotSpeed = 7;
+
+static int PlayerShotSize(ShotType type)
+{
+    return type == SHOT_FIREBALL ? 10 : TILE_SIZE * 2;
+}
+
+static int PlayerShotVelocity(Direction direction)
+{
+    return direction == DIR_LEFT ? -PlayerShotSpeed : PlayerShotSpeed;
+}
+
+static void InitializePlayerShot(Shot& shot, int x, int y, Direction direction, ShotType type)
+{
+    shot = {};
+    shot.x = x;
+    shot.y = y;
+    shot.direction = direction;
+    shot.vx = PlayerShotVelocity(direction);
+    shot.width = PlayerShotSize(type);
+    shot.height = shot.width;
+    shot.active = true;
+}
+
+static void SpawnPlayerShot(Shot (&shots)[MAX_SHOT], int slot, int x, int y, ShotType type)
+{
+    static uint32_t nextSpawnId = 0;
+    if (++nextSpawnId == 0) ++nextSpawnId;
+
+    Shot& shot = shots[slot];
+    InitializePlayerShot(shot, x, y, g_player.mario.direction, type);
+    shot.spawnId = nextSpawnId;
+    if (!IsMultiplayerGame() || !g_game.gameStart || g_net.myPlayerId < 0 || g_net.myPlayerId >= 3) return;
+
+    struct Packet { PacketHeader header; ShotSpawnData spawn; };
+    static_assert(sizeof(Packet) == sizeof(PacketHeader) + sizeof(ShotSpawnData));
+    const Packet packet = {
+        { sizeof(Packet), PKT_SHOT_SPAWN, static_cast<uint8_t>(g_net.myPlayerId) },
+        { type, static_cast<uint8_t>(slot), static_cast<uint8_t>(shot.direction),
+          static_cast<int16_t>(shot.x), static_cast<int16_t>(shot.y),
+          static_cast<int16_t>(shot.vx), static_cast<int16_t>(shot.vy),
+          static_cast<uint8_t>(shot.width), static_cast<uint8_t>(shot.height), shot.spawnId }
+    };
+    if (g_net.isHost) SendToAll(&packet, sizeof(packet));
+    else SendToHost(&packet, sizeof(packet));
+}
+
 void SpawnFireball(int x, int y)
 {
-    static int fireball_count = 0;
-
-    if (fireball_count >= MAX_SHOT)
-    {
-        fireball_count = 0;
-    }
-    fireball[fireball_count].x = x;
-    fireball[fireball_count].y = y;
-    fireball[fireball_count].vx = (g_player.mario.direction == DIR_LEFT) ? -7 : 7;
-    fireball[fireball_count].vy = 0;
-    fireball[fireball_count].width = 10;
-    fireball[fireball_count].height = 10;
-    fireball[fireball_count].active = true;
-    fireball_count++;
+    static int slot = 0;
+    SpawnPlayerShot(fireball, slot, x, y, SHOT_FIREBALL);
+    slot = (slot + 1) % MAX_SHOT;
 }
+
 void SpawnTinoFire(int x, int y)
 {
-    static int tinofire_count = 0;
-
-    if (tinofire_count >= MAX_SHOT)
-    {
-        tinofire_count = 0;
-    }
-    tinofire[tinofire_count].x = x;
-    tinofire[tinofire_count].y = y;
-    tinofire[tinofire_count].vx = (g_player.mario.direction == DIR_LEFT) ? -7 : 7;
-    tinofire[tinofire_count].vy = 0;
-    tinofire[tinofire_count].motion = 0;
-    tinofire[tinofire_count].motion_fade = 0;
-    tinofire[tinofire_count].duration = 0;
-    tinofire[tinofire_count].direction = g_player.mario.direction;
-    tinofire[tinofire_count].width = TILE_SIZE * 2;
-    tinofire[tinofire_count].height = TILE_SIZE * 2;
-    tinofire[tinofire_count].active = true;
-    tinofire[tinofire_count].fade = false;
-    tinofire_count++;
+    static int slot = 0;
+    SpawnPlayerShot(tinofire, slot, x, y, SHOT_TINOFIRE);
+    slot = (slot + 1) % MAX_SHOT;
 }
+
+bool ApplyShotSpawn(int owner, const ShotSpawnData& spawn)
+{
+    if (owner < 0 || owner >= 3 || owner == g_localPlayerIdx || !spawn.spawnId ||
+        spawn.slot >= MAX_SHOT || spawn.shotType > SHOT_TINOFIRE || spawn.direction > DIR_RIGHT ||
+        spawn.x < 0 || spawn.x >= MAP_WIDTH * TILE_SIZE || spawn.y >= PLAYER_FALL_DEATH_Y) return false;
+
+    const ShotType type = static_cast<ShotType>(spawn.shotType);
+    const Direction direction = static_cast<Direction>(spawn.direction);
+    const int size = PlayerShotSize(type);
+    if (spawn.width != size || spawn.height != size ||
+        spawn.vx != PlayerShotVelocity(direction) || spawn.vy != 0) return false;
+
+    if (g_net.isHost)
+    {
+        const Player& player = g_allPlayers[owner].mario;
+        const MarioForm requiredForm = type == SHOT_FIREBALL ? FORM_FLOWER : FORM_TINO;
+        if (player.isDead || player.isTransforming || player.form != requiredForm ||
+            abs(spawn.x - player.x) > TILE_SIZE || abs(spawn.y - player.y) > TILE_SIZE) return false;
+    }
+
+    RemoteShots& pool = remoteShots[owner];
+    Shot& shot = type == SHOT_FIREBALL ? pool.fireballs[spawn.slot] : pool.tinoFires[spawn.slot];
+    const uint32_t steps = spawn.spawnId - shot.spawnId;
+    if (shot.spawnId && (steps == 0 || steps > INT32_MAX)) return false;
+    InitializePlayerShot(shot, spawn.x, spawn.y, direction, type);
+    shot.spawnId = spawn.spawnId;
+    return true;
+}
+
+Shot* FindActivePlayerShot(int owner, ShotType type, uint32_t spawnId)
+{
+    if (owner < 0 || owner >= 3 || !spawnId) return nullptr;
+
+    const bool local = owner == g_localPlayerIdx;
+    Shot* pool = type == SHOT_FIREBALL ?
+        (local ? fireball : remoteShots[owner].fireballs) :
+        (local ? tinofire : remoteShots[owner].tinoFires);
+    for (int slot = 0; slot < MAX_SHOT; ++slot)
+        if (pool[slot].active && pool[slot].spawnId == spawnId)
+            return &pool[slot];
+    return nullptr;
+}
+
+void DespawnPlayerFireball(int owner, Shot& shot)
+{
+    shot.active = false;
+    if (!IsMultiplayerGame() || !g_net.isHost) return;
+
+    struct Packet { PacketHeader header; uint32_t spawnId; };
+    static_assert(sizeof(Packet) == sizeof(PacketHeader) + sizeof(uint32_t));
+    const Packet packet = {
+        { sizeof(Packet), PKT_FIREBALL_DESPAWN, static_cast<uint8_t>(owner) }, shot.spawnId
+    };
+    SendToAll(&packet, sizeof(packet));
+}
+
+void ApplyFireballDespawn(int owner, uint32_t spawnId)
+{
+    Shot* shot = FindActivePlayerShot(owner, SHOT_FIREBALL, spawnId);
+    if (shot) shot->active = false;
+}
+
 void UpdateAllShots()
 {
-    UpdateShot_fireball();
-    UpdateShot_tinofire();
+    UpdateFireballs(fireball);
+    UpdateTinoFires(tinofire);
+    if (IsMultiplayerGame())
+        for (RemoteShots& pool : remoteShots)
+        {
+            UpdateFireballs(pool.fireballs);
+            UpdateTinoFires(pool.tinoFires);
+        }
     UpdateShot_tinofire_effect();
 }
 void HandleShotCollisions()

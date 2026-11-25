@@ -6,6 +6,7 @@
 #include "map.h"
 #include "collision.h"
 #include "image.h"
+#include "item.h"
 #include "monster.h"
 #include "sound.h"
 
@@ -242,10 +243,10 @@ void UpdateMonsters()
 
     }
 }
-void SendMonsterHit(MonsterKind kind, int slot, HitType hitType)
+void SendMonsterHit(MonsterKind kind, int slot, HitType hitType, uint32_t shotId)
 {
     if (slot < 0 || slot >= MAX_MONSTERS) return;
-    const MonsterHitData hit = { kind, static_cast<uint8_t>(slot), hitType };
+    const MonsterHitData hit = { kind, static_cast<uint8_t>(slot), hitType, shotId };
     if (!IsMultiplayerGame() || g_net.isHost) {
         HandleMonsterHit(g_localPlayerIdx, hit);
         return;
@@ -277,6 +278,18 @@ void HandleMonsterHit(int senderId, const MonsterHitData& hit)
         break;
     }
     if (!target || !target->isAlive || target->isDead) return;
+    if (hit.kind != MON_BOSS && (hit.hitType == HIT_FIREBALL || hit.hitType == HIT_TINOFIRE))
+    {
+        const ShotType type = hit.hitType == HIT_FIREBALL ? SHOT_FIREBALL : SHOT_TINOFIRE;
+        Shot* shot = FindActivePlayerShot(senderId, type, hit.shotId);
+        if (!shot) return;
+        // 원격 투사체와 몬스터 스냅샷 사이의 이동을 한 타일 허용한다.
+        if (senderId != g_localPlayerIdx &&
+            !IsColliding(shot->x - TILE_SIZE, shot->y - TILE_SIZE,
+                shot->width + 2 * TILE_SIZE, shot->height + 2 * TILE_SIZE,
+                target->x, target->y, target->width, target->height)) return;
+        if (hit.hitType == HIT_FIREBALL) DespawnPlayerFireball(senderId, *shot);
+    }
     const Player& attacker = g_allPlayers[senderId].mario;
     const int attackerX = attacker.x + (senderId == g_localPlayerIdx ? static_cast<int>(g_game.cameraX) : 0);
     if (senderId != g_localPlayerIdx && (hit.hitType == HIT_STOMP ||

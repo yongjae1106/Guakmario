@@ -34,6 +34,7 @@ struct Shot
     Direction direction;
     bool active;
     bool fade;
+    uint32_t spawnId;
 };
 struct Shot_Effect
 {
@@ -41,6 +42,18 @@ struct Shot_Effect
     int timer;
     bool active;
 };
+struct RemoteShots
+{
+    Shot fireballs[MAX_SHOT];
+    Shot tinoFires[MAX_SHOT];
+};
+extern RemoteShots remoteShots[3];
+struct ShotSpawnData;
+enum ShotType : uint8_t;
+bool ApplyShotSpawn(int owner, const ShotSpawnData& spawn);
+Shot* FindActivePlayerShot(int owner, ShotType type, uint32_t spawnId);
+void DespawnPlayerFireball(int owner, Shot& shot);
+void ApplyFireballDespawn(int owner, uint32_t spawnId);
 extern Shot fireball[MAX_SHOT];
 extern Shot tinofire[MAX_SHOT];
 extern Shot_Effect tinofire_effect[MAX_SHOT];
@@ -50,8 +63,6 @@ void UpdateItems_up_mushroom();
 void UpdateItems_star();
 void UpdateItems_flower();
 void UpdateItems_tino();
-void UpdateShot_fireball();
-void UpdateShot_tinofire();
 void UpdateShot_tinofire_effect();
 void OnMonsterHit(int x, int y);
 
