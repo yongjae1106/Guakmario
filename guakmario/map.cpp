@@ -106,9 +106,10 @@ void CheckMarioHazardCollision()
     {
         if (!fireTraps[i].active) continue;
 
+        const LONG screenX = static_cast<LONG>(fireTraps[i].x - g_game.cameraX);
         RECT rTrap = {
-            fireTraps[i].x - g_game.cameraX, fireTraps[i].y,
-            fireTraps[i].x - g_game.cameraX + fireTraps[i].width,
+            screenX, fireTraps[i].y,
+            screenX + fireTraps[i].width,
             fireTraps[i].y + fireTraps[i].height
         };
 
@@ -246,7 +247,6 @@ void InitMap() //맵 1 구조
     map1[10][17] = 64;
     map1[10][31] = 64;
     map1[10][60] = 64;
-    map1[20][76] = 64;
     map1[10][62] = 64;
     map1[10][64] = 64;
     map1[6][62] = 62;
