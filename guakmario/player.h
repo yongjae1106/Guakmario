@@ -61,6 +61,11 @@ MarioRenderData BuildMarioRenderDataFor(int idx);  // 렌더 테스트용 — �
 void movePlayer();
 int CameraXForPlayer(int worldX);
 void UpdatePlayer();
+void CollectMapCoin(int row, int column);
+struct BlockHitData;
+struct TileChangeData;
+void HandleRemoteTileHit(int playerId, const BlockHitData& hit);
+void ApplyTileChange(int playerId, const TileChangeData& change);
 void StartPlayerTransformation(MarioForm target);
 void UpdatePlayerTransformation(Player& player, DWORD now);
 void UpdateMario_motion();

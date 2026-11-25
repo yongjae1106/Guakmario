@@ -436,6 +436,25 @@ void NetPollPackets()
 
             break;
         }
+        case PKT_BLOCK_HIT:
+        {
+            if (!fromClient || !g_game.gameStart || g_game.gameState != GAME_RUNNING ||
+                pkt.size() != sizeof(PacketHeader) + sizeof(BlockHitData) || hdr->size != pkt.size()) break;
+            BlockHitData hit;
+            memcpy(&hit, pkt.data() + sizeof(PacketHeader), sizeof(hit));
+            HandleRemoteTileHit(senderPlayerId, hit);
+            break;
+        }
+        case PKT_TILE_CHANGE:
+        {
+            if (g_net.isHost || senderPlayerId != 0 || hdr->playerId >= 3 ||
+                !IsMultiplayerGame() || !g_game.gameStart ||
+                pkt.size() != sizeof(PacketHeader) + sizeof(TileChangeData) || hdr->size != pkt.size()) break;
+            TileChangeData change;
+            memcpy(&change, pkt.data() + sizeof(PacketHeader), sizeof(change));
+            ApplyTileChange(hdr->playerId, change);
+            break;
+        }
         case PKT_ITEM_PICKUP:
         {
             if (pkt.size() != sizeof(ItemPickupPacket) || hdr->size != pkt.size()) break;
