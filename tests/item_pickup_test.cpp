@@ -134,6 +134,10 @@ static void TestConfirmation()
     const ItemPickupData remoteApproval = { ITEM_UP_MUSHROOM, 0, 2, 1 };
     ApplyItemPickupResult(remoteApproval);
     assert(!up_mushroom[0].active && !up_mushroom[0].motion && appliedEffects == 1);
+
+    up_mushroom[0] = Item(400, MAP_HEIGHT * TILE_SIZE - 1, 1, 10, 30, 30, 0, true, false);
+    ApplyItemSpawn(spawn);
+    assert(!up_mushroom[0].active && up_mushroom[0].motion && up_mushroom[0].y == spawn.y);
 }
 
 int main()
