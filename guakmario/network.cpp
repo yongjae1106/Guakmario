@@ -2,6 +2,7 @@
 #include "config.h"
 #include "player.h"
 #include "game.h"
+#include "map.h"
 #include "item.h"
 #include <queue>
 
@@ -410,6 +411,10 @@ void NetPollPackets()
         case PKT_MONSTER_STATE:
             if (fromHost && g_game.gameStart) ApplyMonsterSnapshot(pkt);
             break;
+        case PKT_BOSS_STATE:
+            if (fromHost && g_game.gameStart && g_game.stage == CASTLE_STAGE)
+                ApplyBossSnapshot(pkt);
+            break;
         case PKT_PLAYER_STATE:
         {
             if (pkt.size() != sizeof(PacketHeader) + sizeof(PlayerStateData) || hdr->size != pkt.size()) break;
@@ -787,5 +792,63 @@ bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
     if (!ValidateMonsterSnapshot(snapshot.kind, result)) return false;
     kind = snapshot.kind;
     states.swap(result);
+    return true;
+}
+
+namespace {
+bool ValidateBossState(const BossStateData& boss, const std::vector<BossFireballData>& fireballs)
+{
+    constexpr uint8_t knownFlags = BOSS_FLAG_ALIVE | BOSS_FLAG_DEAD | BOSS_FLAG_ACTIVE |
+        BOSS_FLAG_FALLING | BOSS_FLAG_JUMPING | BOSS_FLAG_FIRING;
+    if (boss.width == 0 || boss.height == 0 || boss.hp < 0 || boss.hp > BOWSER_MAX_HP ||
+        boss.frame > 1 || (boss.flags & ~knownFlags) != 0 ||
+        (boss.moveSign != -1 && boss.moveSign != 1) ||
+        (boss.fireSign != -1 && boss.fireSign != 1) ||
+        fireballs.size() > MAX_FIREBALLS) return false;
+
+    bool seen[MAX_FIREBALLS] = {};
+    for (const auto& fireball : fireballs) {
+        if (fireball.slot >= MAX_FIREBALLS || seen[fireball.slot] ||
+            fireball.width == 0 || fireball.height == 0 || fireball.motion > 6) return false;
+        seen[fireball.slot] = true;
+    }
+    return true;
+}
+}
+
+bool BuildBossStatePacket(BossStateData boss, const std::vector<BossFireballData>& fireballs,
+    std::vector<uint8_t>& packet)
+{
+    if (!ValidateBossState(boss, fireballs)) return false;
+    constexpr size_t prefix = sizeof(PacketHeader) + sizeof(BossStateData);
+    std::vector<uint8_t> result(prefix + fireballs.size() * sizeof(BossFireballData));
+    const PacketHeader header = { static_cast<uint16_t>(result.size()), PKT_BOSS_STATE, 0 };
+    boss.fireballCount = static_cast<uint8_t>(fireballs.size());
+    memcpy(result.data(), &header, sizeof(header));
+    memcpy(result.data() + sizeof(header), &boss, sizeof(boss));
+    if (!fireballs.empty())
+        memcpy(result.data() + prefix, fireballs.data(), fireballs.size() * sizeof(BossFireballData));
+    packet.swap(result);
+    return true;
+}
+
+bool ParseBossStatePacket(const std::vector<uint8_t>& packet, BossStateData& boss,
+    std::vector<BossFireballData>& fireballs)
+{
+    constexpr size_t prefix = sizeof(PacketHeader) + sizeof(BossStateData);
+    if (packet.size() < prefix) return false;
+    PacketHeader header = {};
+    BossStateData snapshot = {};
+    memcpy(&header, packet.data(), sizeof(header));
+    memcpy(&snapshot, packet.data() + sizeof(header), sizeof(snapshot));
+    if (header.type != PKT_BOSS_STATE || header.playerId != 0 ||
+        header.size != packet.size() || snapshot.fireballCount > MAX_FIREBALLS ||
+        packet.size() != prefix + snapshot.fireballCount * sizeof(BossFireballData)) return false;
+    std::vector<BossFireballData> result(snapshot.fireballCount);
+    if (!result.empty())
+        memcpy(result.data(), packet.data() + prefix, result.size() * sizeof(BossFireballData));
+    if (!ValidateBossState(snapshot, result)) return false;
+    boss = snapshot;
+    fireballs.swap(result);
     return true;
 }

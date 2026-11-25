@@ -192,24 +192,28 @@ enum BossStateFlags : uint8_t {
     BOSS_FLAG_DEAD        = 1 << 1,
     BOSS_FLAG_ACTIVE      = 1 << 2,
     BOSS_FLAG_FALLING     = 1 << 3,
-    BOSS_FLAG_IGNORE_FIRE = 1 << 4,
-    BOSS_FLAG_IGNORE_BITE = 1 << 5,
-    BOSS_FLAG_JUMPING     = 1 << 6,
-    BOSS_FLAG_FIRING      = 1 << 7,
+    BOSS_FLAG_JUMPING     = 1 << 4,
+    BOSS_FLAG_FIRING      = 1 << 5,
 };
 
+// 뒤에는 활성 보스 불꽃만 fireballCount개 이어진다. 빠진 슬롯은 비활성이다.
 struct BossStateData {
-    int16_t  x, y, vx, vy, hp;
-    int16_t  startX, moveDistance, maxDistance;
-    uint8_t  width, height;
-    uint8_t  flags;     // BossStateFlags
-    uint8_t  frame;
-    int8_t   moveSign;
-    uint16_t fireTimer, fireDuration, fireInterval;
-    uint16_t jumpTimer, jumpInterval;
-    int16_t  fireX, fireY, fireVx, fireVy;  // bowserFire
-    uint8_t  fireWidth, fireHeight, fireMotion, fireActive;
+    int16_t x, y, vx, vy, hp;
+    uint8_t width, height;
+    uint8_t flags;
+    uint8_t frame;
+    int8_t moveSign, fireSign;
+    uint8_t fireballCount;
 };
+
+struct BossFireballData {
+    uint8_t slot;
+    int16_t x, y, vx, vy;
+    uint8_t width, height, motion;
+};
+
+static_assert(sizeof(BossStateData) == 17, "Boss state wire size changed");
+static_assert(sizeof(BossFireballData) == 12, "Boss fireball wire size changed");
 
 // 함정 상태 (PKT_HAZARD_STATE, 호스트 → 전체)
 struct HazardStateHeader {
@@ -300,6 +304,7 @@ void NetBroadcastGameStart();  // connectedCount == 3 → GAME_START 브로드�
 // 수신 큐 소비 (메인 스레드, UpdateGame() 첫 줄에서 호출)
 void NetPollPackets();
 void ApplyMonsterSnapshot(const std::vector<uint8_t>& packet);
+void ApplyBossSnapshot(const std::vector<uint8_t>& packet);
 void SendMonsterHit(MonsterKind kind, int slot, HitType hitType);
 void HandleMonsterHit(int senderId, const MonsterHitData& hit);
 
@@ -319,3 +324,7 @@ bool BuildMonsterStatePacket(uint8_t kind, const std::vector<MonsterEntry>& stat
     std::vector<uint8_t>& packet);
 bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
     std::vector<MonsterEntry>& states);
+bool BuildBossStatePacket(BossStateData boss, const std::vector<BossFireballData>& fireballs,
+    std::vector<uint8_t>& packet);
+bool ParseBossStatePacket(const std::vector<uint8_t>& packet, BossStateData& boss,
+    std::vector<BossFireballData>& fireballs);

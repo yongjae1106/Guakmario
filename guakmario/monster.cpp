@@ -98,35 +98,22 @@ void InitAngelTurtles()
     }
 }
 
-void InitBowser() 
+void InitBowser()
 {
-    g_monsters.bowser.hp = 100;
-    g_monsters.bowser.x = 125 * TILE_SIZE;  // 보서의 시작 위치 (오른쪽 끝)
-    g_monsters.bowser.y = 9 * TILE_SIZE;   // 맵 바닥에 위치하도록
-    g_monsters.bowser.vx = 0;
-    g_monsters.bowser.vy = 0;
-    g_monsters.bowser.width = 120;
-    g_monsters.bowser.height = 120;
-    g_monsters.bowser.isAlive = true;
-    g_monsters.bowser.isDead = false;
-    g_monsters.bowser.isJumping = false;
-    g_monsters.bowser.jumpTimer = 0;
+    if (IsMultiplayerGame() && !g_net.isHost) return;
 
-    g_monsters.bowser.startX = g_monsters.bowser.x;
-    g_monsters.bowser.moveSign = 1;
-    g_monsters.bowser.moveDistance = 0;
-    g_monsters.bowser.maxDistance = 10 * TILE_SIZE;  // 6칸
-    g_monsters.bowser.jumpTimer = 0;
-    g_monsters.bowser.jumpInterval = 60 + rand() % 121;  // 60~180프레임마다
-
-    g_monsters.bowser.jumpTimer = 0;
-    g_monsters.bowser.jumpInterval = 60 + rand() % 121;
-
-    g_monsters.bowser.fireTimer = 0;
-    g_monsters.bowser.fireInterval = 60 + rand() % 60; // 1~2초 간격
-
-    g_monsters.bowser.isFiring = false;
-    g_monsters.bowser.fireDuration = 0;
+    Bowser& bowser = g_monsters.bowser;
+    bowser = {};
+    bowser.hp = BOWSER_MAX_HP;
+    bowser.x = 125 * TILE_SIZE;
+    bowser.y = 9 * TILE_SIZE;
+    bowser.width = 120;
+    bowser.height = 120;
+    bowser.isAlive = true;
+    bowser.active = true;
+    bowser.maxDistance = 10 * TILE_SIZE;
+    bowser.jumpInterval = 60 + rand() % 121;
+    bowser.fireInterval = 60 + rand() % 60;
 }
 
 //monster
@@ -670,7 +657,23 @@ void FinishBowserDefeat()
     bowser.isFiring = false;
 }
 
-void UpdateBowser() 
+static int BowserTargetX(int centerX)
+{
+    const Player& local = g_player.mario;
+    const int localCenterX = local.x + g_game.cameraX + local.width / 2;
+    if (!IsMultiplayerGame()) return localCenterX;
+
+    int targetX = centerX + SCREEN_WIDTH + 1;
+    for (int id = 0; id < 3; ++id) {
+        const Player& player = g_allPlayers[id].mario;
+        if (!NetIsPlayerConnected(id) || player.isDead) continue;
+        const int playerX = id == g_localPlayerIdx ? localCenterX : player.x + player.width / 2;
+        if (abs(playerX - centerX) < abs(targetX - centerX)) targetX = playerX;
+    }
+    return targetX;
+}
+
+void UpdateBowser()
 {
     Bowser& bowser = g_monsters.bowser;
     if (!bowser.isAlive) return;
@@ -678,8 +681,12 @@ void UpdateBowser()
     if (!bowser.isFalling && bowser.hp <= 0)
     {
         PlaySoundBuffer(bowserfalls_Sound);
+        bowser.hp = 0;
         bowser.isDead = true;
         bowser.isFalling = true;
+        bowser.isFiring = false;
+        bowser.isJumping = false;
+        bowser.vx = 0;
     }
 
     if (bowser.isFalling)
@@ -694,9 +701,15 @@ void UpdateBowser()
         return;
     }
 
+    if (++bowser.animationTicks == 13) {
+        bowser.animationTicks = 0;
+        bowser.frame = 1 - bowser.frame;
+    }
+
     // === 이동 ===
-    int moveSpeed = 2;
-    g_monsters.bowser.x += moveSpeed * g_monsters.bowser.moveSign;
+    const int moveSpeed = 2;
+    bowser.vx = moveSpeed * bowser.moveSign;
+    bowser.x += bowser.vx;
     g_monsters.bowser.moveDistance += moveSpeed;
 
     if (g_monsters.bowser.moveDistance >= g_monsters.bowser.maxDistance)
@@ -732,32 +745,23 @@ void UpdateBowser()
         g_monsters.bowser.isJumping = false;
     }
 
-    g_monsters.bowser.fireTimer++;
-    if (g_monsters.bowser.fireTimer > g_monsters.bowser.fireInterval) 
+    const int centerX = bowser.x + bowser.width / 2;
+    const int targetX = BowserTargetX(centerX);
+    if ((!IsMultiplayerGame() || abs(targetX - centerX) <= SCREEN_WIDTH) &&
+        ++bowser.fireTimer > bowser.fireInterval)
     {
-        for (int i = 0; i < MAX_FIREBALLS; i++) 
+        for (Fireball& fireball : g_monsters.fireballs)
         {
-            if (!g_monsters.fireballs[i].active)
-            {
-                // 마리오 위치 기반으로 방향 결정
-                int dir = (g_player.mario.x + g_player.mario.width / 2 < g_monsters.bowser.x + g_monsters.bowser.width / 2) ? -1 : 1;
-
-                g_monsters.fireballs[i].x = g_monsters.bowser.x + g_monsters.bowser.width / 2;
-                g_monsters.fireballs[i].y = g_monsters.bowser.y + g_monsters.bowser.height / 2;
-                g_monsters.fireballs[i].width = 40;
-                g_monsters.fireballs[i].height = 20;
-                g_monsters.fireballs[i].vx = 6 * dir;
-                g_monsters.fireballs[i].vy = 0;
-                g_monsters.fireballs[i].active = true;
-
-                g_monsters.bowser.isFiring = true;
-                g_monsters.bowser.fireDuration = 30;
-                break;
-            }
+            if (fireball.active) continue;
+            bowser.fireSign = targetX < centerX ? -1 : 1;
+            fireball = { centerX, bowser.y + bowser.height / 2,
+                6 * bowser.fireSign, 0, 40, 20, 0, true };
+            bowser.isFiring = true;
+            bowser.fireDuration = 30;
+            break;
         }
-
-        g_monsters.bowser.fireTimer = 0;
-        g_monsters.bowser.fireInterval = 120 + rand() % 120;
+        bowser.fireTimer = 0;
+        bowser.fireInterval = 120 + rand() % 120;
     }
 
 
@@ -769,21 +773,19 @@ void UpdateBowser()
             g_monsters.bowser.isFiring = false;
     }
 }
-void UpdateFireballs() 
+void UpdateFireballs()
 {
-    for (int i = 0; i < MAX_FIREBALLS; i++) 
+    const bool multiplayer = IsMultiplayerGame();
+    const int left = multiplayer ? 0 : g_game.cameraX;
+    const int right = multiplayer ? MAP_WIDTH * TILE_SIZE : g_game.cameraX + SCREEN_WIDTH;
+    for (Fireball& fireball : g_monsters.fireballs)
     {
-        if (!g_monsters.fireballs[i].active) continue;
-        g_monsters.fireballs[i].motion++;
-        if (g_monsters.fireballs[i].motion > 6)
-        {
-            g_monsters.fireballs[i].motion = 0;
-        }
-        g_monsters.fireballs[i].x += g_monsters.fireballs[i].vx;
-
-        // 화면 범위를 벗어나면 파이어볼 비활성화
-        if (g_monsters.fireballs[i].x < g_game.cameraX || g_monsters.fireballs[i].x > g_game.cameraX + SCREEN_WIDTH)
-            g_monsters.fireballs[i].active = false;
+        if (!fireball.active) continue;
+        fireball.motion = (fireball.motion + 1) % 7;
+        fireball.x += fireball.vx;
+        fireball.y += fireball.vy;
+        if (fireball.x + fireball.width <= left || fireball.x >= right)
+            fireball.active = false;
     }
 }
 
@@ -985,6 +987,77 @@ void ApplyMonsterSnapshot(const std::vector<uint8_t>& packet)
     }
 }
 
+static void BroadcastBossState()
+{
+    const Bowser& bowser = g_monsters.bowser;
+    BossStateData state = {};
+    state.x = static_cast<int16_t>(bowser.x);
+    state.y = static_cast<int16_t>(bowser.y);
+    state.vx = static_cast<int16_t>(bowser.vx);
+    state.vy = static_cast<int16_t>(bowser.vy);
+    state.hp = static_cast<int16_t>(bowser.hp);
+    state.width = static_cast<uint8_t>(bowser.width);
+    state.height = static_cast<uint8_t>(bowser.height);
+    state.frame = static_cast<uint8_t>(bowser.frame);
+    state.moveSign = static_cast<int8_t>(bowser.moveSign);
+    state.fireSign = static_cast<int8_t>(bowser.fireSign);
+    if (bowser.isAlive) state.flags |= BOSS_FLAG_ALIVE;
+    if (bowser.isDead) state.flags |= BOSS_FLAG_DEAD;
+    if (bowser.active) state.flags |= BOSS_FLAG_ACTIVE;
+    if (bowser.isFalling) state.flags |= BOSS_FLAG_FALLING;
+    if (bowser.isJumping) state.flags |= BOSS_FLAG_JUMPING;
+    if (bowser.isFiring) state.flags |= BOSS_FLAG_FIRING;
+
+    std::vector<BossFireballData> fireballs;
+    for (int slot = 0; slot < MAX_FIREBALLS; ++slot) {
+        const Fireball& fireball = g_monsters.fireballs[slot];
+        if (!fireball.active) continue;
+        fireballs.push_back({ static_cast<uint8_t>(slot), static_cast<int16_t>(fireball.x),
+            static_cast<int16_t>(fireball.y), static_cast<int16_t>(fireball.vx),
+            static_cast<int16_t>(fireball.vy), static_cast<uint8_t>(fireball.width),
+            static_cast<uint8_t>(fireball.height), static_cast<uint8_t>(fireball.motion) });
+    }
+    std::vector<uint8_t> packet;
+    if (BuildBossStatePacket(state, fireballs, packet))
+        SendToAll(packet.data(), static_cast<int>(packet.size()));
+}
+
+void ApplyBossSnapshot(const std::vector<uint8_t>& packet)
+{
+    BossStateData state = {};
+    std::vector<BossFireballData> fireballs;
+    if (!ParseBossStatePacket(packet, state, fireballs)) return;
+
+    Bowser& bowser = g_monsters.bowser;
+    if (bowser.isAlive && !(state.flags & BOSS_FLAG_ALIVE))
+        PlaySoundBuffer(bowserdead_Sound);
+    else if (!bowser.isFalling && (state.flags & BOSS_FLAG_FALLING) && (state.flags & BOSS_FLAG_ALIVE))
+        PlaySoundBuffer(bowserfalls_Sound);
+
+    bowser.x = state.x;
+    bowser.y = state.y;
+    bowser.vx = state.vx;
+    bowser.vy = state.vy;
+    bowser.hp = state.hp;
+    bowser.width = state.width;
+    bowser.height = state.height;
+    bowser.frame = state.frame;
+    bowser.moveSign = state.moveSign;
+    bowser.fireSign = state.fireSign;
+    bowser.isAlive = (state.flags & BOSS_FLAG_ALIVE) != 0;
+    bowser.isDead = (state.flags & BOSS_FLAG_DEAD) != 0;
+    bowser.active = (state.flags & BOSS_FLAG_ACTIVE) != 0;
+    bowser.isFalling = (state.flags & BOSS_FLAG_FALLING) != 0;
+    bowser.isJumping = (state.flags & BOSS_FLAG_JUMPING) != 0;
+    bowser.isFiring = (state.flags & BOSS_FLAG_FIRING) != 0;
+
+    for (Fireball& fireball : g_monsters.fireballs) fireball.active = false;
+    for (const auto& fireball : fireballs) {
+        g_monsters.fireballs[fireball.slot] = { fireball.x, fireball.y, fireball.vx, fireball.vy,
+            fireball.width, fireball.height, fireball.motion, true };
+    }
+}
+
 void UpdateAllMonsters()
 {
     const bool multiplayer = IsMultiplayerGame();
@@ -992,13 +1065,14 @@ void UpdateAllMonsters()
         UpdateMonsters();
         UpdateTurtles();
         UpdateAngelTurtles();
+        UpdateBowser();
+        UpdateFireballs();
         if (multiplayer && ++g_monsters.snapshotFrame == 5) {
             g_monsters.snapshotFrame = 0;
             BroadcastMonsterState();
+            if (g_game.stage == CASTLE_STAGE) BroadcastBossState();
         }
     }
-    UpdateBowser();
-    UpdateFireballs();
     UpdateFireTraps();
 }
 

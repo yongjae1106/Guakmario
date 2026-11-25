@@ -1520,61 +1520,35 @@ static void Draw_Angel_Turtles()
         }
     }
 }
-// g_monsters.bowser
 static void Draw_Bowser()
 {
-    if (!g_monsters.bowser.isAlive) return;
+    const Bowser& bowser = g_monsters.bowser;
+    if (!bowser.isAlive) return;
 
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
 
-    int screenX = g_monsters.bowser.x - g_game.cameraX;
-    int screenY = g_monsters.bowser.y;
-
-    // 걷기 또는 불뿜기 애니메이션 프레임 처리
-    static int walkFrame = 0;
-    static DWORD lastFrameTime = GetTickCount();
-
-    if (GetTickCount() - lastFrameTime > 200) { // 0.2초마다 프레임 전환
-        walkFrame = (walkFrame + 1) % 2;
-        lastFrameTime = GetTickCount();
-    }
-
-    // 불을 뿜는 중이면 fire 이미지 사용
-    if (g_monsters.bowser.isFiring)
-    {
-        if (walkFrame == 0)
-            graphics.DrawImage(g_images.bowser_fire_walk_1, screenX, screenY, g_monsters.bowser.width, g_monsters.bowser.height);
-        else
-            graphics.DrawImage(g_images.bowser_fire_walk_2, screenX, screenY, g_monsters.bowser.width, g_monsters.bowser.height);
-    }
-    else {
-        if (walkFrame == 0)
-            graphics.DrawImage(g_images.bowser_walk_1, screenX, screenY, g_monsters.bowser.width, g_monsters.bowser.height);
-        else
-            graphics.DrawImage(g_images.bowser_walk_2, screenX, screenY, g_monsters.bowser.width, g_monsters.bowser.height);
-    }
+    Image* sprite;
+    if (bowser.isFiring)
+        sprite = bowser.frame == 0 ? g_images.bowser_fire_walk_1 : g_images.bowser_fire_walk_2;
+    else
+        sprite = bowser.frame == 0 ? g_images.bowser_walk_1 : g_images.bowser_walk_2;
+    const int facing = bowser.isFiring ? bowser.fireSign : bowser.moveSign;
+    DrawSprite(graphics, sprite, bowser.x - g_game.cameraX, bowser.y,
+        bowser.width, bowser.height, facing > 0);
 }
+
 static void Draw_Fireballs()
 {
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
 
-    for (int i = 0; i < MAX_FIREBALLS; i++) 
+    for (const Fireball& fireball : g_monsters.fireballs)
     {
-        if (!g_monsters.fireballs[i].active) continue;
-
-        int sx = g_monsters.fireballs[i].x - g_game.cameraX;
-        int sy = g_monsters.fireballs[i].y;
-
-        if(fireball[i].motion < 3)
-        {
-            graphics.DrawImage(g_images.bowser_fireball_1, sx, sy, TILE_SIZE + 30, 30);
-        }
-        else
-        {
-            graphics.DrawImage(g_images.bowser_fireball_2, sx, sy, TILE_SIZE + 30, 30);
-        }
+        if (!fireball.active) continue;
+        Image* sprite = fireball.motion < 3 ? g_images.bowser_fireball_1 : g_images.bowser_fireball_2;
+        DrawSprite(graphics, sprite, fireball.x - g_game.cameraX, fireball.y,
+            TILE_SIZE + 30, 30, fireball.vx > 0);
     }
 }
 static void DrawFireTraps()
