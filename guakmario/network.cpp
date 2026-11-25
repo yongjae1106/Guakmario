@@ -515,9 +515,6 @@ void NetPollPackets()
                 if (fromClient && evt->param == senderPlayerId)
                     HandleMultiplayerGameEvent(senderPlayerId, *evt);
                 break;
-            case EVT_BOWSER_DEFEAT_REPORT:
-                if (fromClient) HandleMultiplayerGameEvent(senderPlayerId, *evt);
-                break;
             case EVT_CASTLE_GATE_OPENED:
             case EVT_STAGE_CLEAR:
             case EVT_STAGE_LOAD:
