@@ -12,6 +12,8 @@
 
 using namespace Gdiplus;
 
+static void DrawLobbyCharacterIcons(Graphics& graphics);
+
 void DrawLobbyScreen()
 {
     Graphics graphics(g_memDC);
@@ -19,6 +21,7 @@ void DrawLobbyScreen()
     // 로비 이미지의 투명 영역에 이전 화면이나 문구가 남지 않도록 타이틀 배경으로 덮는다.
     graphics.DrawImage(g_images.title_screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     graphics.DrawImage(g_images.title_screen_multi, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    DrawLobbyCharacterIcons(graphics);
     // 클라이언트는 START 버튼이 없으므로 커서를 항상 EXIT에 둔다.
     const bool cursorOnStart = g_net.isHost && g_game.multi_select == 0;
     graphics.DrawImage(g_images.title_cursor, cursorOnStart ? 250 : 400, 475, 25, 25);
@@ -355,6 +358,37 @@ static void Draw_toad(const MarioRenderData& p)
         srcX, srcY, CONTENT_W, srcH,
         p.x, p.y, dstW, dstH,
         flip);
+}
+
+// 로비: 접속한 플레이어 칸의 실루엣을 플레이어 번호에 맞는 캐릭터로 바꾼다 (P2 루이지, P3 토드).
+// 좌표는 title_screen_multi.png(256x240)의 아이콘 칸을 화면(800x640) 크기로 옮긴 값이다.
+static void DrawLobbyCharacterIcons(Graphics& graphics)
+{
+    struct LobbySlot { int playerId; int iconY; CharacterType charType; };
+    static const LobbySlot slots[] = {
+        { 1, 325, CHAR_LUIGI },  // 원본 122~137행
+        { 2, 408, CHAR_TOAD  },  // 원본 153~168행
+    };
+    constexpr int ICON_X = 150, ICON_W = 44, ICON_H = 43;  // 원본 48~61열, P1 마리오 아이콘과 같은 크기
+    SolidBrush slotFill(Color(255, 255, 206, 197));        // 아이콘 칸 바탕색
+
+    for (const LobbySlot& slot : slots)
+    {
+        if (!NetIsPlayerConnected(slot.playerId)) continue;
+        graphics.FillRectangle(&slotFill, ICON_X - 2, slot.iconY - 1, ICON_W + 4, ICON_H + 2);  // 실루엣 지우기
+        graphics.Flush(FlushIntentionSync);
+
+        MarioRenderData icon = {};
+        icon.x = ICON_X;
+        icon.y = slot.iconY;
+        icon.width = ICON_W;
+        icon.height = ICON_H;
+        icon.direction = DIR_RIGHT;
+        icon.form = FORM_SMALL;
+        icon.charType = slot.charType;
+        if (slot.charType == CHAR_LUIGI) Draw_luigi(icon);
+        else Draw_toad(icon);
+    }
 }
 
 static void DrawPlayerTransformation(MarioRenderData mario)
