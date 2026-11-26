@@ -30,6 +30,10 @@
 // --- 파이어플라워 (스페이스) ---
 #define FLOWER_FIRE_MOTION_FRAMES 5     // 파이어볼 발사 모션 프레임
 
+// --- 쿠파 ---
+constexpr int MAX_FIREBALLS = 100;
+constexpr int BOWSER_MAX_HP = 100;
+
 // --- 네트워크 ---
 #define NET_PORT                9000    // 호스트 listen 포트
 

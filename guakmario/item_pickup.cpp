@@ -80,6 +80,7 @@ bool ConfirmItemPickup(int senderPlayerId, const ItemPickupData& request)
 
     // Validate and consume on the same game thread before any effects or broadcast.
     FindPickupItem(request.itemType, request.slot)->active = false;
+    if (request.itemType == ITEM_UP_MUSHROOM) AwardMultiplayerLife();
     if (senderPlayerId == g_localPlayerIdx)
         ApplyItemPickupEffect(static_cast<ItemType>(request.itemType));
 
@@ -118,7 +119,8 @@ void ApplyItemSpawn(const ItemSpawnData& spawn)
         spawn.spawnMotion >= 18) return;
 
     Item* item = FindPickupItem(spawn.itemType, spawn.slot);
-    if (!item || item->active || item->motion) return;
+    if (!item) return;
+    // 호스트가 재사용한 슬롯에 이전 아이템이 잠시 남아 있어도 새 생성을 적용한다.
     *item = Item(spawn.x, spawn.y, spawn.vx, spawn.vy, spawn.width, spawn.height,
         spawn.spawnMotion, spawn.flags == ITEM_FLAG_ACTIVE, spawn.flags == ITEM_FLAG_MOTION);
 }

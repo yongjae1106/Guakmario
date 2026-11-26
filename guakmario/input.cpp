@@ -2,13 +2,19 @@
 #include "player.h"
 #include "game.h"
 #include "item.h"
-#include "monster.h"
 #include "sound.h"
 #include "config.h"
+
+static bool IsMultiplayerInputBlocked()
+{
+    return IsMultiplayerGame() &&
+        (g_game.gameState != GAME_RUNNING || g_player.mario.isDead || g_game.multiplayerArrived);
+}
 
 void HandleGameKeyDown(WPARAM wParam)
 {
     if (g_game.gameState == GAME_OVER || g_game.gameState == GAME_VICTORY || g_game.gameState == GAME_CLEAR) return;
+    if (IsMultiplayerInputBlocked()) return;
     g_player.keyState[wParam] = true;
     if (g_player.mario.isTransforming) return;
     g_player.mario.isWalking = true;
@@ -32,7 +38,7 @@ void HandleGameKeyDown(WPARAM wParam)
         if (g_player.mario.form == FORM_TINO)
         {
             if (g_player.mario.tino_cooldown_space > 0) break;
-            g_monsters.bowser.ignoreTinoBite = false;
+            if (++g_player.mario.tinoBiteId == 0) ++g_player.mario.tinoBiteId;
             g_player.mario.tino_motion = true;
             g_player.mario.motion_timer = TINO_BITE_MOTION_FRAMES;
             g_player.mario.god = true;
@@ -47,7 +53,7 @@ void HandleGameKeyDown(WPARAM wParam)
 void HandleGameKeyUp(WPARAM wParam)
 {
     g_player.keyState[wParam] = false;
-    if (g_player.mario.isTransforming) return;
+    if (g_player.mario.isTransforming || IsMultiplayerInputBlocked()) return;
     switch (wParam)
     {
     case VK_SPACE:
@@ -77,7 +83,7 @@ void HandleGameKeyUp(WPARAM wParam)
 
 void HandleGameChar(WPARAM wParam)
 {
-    if (g_player.mario.isTransforming) return;
+    if (g_player.mario.isTransforming || IsMultiplayerInputBlocked()) return;
     switch (wParam)
     {
     case ('z'):
@@ -85,7 +91,6 @@ void HandleGameChar(WPARAM wParam)
         if (g_player.mario.form == FORM_TINO)
         {
             if (g_player.mario.tino_cooldown_z > 0) break;
-            g_monsters.bowser.ignoreTinoFire = false;
             PlaySoundBuffer(bowserfire_Sound);
             g_player.mario.tino_fire_motion = true;
             g_player.mario.motion_timer = TINO_FIRE_MOTION_FRAMES;

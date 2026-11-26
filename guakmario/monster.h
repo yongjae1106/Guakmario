@@ -1,9 +1,10 @@
 ﻿#pragma once
 #include "item.h"
+#include "config.h"
+
 #define MAX_MONSTERS 100
 #define MAX_TURTLES 100
 #define MAX_BOWSER 1
-#define MAX_FIREBALLS 100
 
 struct Entity
 {
@@ -33,6 +34,7 @@ struct Turtle : Entity
     TurtleState turtleState = NORMAL;
     int shellTimer = 0;
     int damageTimer = 0;
+    DWORD lastNetworkStomp = 0;
 };
 
 //angel turtle
@@ -51,17 +53,17 @@ struct AngelTurtle : Entity
 struct Bowser : Entity
 {
     int hp = 0;
-    bool ignoreTinoFire = false;
-    bool ignoreTinoBite = false;
+    uint32_t lastBiteHits[3] = {};
     bool isJumping = false;
     bool isFiring = false;
     int fireTimer = 0;// 추가: 불 공격 중인지 여부
     int frame = 0;
+    int animationTicks = 0;
+    int fireSign = -1;
 
     int jumpTimer = 0;  //랜덤하게 점프하기
     int jumpInterval = 0;
 
-    int startX = 0;            // 시작 위치 x 좌표
     int moveSign = 1;          // 이동 배율: 1 = 오른쪽, -1 = 왼쪽 (속도에 곱해서 사용)
     int moveDistance = 0;      // 이동한 거리 누적
     int maxDistance = 0;
@@ -81,6 +83,7 @@ struct Fireball
 };
 
 struct MonsterState {
+    int snapshotFrame = 0;
     Monster     monsters[MAX_MONSTERS]       = {};
     int         monsterCount                 = 0;
     Turtle      turtles[MAX_TURTLES]         = {};
@@ -91,7 +94,6 @@ struct MonsterState {
     int         angelTurtleCount             = 0;
     Fireball    fireballs[MAX_FIREBALLS]     = {};
     Bowser      bowser                       = {};
-    Fireball    bowserFire                   = {};
 };
 extern MonsterState g_monsters;
 
@@ -110,6 +112,10 @@ void UpdateAngelTurtles();
 void HandleMarioAngelTurtleCollision();
 
 void UpdateBowser();
+void FinishBowserDefeat();
+enum HitType : uint8_t;
+bool ApplyBowserHit(HitType type);
+void HandleBowserPlayerAttacks();
 void UpdateFireballs();
 void HandleMarioBowserCollision();
 void HandleMarioFireballCollision();

@@ -1,6 +1,8 @@
 #include "network.h"
 #include "player.h"
 #include "game.h"
+#include "map.h"
+#include "sound.h"
 #include <cassert>
 #include <cstdio>
 
@@ -9,11 +11,78 @@ PlayerContext g_allPlayers[3] = {};
 int g_localPlayerIdx = 0;
 GameContext g_game = {};
 bool ApplyRemotePlayerState(int, const PlayerStateData&) { return false; }
+void HandleMultiplayerGameEvent(int, const GameEventData&) {}
+void HandleMultiplayerPlayerState(int, int) {}
 bool ConfirmItemPickup(int, const ItemPickupData&) { return false; }
 void ApplyItemPickupResult(const ItemPickupData&) {}
 void ApplyItemSpawn(const ItemSpawnData&) {}
+void HandleMonsterHit(int, const MonsterHitData&) {}
+void ApplyMonsterSnapshot(const std::vector<uint8_t>&) {}
+void ApplyBossSnapshot(const std::vector<uint8_t>&) {}
+bool IsMultiplayerGame() { return false; }
+void CollectMapCoin(int, int, int) {}
+void HandleBlockHit(int, int, int) {}
+int (*currentMap)[MAP_WIDTH] = nullptr;
+Sound coin_Sound = {};
+void PlaySoundBuffer(Sound&) {}
+bool ApplyShotSpawn(int, const ShotSpawnData&) { return false; }
+
+static void TestBossStatePacket()
+{
+    BossStateData boss = {};
+    boss.x = 5020;
+    boss.y = 320;
+    boss.vy = -18;
+    boss.hp = 85;
+    boss.width = 120;
+    boss.height = 120;
+    boss.flags = BOSS_FLAG_ALIVE | BOSS_FLAG_FIRING | BOSS_FLAG_JUMPING;
+    boss.frame = 1;
+    boss.moveSign = 1;
+    boss.fireSign = -1;
+
+    std::vector<BossFireballData> fireballs = { { 0, 5000, 400, -6, 0, 40, 20, 3 },
+        { MAX_FIREBALLS - 1, -20, 450, 6, 0, 40, 20, 6 } };
+    std::vector<uint8_t> packet;
+    assert(BuildBossStatePacket(boss, fireballs, packet));
+    BossStateData decoded = {};
+    std::vector<BossFireballData> decodedFireballs;
+    assert(ParseBossStatePacket(packet, decoded, decodedFireballs));
+    boss.fireballCount = 2;
+    assert(memcmp(&decoded, &boss, sizeof(boss)) == 0);
+    assert(decodedFireballs.size() == fireballs.size());
+    assert(memcmp(decodedFireballs.data(), fireballs.data(),
+        fireballs.size() * sizeof(BossFireballData)) == 0);
+
+    auto rejects = [&](std::vector<uint8_t> bad) {
+        assert(!ParseBossStatePacket(bad, decoded, decodedFireballs));
+        assert(decoded.hp == boss.hp && decodedFireballs.size() == fireballs.size());
+    };
+    auto bad = packet;
+    bad.pop_back();
+    rejects(bad);
+    bad = packet;
+    bad[3] = 1;
+    rejects(bad);
+    bad = packet;
+    const size_t prefix = sizeof(PacketHeader) + sizeof(BossStateData);
+    bad[prefix + sizeof(BossFireballData)] = bad[prefix]; // 중복 슬롯
+    rejects(bad);
+    bad = packet;
+    bad[prefix] = MAX_FIREBALLS;
+    rejects(bad);
+
+    fireballs[1].motion = 7;
+    assert(!BuildBossStatePacket(boss, fireballs, packet));
+    boss.flags = BOSS_FLAG_DEAD | BOSS_FLAG_FALLING;
+    boss.hp = 0;
+    assert(BuildBossStatePacket(boss, {}, packet));
+    assert(ParseBossStatePacket(packet, decoded, decodedFireballs));
+    assert(decoded.hp == 0 && decodedFireballs.empty());
+}
 
 int main() {
+    TestBossStatePacket();
     std::vector<uint8_t> packet;
     std::vector<MonsterEntry> states, decoded;
     uint8_t kind = 255;
