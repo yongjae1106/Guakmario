@@ -1,3 +1,4 @@
+#include "network.h"
 #include "item.h"
 #include "data.h"
 #include "renderer.h"
@@ -246,76 +247,86 @@ void TinoAttack()
         }
     }
 }
-void UpdateShot_fireball()
+static void UpdateFireballs(Shot (&shots)[MAX_SHOT])
 {
     for (int i = 0; i < MAX_SHOT; i++)
     {
-        if (!fireball[i].active) continue;
-        fireball[i].motion++;
-        if (fireball[i].motion > 3)
+        if (!shots[i].active) continue;
+        shots[i].motion++;
+        if (shots[i].motion > 3)
         {
-            fireball[i].motion = 0;
+            shots[i].motion = 0;
         }
 
-        fireball[i].x += fireball[i].vx;    // 수평이동
+        shots[i].x += shots[i].vx;    // 수평이동
 
         // 충돌 계산
-        int left = fireball[i].x / TILE_SIZE;
-        int right = (fireball[i].x + fireball[i].width - 1) / TILE_SIZE;
-        int top = fireball[i].y / TILE_SIZE;
-        int bottom = (fireball[i].y + fireball[i].height - 1) / TILE_SIZE;
-        int middle = (fireball[i].y + 30 / 2 - 1) / TILE_SIZE;
+        int left = shots[i].x / TILE_SIZE;
+        int right = (shots[i].x + shots[i].width - 1) / TILE_SIZE;
+        int top = shots[i].y / TILE_SIZE;
+        int bottom = (shots[i].y + shots[i].height - 1) / TILE_SIZE;
+        int middle = (shots[i].y + 30 / 2 - 1) / TILE_SIZE;
 
         // 2️⃣ 수평 충돌 처리
-        if (fireball[i].vx < 0 &&
+        if (left < 0 || right >= MAP_WIDTH || top < 0 || bottom >= MAP_HEIGHT || middle >= MAP_HEIGHT)
+        {
+            shots[i].active = false;
+            continue;
+        }
+        if (shots[i].vx < 0 &&
             (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
         {
-            fireball[i].active = false;
-            fireball[i].fade = true;
+            shots[i].active = false;
+            shots[i].fade = true;
         }
-        else if (fireball[i].vx > 0 &&
+        else if (shots[i].vx > 0 &&
             (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right]) || isSolidTile(currentMap[middle][right])))
         {
-            fireball[i].active = false;
-            fireball[i].fade = true;
+            shots[i].active = false;
+            shots[i].fade = true;
         }
 
         // 3️⃣ 수직 낙하 (중력)
-        fireball[i].vy += 1;
-        if (fireball[i].vy > 10) fireball[i].vy = 5;
-        fireball[i].y += fireball[i].vy;
+        shots[i].vy += 1;
+        if (shots[i].vy > 10) shots[i].vy = 5;
+        shots[i].y += shots[i].vy;
 
-        left = fireball[i].x / TILE_SIZE;
-        right = (fireball[i].x + TILE_SIZE - 1) / TILE_SIZE;
-        top = fireball[i].y / TILE_SIZE;
-        bottom = (fireball[i].y + TILE_SIZE - 1) / TILE_SIZE;
+        left = shots[i].x / TILE_SIZE;
+        right = (shots[i].x + TILE_SIZE - 1) / TILE_SIZE;
+        top = shots[i].y / TILE_SIZE;
+        bottom = (shots[i].y + TILE_SIZE - 1) / TILE_SIZE;
 
         // 아래 충돌 처리
-        if (fireball[i].vy > 0 && (isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[bottom][right])))
+        if (left < 0 || right >= MAP_WIDTH || bottom < 0 || bottom >= MAP_HEIGHT)
         {
-            fireball[i].y = bottom * TILE_SIZE - fireball[i].height - 10;
-            fireball[i].vy = -9;
+            shots[i].active = false;
+            continue;
+        }
+        if (shots[i].vy > 0 && (isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[bottom][right])))
+        {
+            shots[i].y = bottom * TILE_SIZE - shots[i].height - 10;
+            shots[i].vy = -9;
         }
     }
 }
-void UpdateShot_tinofire()
+static void UpdateTinoFires(Shot (&shots)[MAX_SHOT])
 {
     for (int i = 0; i < MAX_SHOT; i++)
     {
-        if (!tinofire[i].active) continue;
-        tinofire[i].motion++;
-        tinofire[i].duration++;
-        if (tinofire[i].motion > 6)
+        if (!shots[i].active) continue;
+        shots[i].motion++;
+        shots[i].duration++;
+        if (shots[i].motion > 6)
         {
-            tinofire[i].motion = 0;
+            shots[i].motion = 0;
         }
-        if (tinofire[i].duration == 100)
+        if (shots[i].duration == 100)
         {
-            tinofire[i].active = false;
+            shots[i].active = false;
             continue;
         }
 
-        tinofire[i].x += tinofire[i].vx;    // 수평이동
+        shots[i].x += shots[i].vx;    // 수평이동
     }
 }
 void UpdateShot_tinofire_effect()
@@ -333,6 +344,22 @@ void UpdateShot_tinofire_effect()
         }
     }
 }
+static void SendShotSpawn(ShotType type, int slot, const Shot& shot)
+{
+    if (!g_game.isMulti || g_game.isRenderTest || g_net.myPlayerId < 0 || g_net.myPlayerId > 2) return;
+    struct Packet { PacketHeader header; ShotSpawnData spawn; };
+    static_assert(sizeof(Packet) == sizeof(PacketHeader) + sizeof(ShotSpawnData));
+    const Packet packet = {
+        { sizeof(Packet), PKT_SHOT_SPAWN, static_cast<uint8_t>(g_net.myPlayerId) },
+        { type, static_cast<uint8_t>(slot), static_cast<uint8_t>(shot.direction),
+          static_cast<int16_t>(shot.x), static_cast<int16_t>(shot.y),
+          static_cast<int16_t>(shot.vx), static_cast<int16_t>(shot.vy),
+          static_cast<uint8_t>(shot.width), static_cast<uint8_t>(shot.height) }
+    };
+    if (g_net.isHost) SendToAll(&packet, sizeof(packet));
+    else SendToHost(&packet, sizeof(packet));
+}
+
 void SpawnFireball(int x, int y)
 {
     static int fireball_count = 0;
@@ -348,6 +375,8 @@ void SpawnFireball(int x, int y)
     fireball[fireball_count].width = 10;
     fireball[fireball_count].height = 10;
     fireball[fireball_count].active = true;
+    fireball[fireball_count].direction = g_player.mario.direction;
+    SendShotSpawn(SHOT_FIREBALL, fireball_count, fireball[fireball_count]);
     fireball_count++;
 }
 void SpawnTinoFire(int x, int y)
@@ -370,12 +399,43 @@ void SpawnTinoFire(int x, int y)
     tinofire[tinofire_count].height = TILE_SIZE * 2;
     tinofire[tinofire_count].active = true;
     tinofire[tinofire_count].fade = false;
+    SendShotSpawn(SHOT_TINOFIRE, tinofire_count, tinofire[tinofire_count]);
     tinofire_count++;
 }
+RemoteShots remoteShots[3] = {};
+
+bool ApplyShotSpawn(int owner, const ShotSpawnData& spawn)
+{
+    if (owner < 0 || owner >= 3 || owner == g_localPlayerIdx ||
+        spawn.slot >= MAX_SHOT || spawn.shotType > SHOT_TINOFIRE ||
+        spawn.direction > DIR_RIGHT || !spawn.width || !spawn.height) return false;
+    auto& pool = remoteShots[owner];
+    Shot& shot = spawn.shotType == SHOT_FIREBALL ? pool.fireballs[spawn.slot] : pool.tinoFires[spawn.slot];
+    shot = {};
+    shot.x = spawn.x;
+    shot.y = spawn.y;
+    shot.vx = spawn.vx;
+    shot.vy = spawn.vy;
+    shot.width = spawn.width;
+    shot.height = spawn.height;
+    shot.direction = static_cast<Direction>(spawn.direction);
+    shot.active = true;
+    return true;
+}
+
+void UpdateRemoteShots()
+{
+    for (auto& pool : remoteShots)
+    {
+        UpdateFireballs(pool.fireballs);
+        UpdateTinoFires(pool.tinoFires);
+    }
+}
+
 void UpdateAllShots()
 {
-    UpdateShot_fireball();
-    UpdateShot_tinofire();
+    UpdateFireballs(fireball);
+    UpdateTinoFires(tinofire);
     UpdateShot_tinofire_effect();
 }
 void HandleShotCollisions()

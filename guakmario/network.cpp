@@ -3,6 +3,8 @@
 #include "player.h"
 #include "game.h"
 #include "item.h"
+#include "map.h"
+#include "sound.h"
 #include <queue>
 
 // ============================================================
@@ -399,6 +401,57 @@ void NetPollPackets()
             {
                 ApplyItemPickupResult(pickup);
             }
+            break;
+        }
+        case PKT_SHOT_SPAWN:
+        {
+            if (!g_game.gameStart || !g_game.isMulti || g_game.isRenderTest ||
+                pkt.size() != sizeof(PacketHeader) + sizeof(ShotSpawnData) ||
+                hdr->size != pkt.size()) break;
+            if (g_net.isHost) {
+                if (senderPlayerId < 1 || senderPlayerId > 2 || hdr->playerId != senderPlayerId) break;
+            } else if (senderPlayerId != 0) break;
+            ShotSpawnData spawn;
+            memcpy(&spawn, pkt.data() + sizeof(PacketHeader), sizeof(spawn));
+            if (!ApplyShotSpawn(hdr->playerId, spawn) || !g_net.isHost) break;
+            for (int target = 1; target <= 2; ++target)
+                if (target != senderPlayerId) SendToOne(target, pkt.data(), (int)pkt.size());
+            break;
+        }
+        case PKT_BLOCK_HIT:
+        {
+            if (!g_net.isHost || !g_game.gameStart || !g_game.isMulti ||
+                senderPlayerId < 1 || senderPlayerId > 2 || hdr->playerId != senderPlayerId ||
+                pkt.size() != sizeof(PacketHeader) + sizeof(BlockHitData) || hdr->size != pkt.size()) break;
+            BlockHitData hit;
+            memcpy(&hit, pkt.data() + sizeof(PacketHeader), sizeof(hit));
+            if (hit.row >= MAP_HEIGHT || hit.col >= MAP_WIDTH) break;
+            if (currentMap[hit.row][hit.col] == TILE_COIN)
+                CollectMapCoin(hit.row, hit.col, senderPlayerId);
+            else
+                HandleBlockHit(hit.row, hit.col, senderPlayerId);
+            break;
+        }
+        case PKT_TILE_CHANGE:
+        {
+            // 호스트 연결만 신뢰하고, 헤더 ID는 호스트가 승인한 타격자를 나타낸다.
+            if (g_net.isHost || senderPlayerId != 0 || hdr->playerId > 2 ||
+                !g_game.gameStart || !g_game.isMulti ||
+                pkt.size() != sizeof(PacketHeader) + sizeof(TileChangeData) ||
+                hdr->size != pkt.size()) break;
+            TileChangeData change;
+            memcpy(&change, pkt.data() + sizeof(PacketHeader), sizeof(change));
+            if (change.row >= MAP_HEIGHT || change.col >= MAP_WIDTH) break;
+            if (change.tile != TILE_USED_BLOCK && change.tile != TILE_EMPTY) break;
+            int& tile = currentMap[change.row][change.col];
+            if (hdr->playerId == g_localPlayerIdx &&
+                ((tile == TILE_COIN && change.tile == TILE_EMPTY) ||
+                 (tile == TILE_BOX_COIN && change.tile == TILE_USED_BLOCK)))
+            {
+                PlaySoundBuffer(coin_Sound);
+                ++g_player.mario.coin;
+            }
+            tile = change.tile;
             break;
         }
         case PKT_ITEM_SPAWN:

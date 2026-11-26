@@ -177,6 +177,7 @@ void UpdateGame()
     if (networkGame) NetPollPackets();
 
     UpdateGameState();
+    if (networkGame && g_game.gameStart) UpdateRemoteShots();
 
     // 변신,사망 연출로 상태 갱신이 일찍 끝나도 이번 틱의 결과를 전송
     if (networkGame && g_game.gameStart) NetFlushSend();
@@ -205,6 +206,7 @@ void ResetMonsters()
 }
 void ResetItems()
 {
+    for (auto& pool : remoteShots) pool = {};
     for (int i = 0; i < MAX_ITEMS; i++) // 아이템 초기화
     {
         mushroom[i].active = false;

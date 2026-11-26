@@ -62,9 +62,7 @@ void CheckCoinCollision()
             int screenY = i * TILE_SIZE;
             if (currentMap[i][j] == TILE_COIN && IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, screenX, screenY, 30, 30))
             {
-                PlaySoundBuffer(coin_Sound);
-                currentMap[i][j] = 0;
-                g_player.mario.coin++;
+                CollectMapCoin(i, j, g_localPlayerIdx);
             }
         }
     }

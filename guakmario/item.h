@@ -41,6 +41,14 @@ struct Shot_Effect
     int timer;
     bool active;
 };
+struct RemoteShots {
+    Shot fireballs[MAX_SHOT];
+    Shot tinoFires[MAX_SHOT];
+};
+extern RemoteShots remoteShots[3];
+struct ShotSpawnData;
+bool ApplyShotSpawn(int owner, const ShotSpawnData& spawn);
+void UpdateRemoteShots();
 extern Shot fireball[MAX_SHOT];
 extern Shot tinofire[MAX_SHOT];
 extern Shot_Effect tinofire_effect[MAX_SHOT];
@@ -50,8 +58,6 @@ void UpdateItems_up_mushroom();
 void UpdateItems_star();
 void UpdateItems_flower();
 void UpdateItems_tino();
-void UpdateShot_fireball();
-void UpdateShot_tinofire();
 void UpdateShot_tinofire_effect();
 void OnMonsterHit(int x, int y);
 
