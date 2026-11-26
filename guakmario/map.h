@@ -15,6 +15,7 @@ constexpr int CASTLE_GATE_COLUMN = 138;
 constexpr int CASTLE_GATE_TOP_ROW = 5;
 constexpr int CASTLE_GATE_BOTTOM_ROW = 8;
 constexpr int CASTLE_EXIT_COLUMN = CASTLE_GATE_COLUMN + 2;
+constexpr int CASTLE_CLEAR_COLUMN = CASTLE_EXIT_COLUMN - 2;  // 최종 클리어 판정 열 (성벽 통로 안쪽)
 constexpr int CASTLE_PRINCESS_COLUMN = 147;
 bool IsCastleGateOpen();
 void OpenCastleGate();
