@@ -523,26 +523,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 g_game.starStartTime = GetTickCount();
                 break;
             }
-            case(ID_STAGE_1):
-            {
-                if (IsMultiplayerGame()) break;
-                LoadStage();
-                break;
-            }
-            case(ID_STAGE_2):
-            {
-                if (IsMultiplayerGame()) break;
-                g_game.stage = 2;
-                LoadStage();
-                break;
-            }
-            case(ID_STAGE_3):
-            {
-                if (IsMultiplayerGame()) break;
-                g_game.stage = 3;
-                LoadStage();
-                break;
-            }
+            case(ID_STAGE_1): CheatMoveStage(1); break;
+            case(ID_STAGE_2): CheatMoveStage(2); break;
+            case(ID_STAGE_3): CheatMoveStage(3); break;
             }
         break;
         }

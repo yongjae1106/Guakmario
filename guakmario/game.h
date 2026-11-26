@@ -43,6 +43,8 @@ extern GameContext g_game;
 void UpdateGame();
 void TickTimer();
 void LoadStage();
+void LoadCheatStage(int stage);
+void CheatMoveStage(int stage);  // 메뉴 치트 스테이지 이동 (멀티는 호스트만)
 void ResetMonsters();
 void ResetItems();
 

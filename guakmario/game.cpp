@@ -258,6 +258,41 @@ bool CanUpdateLocalPlayer()
 }
 }
 
+// 치트 스테이지 이동: 사망·변신 중이어도 살아 있는 상태로 새 스테이지를 시작한다.
+void LoadCheatStage(int stage)
+{
+    Player& player = g_player.mario;
+    if (IsMultiplayerGame())
+    {
+        if (player.isDead || player.isTransforming)
+        {
+            ResetMario(g_sharedLives, player.coin);
+            g_game.multiplayerDeathMotionStarted = false;
+        }
+        LoadMultiplayerStage(stage);
+        return;
+    }
+    if (player.isDead || player.isTransforming) ResetMario(player.life, player.coin);
+    g_game.stage = stage;
+    g_game.gameState = GAME_RUNNING;
+    StopLocalPlayerActions();
+    LoadStage();
+}
+
+// 메뉴 치트: 싱글은 바로 이동, 멀티는 호스트만 이동하고 클라이언트에 전파한다.
+void CheatMoveStage(int stage)
+{
+    if (stage < 1 || stage > 3) return;
+    if (IsMultiplayerGame())
+    {
+        if (!g_net.isHost || g_game.gameState == GAME_OVER) return;
+        LoadCheatStage(stage);
+        NetSendGameEvent(EVT_STAGE_LOAD, static_cast<uint8_t>(stage));
+        return;
+    }
+    LoadCheatStage(stage);
+}
+
 bool IsMultiplayerGame()
 {
     return g_game.isMulti && !g_game.isRenderTest;
@@ -340,12 +375,15 @@ void HandleMultiplayerGameEvent(int senderPlayerId, const GameEventData& event)
             BeginMultiplayerStageClear();
         break;
     case EVT_STAGE_LOAD:
-        if (g_game.gameState == GAME_VICTORY && event.param == g_game.stage + 1 && event.param <= 3)
-        {
-            LoadMultiplayerStage(event.param);
-            NetSendGameEvent(EVT_STAGE_READY, event.param);
-        }
+    {
+        if (event.param < 1 || event.param > 3 || g_game.gameState == GAME_OVER) break;
+        // 클리어 후 다음 스테이지가 아니면 호스트의 치트 스테이지 이동이다.
+        const bool nextStage = g_game.gameState == GAME_VICTORY && event.param == g_game.stage + 1;
+        if (nextStage) LoadMultiplayerStage(event.param);
+        else LoadCheatStage(event.param);
+        NetSendGameEvent(EVT_STAGE_READY, event.param);
         break;
+    }
     case EVT_LIVES_CHANGED:
         if (g_game.gameState != GAME_OVER) ApplySharedLives(event.param);
         break;
