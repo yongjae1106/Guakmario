@@ -15,6 +15,7 @@ struct Entity
     bool isDead = false;
     bool active = false;
     bool isFalling = false;
+    DWORD hitPendingUntil = 0;  // 클라이언트: 타격 요청 후 호스트 확정 전까지 중복 판정 방지
 };
 
 struct Monster : Entity
@@ -124,3 +125,6 @@ void damage_mario();
 
 void UpdateAllMonsters();
 void HandleAllMonsterCollisions();
+
+// 클라이언트가 타격 요청을 보낸 뒤 확정 대기 중이면 다시 판정하지 않는다.
+bool IsMonsterHittable(const Entity& entity);

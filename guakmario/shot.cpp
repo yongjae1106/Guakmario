@@ -28,7 +28,7 @@ void HandleFireballHit()
         for (int j = 0; j < MAX_MONSTERS; j++)
         {
             int monsterScreenX = g_monsters.monsters[j].x - g_game.cameraX;
-            if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive && fireball[i].active) // 여러 조건 같이 확인
+            if (IsMonsterHittable(g_monsters.monsters[j]) && fireball[i].active) // 여러 조건 같이 확인
             {
                 if (IsColliding(monsterScreenX, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
                     fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
@@ -44,7 +44,7 @@ void HandleFireballHit()
         for (int j = 0; j < MAX_TURTLES; j++)
         {
             int turtleScreenX = g_monsters.turtles[j].x - g_game.cameraX;
-            if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive && fireball[i].active)
+            if (IsMonsterHittable(g_monsters.turtles[j]) && fireball[i].active)
             {
                 if (IsColliding(turtleScreenX, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
                     fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
@@ -59,7 +59,7 @@ void HandleFireballHit()
         for (int j = 0; j < MAX_TURTLES; j++)
         {
             int turtleScreenX = g_monsters.angelTurtles[j].x - g_game.cameraX;
-            if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive && fireball[i].active)
+            if (IsMonsterHittable(g_monsters.angelTurtles[j]) && fireball[i].active)
             {
                 if (IsColliding(turtleScreenX, g_monsters.angelTurtles[j].y, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
                     fireballScreenX, fireball[i].y, fireball[i].width, fireball[i].height))
@@ -84,7 +84,7 @@ void HandleTinoFireHit()
         for (int j = 0; j < MAX_MONSTERS; j++)
         {
             int monsterScreenX = g_monsters.monsters[j].x - g_game.cameraX;
-            if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive && tinofire[i].active) // 여러 조건 같이 확인
+            if (IsMonsterHittable(g_monsters.monsters[j]) && tinofire[i].active) // 여러 조건 같이 확인
             {
                 if (IsColliding(monsterScreenX, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
                     tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
@@ -100,7 +100,7 @@ void HandleTinoFireHit()
         for (int j = 0; j < MAX_TURTLES; j++)
         {
             int turtleScreenX = g_monsters.turtles[j].x - g_game.cameraX;
-            if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive && tinofire[i].active)
+            if (IsMonsterHittable(g_monsters.turtles[j]) && tinofire[i].active)
             {
                 if (IsColliding(turtleScreenX, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
                     tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
@@ -115,7 +115,7 @@ void HandleTinoFireHit()
         for (int j = 0; j < MAX_TURTLES; j++)
         {
             int angelturtleScreenX = g_monsters.angelTurtles[j].x - g_game.cameraX;
-            if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive && tinofire[i].active)
+            if (IsMonsterHittable(g_monsters.angelTurtles[j]) && tinofire[i].active)
             {
                 if (IsColliding(angelturtleScreenX, g_monsters.angelTurtles[j].y + 20, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
                     tinofireScreenX, tinofire[i].y, tinofire[i].width, tinofire[i].height))
@@ -156,7 +156,7 @@ void TinoAttack()
     for (int j = 0; j < MAX_MONSTERS; j++)
     {
         int monsterScreenX = g_monsters.monsters[j].x - g_game.cameraX;
-        if (!g_monsters.monsters[j].isDead && g_monsters.monsters[j].isAlive)
+        if (IsMonsterHittable(g_monsters.monsters[j]))
         {
             if (IsColliding(monsterScreenX, g_monsters.monsters[j].y, g_monsters.monsters[j].width, g_monsters.monsters[j].height,
                 biteX, biteY, biteWidth, biteHeight))
@@ -170,7 +170,7 @@ void TinoAttack()
     for (int j = 0; j < MAX_TURTLES; j++)
     {
         int turtleScreenX = g_monsters.turtles[j].x - g_game.cameraX;
-        if (!g_monsters.turtles[j].isDead && g_monsters.turtles[j].isAlive)
+        if (IsMonsterHittable(g_monsters.turtles[j]))
         {
             if (IsColliding(turtleScreenX, g_monsters.turtles[j].y, g_monsters.turtles[j].width, g_monsters.turtles[j].height,
                 biteX, biteY, biteWidth, biteHeight))
@@ -184,7 +184,7 @@ void TinoAttack()
     for (int j = 0; j < MAX_TURTLES; j++)
     {
         int turtleScreenX = g_monsters.angelTurtles[j].x - g_game.cameraX;
-        if (!g_monsters.angelTurtles[j].isDead && g_monsters.angelTurtles[j].isAlive)
+        if (IsMonsterHittable(g_monsters.angelTurtles[j]))
         {
             if (IsColliding(turtleScreenX, g_monsters.angelTurtles[j].y, g_monsters.angelTurtles[j].width, g_monsters.angelTurtles[j].height,
                 biteX, biteY, biteWidth, biteHeight))

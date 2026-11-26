@@ -243,6 +243,55 @@ void UpdateMonsters()
 
     }
 }
+constexpr DWORD MONSTER_HIT_PENDING_MS = 250;
+constexpr int MONSTER_SNAPSHOT_INTERVAL = 2;  // 호스트 몬스터·보스 상태 송신 간격 (프레임)
+
+static bool IsHitPending(const Entity& entity, DWORD now)
+{
+    return entity.hitPendingUntil && static_cast<int>(entity.hitPendingUntil - now) > 0;
+}
+
+bool IsMonsterHittable(const Entity& entity)
+{
+    return entity.isAlive && !entity.isDead && !IsHitPending(entity, GetTickCount());
+}
+
+static Entity* FindHitTarget(MonsterKind kind, int slot)
+{
+    switch (kind) {
+    case MON_NORMAL:
+        return slot < g_monsters.monsterCount ? &g_monsters.monsters[slot] : nullptr;
+    case MON_TURTLE:
+        return slot < g_monsters.turtleCount ? &g_monsters.turtles[slot] : nullptr;
+    case MON_ANGEL_TURTLE:
+        return slot < g_monsters.angelTurtleCount ? &g_monsters.angelTurtles[slot] : nullptr;
+    default:
+        return nullptr;
+    }
+}
+
+// 클라이언트: 호스트 확정을 기다리는 동안 결과가 하나뿐인 타격은 화면에 먼저 반영한다.
+// 호스트가 거부하면 대기 시간이 끝난 뒤 다음 스냅샷이 원래 상태로 되돌린다.
+static void PredictMonsterHit(MonsterKind kind, int slot, HitType hitType)
+{
+    Entity* target = FindHitTarget(kind, slot);
+    if (!target || !target->isAlive || target->isDead) return;
+
+    const DWORD now = GetTickCount();
+    target->hitPendingUntil = now + MONSTER_HIT_PENDING_MS;
+    if (kind != MON_NORMAL) return;  // 거북이 상태 변화는 호스트 결과를 기다린다.
+
+    Monster& monster = g_monsters.monsters[slot];
+    if (hitType == HIT_STOMP) {
+        monster.isAlive = false;
+        monster.deadStart = now;
+    } else {
+        monster.vy = hitType == HIT_TINOBITE ? TINO_BITE_KNOCKBACK_VY : -15;
+        monster.isDead = true;
+        monster.isFalling = true;
+    }
+}
+
 void SendMonsterHit(MonsterKind kind, int slot, HitType hitType)
 {
     if (slot < 0 || slot >= MAX_MONSTERS) return;
@@ -255,6 +304,7 @@ void SendMonsterHit(MonsterKind kind, int slot, HitType hitType)
         { sizeof(MonsterHitPacket), PKT_MONSTER_HIT, static_cast<uint8_t>(g_localPlayerIdx) }, hit
     };
     SendToHost(&packet, sizeof(packet));
+    PredictMonsterHit(kind, slot, hitType);
 }
 
 void HandleMonsterHit(int senderId, const MonsterHitData& hit)
@@ -320,7 +370,7 @@ void HandleMarioMonsterCollision()
 {
     for (int i = 0; i < g_monsters.monsterCount && !g_player.mario.isTransforming; i++)
     {
-        if (!g_monsters.monsters[i].isAlive || g_monsters.monsters[i].isDead) continue;
+        if (!IsMonsterHittable(g_monsters.monsters[i])) continue;
 
         int marioLeft = g_player.mario.x;
         int marioRight = g_player.mario.x + g_player.mario.width;
@@ -537,7 +587,7 @@ void HandleMarioTurtleCollision()
 {
     for (int i = 0; i < g_monsters.turtleCount && !g_player.mario.isTransforming; i++)
     {
-        if (!g_monsters.turtles[i].isAlive || g_monsters.turtles[i].isDead) continue;
+        if (!IsMonsterHittable(g_monsters.turtles[i])) continue;
 
         int marioLeft = g_player.mario.x;
         int marioRight = g_player.mario.x + g_player.mario.width;
@@ -634,7 +684,7 @@ void HandleMarioAngelTurtleCollision()
 {
     for (int i = 0; i < g_monsters.angelTurtleCount && !g_player.mario.isTransforming; i++)
     {
-        if (!g_monsters.angelTurtles[i].isAlive || g_monsters.angelTurtles[i].isDead) continue;
+        if (!IsMonsterHittable(g_monsters.angelTurtles[i])) continue;
 
         int marioLeft = g_player.mario.x;
         int marioRight = g_player.mario.x + g_player.mario.width;
@@ -1018,11 +1068,27 @@ void ApplyMonsterSnapshot(const std::vector<uint8_t>& packet)
     const DWORD now = GetTickCount();
     switch (kind) {
     case MON_NORMAL:
+    {
+        // 확정 대기 중인 예측 타격은 호스트가 처리하기 전 스냅샷으로 되살리지 않는다.
+        Monster predicted[MAX_MONSTERS];
+        bool keep[MAX_MONSTERS] = {};
+        for (int i = 0; i < g_monsters.monsterCount; ++i) {
+            const Monster& m = g_monsters.monsters[i];
+            if (IsHitPending(m, now) && (!m.isAlive || m.isDead)) {
+                predicted[i] = m;
+                keep[i] = true;
+            }
+        }
         ReplaceMonsterSlots(g_monsters.monsters, g_monsters.monsterCount, entries,
             [now](Monster& m, const MonsterEntry& e) {
                 m.deadStart = !m.isAlive || m.isDead ? now - e.timerA : 0;
             });
+        for (int i = 0; i < g_monsters.monsterCount; ++i) {
+            Monster& m = g_monsters.monsters[i];
+            if (keep[i] && m.active && m.isAlive && !m.isDead) m = predicted[i];
+        }
         break;
+    }
     case MON_TURTLE:
         ReplaceMonsterSlots(g_monsters.turtles, g_monsters.turtleCount, entries,
             [now](Turtle& t, const MonsterEntry& e) {
@@ -1118,6 +1184,52 @@ void ApplyBossSnapshot(const std::vector<uint8_t>& packet)
     }
 }
 
+// 클라이언트: 스냅샷 사이 프레임에도 받은 속도로 몬스터를 움직여 끊김을 줄인다.
+// 상태 전환·처치 판정은 하지 않고, 다음 스냅샷이 오면 호스트 값으로 덮어쓴다.
+static void PredictWalker(Entity& entity)
+{
+    if (entity.isFalling) {
+        entity.vy += 1;
+        if (entity.vy > 10) entity.vy = 10;
+        entity.y += entity.vy;
+        entity.x += entity.vx;
+        return;
+    }
+    const int nextX = entity.x + entity.vx;
+    const int edge = entity.vx < 0 ? nextX : nextX + entity.width - 1;
+    const int column = edge < 0 ? -1 : edge / TILE_SIZE;
+    const int top = entity.y / TILE_SIZE;
+    const int bottom = (entity.y + entity.height - 1) / TILE_SIZE;
+    if (entity.vx != 0 && (isSolidTile(MonsterCollisionTile(top, column)) ||
+        isSolidTile(MonsterCollisionTile(bottom, column)))) return;  // 벽 반전은 호스트 결과를 기다린다.
+    entity.x = nextX;
+}
+
+static void PredictRemoteMonsters()
+{
+    for (int i = 0; i < g_monsters.monsterCount; ++i) {
+        Monster& monster = g_monsters.monsters[i];
+        if (monster.active && (monster.isAlive || monster.isDead)) PredictWalker(monster);
+    }
+    for (int i = 0; i < g_monsters.turtleCount; ++i) {
+        Turtle& turtle = g_monsters.turtles[i];
+        if (turtle.isAlive) PredictWalker(turtle);
+    }
+    for (int i = 0; i < g_monsters.angelTurtleCount; ++i) {
+        AngelTurtle& angel = g_monsters.angelTurtles[i];
+        if (!angel.isAlive) continue;
+        if (angel.state == HIDE) {
+            angel.vy += 1;
+            if (angel.vy > 10) angel.vy = 10;
+            angel.y += angel.vy;
+        } else {
+            angel.y += angel.goingUp ? -angel.vy : angel.vy;
+            if (angel.y <= angel.topY) angel.goingUp = false;
+            else if (angel.y >= angel.bottomY) angel.goingUp = true;
+        }
+    }
+}
+
 void UpdateAllMonsters()
 {
     const bool multiplayer = IsMultiplayerGame();
@@ -1127,11 +1239,14 @@ void UpdateAllMonsters()
         UpdateAngelTurtles();
         UpdateBowser();
         UpdateFireballs();
-        if (multiplayer && ++g_monsters.snapshotFrame == 5) {
+        if (multiplayer && ++g_monsters.snapshotFrame >= MONSTER_SNAPSHOT_INTERVAL) {
             g_monsters.snapshotFrame = 0;
             BroadcastMonsterState();
             if (g_game.stage == CASTLE_STAGE) BroadcastBossState();
         }
+    }
+    else {
+        PredictRemoteMonsters();
     }
     UpdateFireTraps();
 }
