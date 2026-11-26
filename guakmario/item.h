@@ -34,6 +34,7 @@ struct Shot
     Direction direction;
     bool active;
     bool fade;
+    bool hitBowser = false;
 };
 struct Shot_Effect
 {

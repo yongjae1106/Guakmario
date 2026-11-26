@@ -2,6 +2,7 @@
 #include "config.h"
 #include "player.h"
 #include "game.h"
+#include "map.h"
 #include "item.h"
 #include "map.h"
 #include "sound.h"
@@ -12,7 +13,8 @@
 // ============================================================
 
 NetContext g_net       = {};
-int        g_sharedLives = 3;
+int        g_sharedLives = PLAYER_INITIAL_LIFE;
+static uint8_t g_clientsLoadingStage = 0;
 
 
 // ============================================================
@@ -130,10 +132,12 @@ bool NetInit(bool isHost, const char* hostIp)
     g_net.connectedCount  = isHost ? 1 : 0;    // 호스트 자신 포함
     g_net.lobbyMask       = isHost ? 1 : 0;    // 클라이언트는 EVT_LOBBY_STATUS를 받으면 설정
     g_net.waitingForItemPickup = false;
+    g_clientsLoadingStage = 0;
     g_net.listenSock      = INVALID_SOCKET;
     g_net.clientSockets[0] = INVALID_SOCKET;
     g_net.clientSockets[1] = INVALID_SOCKET;
     g_net.hostSocket      = INVALID_SOCKET;
+    if (isHost) g_sharedLives = PLAYER_INITIAL_LIFE;
 
     // 수신 큐 크리티컬 섹션 초기화 (최초 1회)
     if (!g_recvCSInit)
@@ -348,6 +352,28 @@ void NetBroadcastGameStart()
     g_net.listenSock = INVALID_SOCKET;
 }
 
+void NetSendGameEvent(GameEventType type, uint8_t param)
+{
+    if (g_net.myPlayerId < 0 || g_net.myPlayerId > 2) return;
+
+    struct GameEventPacket {
+        PacketHeader header;
+        GameEventData event;
+    };
+    static_assert(sizeof(GameEventPacket) == 6, "Game event wire size changed");
+
+    const GameEventPacket packet = {
+        { sizeof(GameEventPacket), PKT_GAME_EVENT, static_cast<uint8_t>(g_net.myPlayerId) },
+        { type, param }
+    };
+    if (g_net.isHost)
+    {
+        if (type == EVT_STAGE_LOAD) g_clientsLoadingStage = 0x06;
+        SendToAll(&packet, sizeof(packet));
+    }
+    else SendToHost(&packet, sizeof(packet));
+}
+
 void NetPollPackets()
 {
     ReceivedPacket received;
@@ -358,22 +384,54 @@ void NetPollPackets()
         const auto* hdr = (const PacketHeader*)pkt.data();
         const int senderPlayerId = received.senderPlayerId;
         const bool fromHost = !g_net.isHost && senderPlayerId == 0 && hdr->playerId == 0;
+        const bool fromClient = g_net.isHost && senderPlayerId >= 1 && senderPlayerId <= 2 &&
+            hdr->playerId == senderPlayerId;
+
+        // TCP 순서상 로드 확인보다 앞선 패킷은 이전 스테이지에서 보낸 것이다.
+        if (fromClient && !received.disconnected && (g_clientsLoadingStage & (1 << senderPlayerId)))
+        {
+            if (hdr->type == PKT_GAME_EVENT && pkt.size() == sizeof(PacketHeader) + sizeof(GameEventData) &&
+                hdr->size == pkt.size())
+            {
+                const auto* evt = (const GameEventData*)(pkt.data() + sizeof(PacketHeader));
+                if (evt->eventType == EVT_STAGE_READY && evt->param == g_game.stage)
+                    g_clientsLoadingStage &= static_cast<uint8_t>(~(1 << senderPlayerId));
+            }
+            continue;
+        }
 
         switch (hdr->type)
         {
+        case PKT_MONSTER_HIT:
+            if (fromClient && g_game.gameStart && g_game.gameState == GAME_RUNNING &&
+                pkt.size() == sizeof(MonsterHitPacket) && hdr->size == pkt.size()) {
+                MonsterHitPacket request;
+                memcpy(&request, pkt.data(), sizeof(request));
+                HandleMonsterHit(senderPlayerId, request.hit);
+            }
+            break;
+        case PKT_MONSTER_STATE:
+            if (fromHost && g_game.gameStart) ApplyMonsterSnapshot(pkt);
+            break;
+        case PKT_BOSS_STATE:
+            if (fromHost && g_game.gameStart && g_game.stage == CASTLE_STAGE)
+                ApplyBossSnapshot(pkt);
+            break;
         case PKT_PLAYER_STATE:
         {
-            if (pkt.size() < sizeof(PacketHeader) + sizeof(PlayerStateData)) break;
+            if (pkt.size() != sizeof(PacketHeader) + sizeof(PlayerStateData) || hdr->size != pkt.size()) break;
             int id = hdr->playerId;
             if (id < 0 || id > 2 || id == g_net.myPlayerId) break;
             if (g_net.isHost && id != senderPlayerId) break;
 
             const auto* ps = (const PlayerStateData*)(pkt.data() + sizeof(PacketHeader));
+            const int previousCoins = g_allPlayers[id].mario.coin;
             if (!ApplyRemotePlayerState(id, *ps)) break;
 
             // 호스트: 보낸 사람을 제외한 나머지 클라이언트에게 중계 (헤더의 playerId 유지)
             if (g_net.isHost)
             {
+                HandleMultiplayerPlayerState(id, previousCoins);
                 for (int target = 1; target <= 2; target++)
                     if (target != id) SendToOne(target, pkt.data(), (int)pkt.size());
             }
@@ -465,7 +523,7 @@ void NetPollPackets()
         }
         case PKT_GAME_EVENT:
         {
-            if (pkt.size() < sizeof(PacketHeader) + sizeof(GameEventData)) break;
+            if (pkt.size() != sizeof(PacketHeader) + sizeof(GameEventData) || hdr->size != pkt.size()) break;
             const auto* evt = (const GameEventData*)(pkt.data() + sizeof(PacketHeader));
             switch (evt->eventType)
             {
@@ -505,20 +563,25 @@ void NetPollPackets()
                     if (g_net.lobbyMask & (1 << i)) g_net.connectedCount++;
                 break;
             }
+            case EVT_PLAYER_ARRIVED:
+            case EVT_PLAYER_DIED:
+                if (fromClient && evt->param == senderPlayerId)
+                    HandleMultiplayerGameEvent(senderPlayerId, *evt);
+                break;
+            case EVT_CASTLE_GATE_OPENED:
+            case EVT_STAGE_CLEAR:
+            case EVT_STAGE_LOAD:
+            case EVT_CHEAT_BOWSER_WARP:
             case EVT_LIVES_CHANGED:
-                g_sharedLives = evt->param;
+            case EVT_GAME_OVER:
+            case EVT_PLAYER_REVIVED:
+                if (fromHost) HandleMultiplayerGameEvent(senderPlayerId, *evt);
                 break;
             case EVT_GAME_START:
                 if (!fromHost || g_game.gameStart || g_net.myPlayerId < 1) break;
                 // 로비에서 스테이지를 준비한 뒤 다음 게임 패킷을 처리한다.
                 g_game.multiStartPending = true;
                 return;
-            case EVT_GAME_OVER:
-                g_game.gameState = GAME_OVER;
-                break;
-            case EVT_STAGE_CLEAR:
-                g_game.gameState = GAME_CLEAR;
-                break;
             default:
                 break;
             }
@@ -570,6 +633,7 @@ void NetFlushSend()
     ps->motionTimer       = (uint16_t)me.motion_timer;
     ps->tinoCooldownZ     = (uint8_t)me.tino_cooldown_z;
     ps->tinoCooldownSpace = (uint8_t)me.tino_cooldown_space;
+    ps->tinoBiteId        = me.tinoBiteId;
     ps->flags             = 0;
     if (me.isJumping)        ps->flags |= FLAG_JUMPING;
     if (me.isFlying)         ps->flags |= FLAG_FLYING;
@@ -780,5 +844,63 @@ bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
     if (!ValidateMonsterSnapshot(snapshot.kind, result)) return false;
     kind = snapshot.kind;
     states.swap(result);
+    return true;
+}
+
+namespace {
+bool ValidateBossState(const BossStateData& boss, const std::vector<BossFireballData>& fireballs)
+{
+    constexpr uint8_t knownFlags = BOSS_FLAG_ALIVE | BOSS_FLAG_DEAD | BOSS_FLAG_ACTIVE |
+        BOSS_FLAG_FALLING | BOSS_FLAG_JUMPING | BOSS_FLAG_FIRING;
+    if (boss.width == 0 || boss.height == 0 || boss.hp < 0 || boss.hp > BOWSER_MAX_HP ||
+        boss.frame > 1 || (boss.flags & ~knownFlags) != 0 ||
+        (boss.moveSign != -1 && boss.moveSign != 1) ||
+        (boss.fireSign != -1 && boss.fireSign != 1) ||
+        fireballs.size() > MAX_FIREBALLS) return false;
+
+    bool seen[MAX_FIREBALLS] = {};
+    for (const auto& fireball : fireballs) {
+        if (fireball.slot >= MAX_FIREBALLS || seen[fireball.slot] ||
+            fireball.width == 0 || fireball.height == 0 || fireball.motion > 6) return false;
+        seen[fireball.slot] = true;
+    }
+    return true;
+}
+}
+
+bool BuildBossStatePacket(BossStateData boss, const std::vector<BossFireballData>& fireballs,
+    std::vector<uint8_t>& packet)
+{
+    if (!ValidateBossState(boss, fireballs)) return false;
+    constexpr size_t prefix = sizeof(PacketHeader) + sizeof(BossStateData);
+    std::vector<uint8_t> result(prefix + fireballs.size() * sizeof(BossFireballData));
+    const PacketHeader header = { static_cast<uint16_t>(result.size()), PKT_BOSS_STATE, 0 };
+    boss.fireballCount = static_cast<uint8_t>(fireballs.size());
+    memcpy(result.data(), &header, sizeof(header));
+    memcpy(result.data() + sizeof(header), &boss, sizeof(boss));
+    if (!fireballs.empty())
+        memcpy(result.data() + prefix, fireballs.data(), fireballs.size() * sizeof(BossFireballData));
+    packet.swap(result);
+    return true;
+}
+
+bool ParseBossStatePacket(const std::vector<uint8_t>& packet, BossStateData& boss,
+    std::vector<BossFireballData>& fireballs)
+{
+    constexpr size_t prefix = sizeof(PacketHeader) + sizeof(BossStateData);
+    if (packet.size() < prefix) return false;
+    PacketHeader header = {};
+    BossStateData snapshot = {};
+    memcpy(&header, packet.data(), sizeof(header));
+    memcpy(&snapshot, packet.data() + sizeof(header), sizeof(snapshot));
+    if (header.type != PKT_BOSS_STATE || header.playerId != 0 ||
+        header.size != packet.size() || snapshot.fireballCount > MAX_FIREBALLS ||
+        packet.size() != prefix + snapshot.fireballCount * sizeof(BossFireballData)) return false;
+    std::vector<BossFireballData> result(snapshot.fireballCount);
+    if (!result.empty())
+        memcpy(result.data(), packet.data() + prefix, result.size() * sizeof(BossFireballData));
+    if (!ValidateBossState(snapshot, result)) return false;
+    boss = snapshot;
+    fireballs.swap(result);
     return true;
 }

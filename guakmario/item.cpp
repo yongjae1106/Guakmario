@@ -21,7 +21,7 @@ void ApplyItemPickupEffect(ItemType type)
     Player& player = g_player.mario;
     if (type == ITEM_UP_MUSHROOM) {
         PlaySoundBuffer(up_Sound);
-        ++player.life;
+        if (!IsMultiplayerGame()) ++player.life;
         return;
     }
     if (type == ITEM_STAR) {
@@ -61,6 +61,18 @@ static void HandleLocalItemCollisions(Item (&items)[MAX_ITEMS], ItemType type)
     }
 }
 
+static bool IsSolidItemTile(int row, int column)
+{
+    return row >= 0 && row < MAP_HEIGHT && column >= 0 && column < MAP_WIDTH &&
+        isSolidTile(currentMap[row][column]);
+}
+
+static bool ItemLeftMap(const Item& item)
+{
+    return item.x + item.width <= 0 || item.x >= MAP_WIDTH * TILE_SIZE ||
+        item.y >= MAP_HEIGHT * TILE_SIZE;
+}
+
 // 버섯 움직임
 void UpdateItems_mushroom()
 {
@@ -90,12 +102,12 @@ void UpdateItems_mushroom()
         int bottom = (mushroom[i].y + TILE_SIZE - 1) / TILE_SIZE;
 
         // 2️⃣ 수평 충돌 처리
-        if (mushroom[i].vx < 0 && (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left])))
+        if (mushroom[i].vx < 0 && (IsSolidItemTile(top, left) || IsSolidItemTile(bottom, left)))
         {
             mushroom[i].x = (left + 1) * TILE_SIZE; // 경계 맞춤
             mushroom[i].vx = -mushroom[i].vx;      // 방향 반전
         }
-        else if (mushroom[i].vx > 0 && (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right])))
+        else if (mushroom[i].vx > 0 && (IsSolidItemTile(top, right) || IsSolidItemTile(bottom, right)))
         {
             mushroom[i].x = right * TILE_SIZE - mushroom[i].width; // 경계 맞춤
             mushroom[i].vx = -mushroom[i].vx;                       // 방향 반전
@@ -105,6 +117,11 @@ void UpdateItems_mushroom()
         mushroom[i].vy += 1;
         if (mushroom[i].vy > 10) mushroom[i].vy = 10;
         mushroom[i].y += mushroom[i].vy;
+        if (ItemLeftMap(mushroom[i]))
+        {
+            mushroom[i].active = false;
+            continue;
+        }
 
         left = mushroom[i].x / TILE_SIZE;
         right = (mushroom[i].x + TILE_SIZE - 1) / TILE_SIZE;
@@ -112,7 +129,7 @@ void UpdateItems_mushroom()
         bottom = (mushroom[i].y + TILE_SIZE - 1) / TILE_SIZE;
 
         // 아래 충돌 처리
-        if (mushroom[i].vy > 0 && (isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[bottom][right])))
+        if (mushroom[i].vy > 0 && (IsSolidItemTile(bottom, left) || IsSolidItemTile(bottom, right)))
         {
             mushroom[i].y = bottom * TILE_SIZE - TILE_SIZE; // 위치 보정 (딱 맞게)
             mushroom[i].vy = 0;
@@ -150,12 +167,12 @@ void UpdateItems_up_mushroom()
         int bottom = (up_mushroom[i].y + TILE_SIZE - 1) / TILE_SIZE;
 
         // 2️⃣ 수평 충돌 처리
-        if (up_mushroom[i].vx < 0 && (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left])))
+        if (up_mushroom[i].vx < 0 && (IsSolidItemTile(top, left) || IsSolidItemTile(bottom, left)))
         {
             up_mushroom[i].x = (left + 1) * TILE_SIZE; // 경계 맞춤
             up_mushroom[i].vx = -up_mushroom[i].vx;      // 방향 반전
         }
-        else if (up_mushroom[i].vx > 0 && (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right])))
+        else if (up_mushroom[i].vx > 0 && (IsSolidItemTile(top, right) || IsSolidItemTile(bottom, right)))
         {
             up_mushroom[i].x = right * TILE_SIZE - up_mushroom[i].width; // 경계 맞춤
             up_mushroom[i].vx = -up_mushroom[i].vx;                       // 방향 반전
@@ -165,6 +182,11 @@ void UpdateItems_up_mushroom()
         up_mushroom[i].vy += 1;
         if (up_mushroom[i].vy > 10) up_mushroom[i].vy = 10;
         up_mushroom[i].y += up_mushroom[i].vy;
+        if (ItemLeftMap(up_mushroom[i]))
+        {
+            up_mushroom[i].active = false;
+            continue;
+        }
 
         left = up_mushroom[i].x / TILE_SIZE;
         right = (up_mushroom[i].x + TILE_SIZE - 1) / TILE_SIZE;
@@ -172,7 +194,7 @@ void UpdateItems_up_mushroom()
         bottom = (up_mushroom[i].y + TILE_SIZE - 1) / TILE_SIZE;
 
         // 아래 충돌 처리
-        if (up_mushroom[i].vy > 0 && (isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[bottom][right])))
+        if (up_mushroom[i].vy > 0 && (IsSolidItemTile(bottom, left) || IsSolidItemTile(bottom, right)))
         {
             up_mushroom[i].y = bottom * TILE_SIZE - TILE_SIZE; // 위치 보정 (딱 맞게)
             up_mushroom[i].vy = 0;
@@ -210,14 +232,14 @@ void UpdateItems_star()
         int middle = (star[i].y + star[i].height / 2 - 1) / TILE_SIZE;
         
         // 2️⃣ 수평 충돌 처리
-        if (star[i].vx < 0 && 
-            (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[middle][left])))
+        if (star[i].vx < 0 &&
+            (IsSolidItemTile(top, left) || IsSolidItemTile(bottom, left) || IsSolidItemTile(middle, left)))
         {
             star[i].x = (left + 1) * TILE_SIZE; // 경계 맞춤
             star[i].vx = -star[i].vx;      // 방향 반전
         }
-        else if (star[i].vx > 0 && 
-            (isSolidTile(currentMap[top][right]) || isSolidTile(currentMap[bottom][right]) || isSolidTile(currentMap[middle][right])))
+        else if (star[i].vx > 0 &&
+            (IsSolidItemTile(top, right) || IsSolidItemTile(bottom, right) || IsSolidItemTile(middle, right)))
         {
             star[i].x = right * TILE_SIZE - star[i].width; // 경계 맞춤
             star[i].vx = -star[i].vx;                       // 방향 반전
@@ -227,6 +249,11 @@ void UpdateItems_star()
         star[i].vy += 1;
         if (star[i].vy > 10) star[i].vy = 10;
         star[i].y += star[i].vy;
+        if (ItemLeftMap(star[i]))
+        {
+            star[i].active = false;
+            continue;
+        }
 
         left = star[i].x / TILE_SIZE;
         right = (star[i].x + TILE_SIZE - 1) / TILE_SIZE;
@@ -234,18 +261,14 @@ void UpdateItems_star()
         bottom = (star[i].y + TILE_SIZE - 1) / TILE_SIZE;
 
         // 위 충돌
-        if (star[i].vy < 0 && (isSolidTile(currentMap[top][left]) || isSolidTile(currentMap[top][right])))
+        if (star[i].vy < 0 && (IsSolidItemTile(top, left) || IsSolidItemTile(top, right)))
         {
-            // 마리오가 정통으로 친 블럭 찾기
-            int centerX = star[i].x + TILE_SIZE / 2 + g_game.cameraX;
-            int blockX = centerX / TILE_SIZE;
-
             star[i].y = (top + 1) * TILE_SIZE;
             star[i].vy = 0;
         }
 
         // 아래 충돌 처리
-        if (star[i].vy > 0 && (isSolidTile(currentMap[bottom][left]) || isSolidTile(currentMap[bottom][right])))
+        if (star[i].vy > 0 && (IsSolidItemTile(bottom, left) || IsSolidItemTile(bottom, right)))
         {
             star[i].y = bottom * TILE_SIZE - TILE_SIZE; // 위치 보정 (딱 맞게)
             star[i].vy = -15;

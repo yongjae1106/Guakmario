@@ -33,7 +33,9 @@ struct PlayerStateData {
     uint16_t motionTimer;       // 공격 모션 프레임
     uint8_t  tinoCooldownZ, tinoCooldownSpace;
     uint16_t flags;             // PlayerStateFlags
+    uint32_t tinoBiteId;        // 발동할 때마다 증가하는 티노 물기 식별자
 };
+static_assert(sizeof(PlayerStateData) == 27, "Player state wire size changed");
 
 // PlayerStateData.flags 비트 정의
 enum PlayerStateFlags : uint16_t {
@@ -59,16 +61,19 @@ struct GameEventData {
 };
 
 enum GameEventType : uint8_t {
-    EVT_STAGE_CLEAR   = 1,  // 스테이지 클리어 (호스트 → 전체)
+    EVT_STAGE_CLEAR   = 1,  // 세 명 도착 후 자동 걷기 시작 (호스트 → 전체), param = 현재 스테이지
     EVT_GAME_OVER     = 2,  // 게임오버 (호스트 → 전체)
     EVT_GAME_START    = 3,  // 3인 접속 완료 → 게임 시작 (호스트 → 전체)
     EVT_LIVES_CHANGED = 4,  // 공용 목숨 변경 (호스트 → 전체), param = 새 목숨 수
     EVT_DISCONNECT    = 5,  // 플레이어 접속 끊김, param = playerId
-    EVT_PLAYER_ARRIVED = 6, // 플레이어 클리어 지점 도착 (클라이언트 → 호스트)
-    EVT_PLAYER_DIED    = 7, // 플레이어 사망 (클라이언트 → 호스트 → 전체), param = playerId
+    EVT_PLAYER_ARRIVED = 6, // 플레이어 클리어 지점 도착 (클라이언트 → 호스트), param = playerId
+    EVT_PLAYER_DIED    = 7, // 플레이어 사망 (클라이언트 → 호스트), param = playerId
     EVT_PLAYER_REVIVED = 8, // 플레이어 부활 (호스트 → 전체), param = playerId
     EVT_STAGE_LOAD     = 9, // 스테이지 로드 (호스트 → 전체), param = 스테이지 번호
     EVT_LOBBY_STATUS   = 10, // 로비 접속 현황 (호스트 → 전체), param = 접속 비트 (bit0 = P1 호스트, bit1 = P2, bit2 = P3)
+    EVT_STAGE_READY    = 11, // 새 스테이지 로드 확인 (클라이언트 → 호스트), param = 스테이지 번호
+    EVT_CASTLE_GATE_OPENED   = 13, // 쿠파 처치 및 통로 개방 확정 (호스트 → 전체), param = 스테이지 번호
+    EVT_CHEAT_BOWSER_WARP    = 14, // 치트: 쿠파 앞으로 이동 (호스트 → 전체), param = 스테이지 번호
 };
 
 // 접속 확인 페이로드 (PKT_CONNECT_ACK, 호스트 → 클라이언트)
@@ -145,6 +150,12 @@ struct MonsterHitData {
     uint8_t hitType;    // HitType
 };
 
+struct MonsterHitPacket {
+    PacketHeader header;
+    MonsterHitData hit;
+};
+static_assert(sizeof(MonsterHitPacket) == 7, "Monster hit wire size changed");
+
 // 몬스터 상태 (PKT_MONSTER_STATE, 호스트 → 전체) — 종류별 1패킷, 활성 개체만
 // 패킷에 없는 슬롯은 해당 종류의 비활성으로 처리
 struct MonsterStateHeader {
@@ -183,24 +194,28 @@ enum BossStateFlags : uint8_t {
     BOSS_FLAG_DEAD        = 1 << 1,
     BOSS_FLAG_ACTIVE      = 1 << 2,
     BOSS_FLAG_FALLING     = 1 << 3,
-    BOSS_FLAG_IGNORE_FIRE = 1 << 4,
-    BOSS_FLAG_IGNORE_BITE = 1 << 5,
-    BOSS_FLAG_JUMPING     = 1 << 6,
-    BOSS_FLAG_FIRING      = 1 << 7,
+    BOSS_FLAG_JUMPING     = 1 << 4,
+    BOSS_FLAG_FIRING      = 1 << 5,
 };
 
+// 뒤에는 활성 보스 불꽃만 fireballCount개 이어진다. 빠진 슬롯은 비활성이다.
 struct BossStateData {
-    int16_t  x, y, vx, vy, hp;
-    int16_t  startX, moveDistance, maxDistance;
-    uint8_t  width, height;
-    uint8_t  flags;     // BossStateFlags
-    uint8_t  frame;
-    int8_t   moveSign;
-    uint16_t fireTimer, fireDuration, fireInterval;
-    uint16_t jumpTimer, jumpInterval;
-    int16_t  fireX, fireY, fireVx, fireVy;  // bowserFire
-    uint8_t  fireWidth, fireHeight, fireMotion, fireActive;
+    int16_t x, y, vx, vy, hp;
+    uint8_t width, height;
+    uint8_t flags;
+    uint8_t frame;
+    int8_t moveSign, fireSign;
+    uint8_t fireballCount;
 };
+
+struct BossFireballData {
+    uint8_t slot;
+    int16_t x, y, vx, vy;
+    uint8_t width, height, motion;
+};
+
+static_assert(sizeof(BossStateData) == 17, "Boss state wire size changed");
+static_assert(sizeof(BossFireballData) == 12, "Boss fireball wire size changed");
 
 // 함정 상태 (PKT_HAZARD_STATE, 호스트 → 전체)
 struct HazardStateHeader {
@@ -290,11 +305,16 @@ void NetBroadcastGameStart();  // connectedCount == 3 → GAME_START 브로드�
 
 // 수신 큐 소비 (메인 스레드, UpdateGame() 첫 줄에서 호출)
 void NetPollPackets();
+void ApplyMonsterSnapshot(const std::vector<uint8_t>& packet);
+void ApplyBossSnapshot(const std::vector<uint8_t>& packet);
+void SendMonsterHit(MonsterKind kind, int slot, HitType hitType);
+void HandleMonsterHit(int senderId, const MonsterHitData& hit);
 
 // 자신의 플레이어 상태 직렬화 → 송신 (UpdateGame() 마지막에 호출)
 void NetFlushSend();
 
 // 송신
+void NetSendGameEvent(GameEventType type, uint8_t param); // 호스트 → 전체 / 클라이언트 → 호스트
 void SendToAll(const void* data, int size);             // 호스트 전용
 void SendToHost(const void* data, int size);            // 클라이언트 전용
 void SendToOne(int playerId, const void* data, int size); // 특정 플레이어
@@ -306,3 +326,7 @@ bool BuildMonsterStatePacket(uint8_t kind, const std::vector<MonsterEntry>& stat
     std::vector<uint8_t>& packet);
 bool ParseMonsterStatePacket(const std::vector<uint8_t>& packet, uint8_t& kind,
     std::vector<MonsterEntry>& states);
+bool BuildBossStatePacket(BossStateData boss, const std::vector<BossFireballData>& fireballs,
+    std::vector<uint8_t>& packet);
+bool ParseBossStatePacket(const std::vector<uint8_t>& packet, BossStateData& boss,
+    std::vector<BossFireballData>& fireballs);

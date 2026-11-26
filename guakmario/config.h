@@ -30,6 +30,10 @@
 // --- 파이어플라워 (스페이스) ---
 #define FLOWER_FIRE_MOTION_FRAMES 5     // 파이어볼 발사 모션 프레임
 
+// --- 쿠파 ---
+constexpr int MAX_FIREBALLS = 100;
+constexpr int BOWSER_MAX_HP = 100;
+
 // --- 네트워크 ---
 #define NET_PORT                9000    // 호스트 listen 포트
 
@@ -41,4 +45,5 @@
 #define DEATH_REVIVE_DELAY_MS   3000    // GAME_OVER 후 부활 딜레이
 #define VICTORY_NEXT_STAGE_MS   5000    // 스테이지 클리어 후 다음 스테이지 전환
 #define CLEAR_WALK_MS           5000    // 최종 클리어 걷기 연출 시간
+#define CLEAR_WALK_SPEED        2       // 최종 클리어 후 피치까지 걷는 속도 (px/frame)
 #define CLEAR_RESET_MS          10000   // 최종 클리어 후 타이틀 복귀

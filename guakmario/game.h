@@ -21,6 +21,8 @@ struct GameContext {
     bool  multiStartPending  = false;  // 클라이언트: EVT_GAME_START 수신 표시 (화면 전환은 로비 코드가 처리)
     bool  isMulti            = false;  // 멀티플레이어 모드 여부
     bool  isRenderTest       = false;  // 렌더 테스트 모드 (네트워크 없이 3인 렌더 확인)
+    bool  multiplayerDeathMotionStarted = false;
+    bool  multiplayerArrived = false;
     bool  showMultiSelect    = false;  // 방 만들기/방 참가 선택 화면
     bool  showMultiScreen    = false;  // 호스트 로비 화면
     bool  showIpInput        = false;  // JOIN: IP 입력 화면
@@ -41,5 +43,19 @@ extern GameContext g_game;
 void UpdateGame();
 void TickTimer();
 void LoadStage();
+void LoadCheatStage(int stage);
+void CheatMoveStage(int stage);  // 메뉴 치트 스테이지 이동 (멀티는 호스트만)
+void WarpLocalPlayerToBowser();
+void CheatWarpToBowser();        // 메뉴 치트: 3스테이지 쿠파 앞으로 전원 이동 (멀티는 호스트만)
+void CheatSetBowserHpOne();      // 메뉴 치트: 쿠파 체력 1 (멀티는 호스트만)
 void ResetMonsters();
 void ResetItems();
+
+struct GameEventData;
+bool IsMultiplayerGame();
+void StartMultiplayerMatch();
+void ReportMultiplayerDeath();
+void ReportBowserDefeat();
+void AwardMultiplayerLife();
+void HandleMultiplayerGameEvent(int senderPlayerId, const GameEventData& event);
+void HandleMultiplayerPlayerState(int playerId, int previousCoins);

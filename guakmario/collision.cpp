@@ -5,7 +5,36 @@
 #include "item.h"
 #include "sound.h"
 
-constexpr int STAGE3_CLEAR_COLUMN = 139;
+constexpr int STAGE3_CLEAR_COLUMN = CASTLE_CLEAR_COLUMN - 1;
+
+bool IsPlayerAtStageGoal(int playerId)
+{
+    if (playerId < 0 || playerId >= 3) return false;
+
+    const Player& player = g_allPlayers[playerId].mario;
+    const int worldX = player.x + (playerId == g_localPlayerIdx ? static_cast<int>(g_game.cameraX) : 0);
+    if (g_game.stage == CASTLE_STAGE)
+    {
+        // 성벽 통로 안의 판정 열에 들어오면 도착으로 판정한다.
+        return IsCastleGateOpen() && worldX >= CASTLE_CLEAR_COLUMN * TILE_SIZE &&
+            worldX < (CASTLE_CLEAR_COLUMN + 1) * TILE_SIZE &&
+            player.y < CASTLE_GATE_BOTTOM_ROW * TILE_SIZE &&
+            player.y + player.height > CASTLE_GATE_TOP_ROW * TILE_SIZE;
+    }
+    if (g_game.stage != 1 && g_game.stage != 2) return false;
+
+    for (int row = 0; row < MAP_HEIGHT; ++row)
+    {
+        for (int column = 0; column < MAP_WIDTH; ++column)
+        {
+            const int tile = currentMap[row][column];
+            if (tile != TILE_FLAG && tile != TILE_FLAG_TOP) continue;
+            if (IsColliding(worldX, player.y, player.width, player.height,
+                column * TILE_SIZE, row * TILE_SIZE, 10, 30)) return true;
+        }
+    }
+    return false;
+}
 
 void CheckFlagCollision()
 {
@@ -40,7 +69,7 @@ void CheckClearCollision()
         {
             int screenX = j * TILE_SIZE - g_game.cameraX;
             int screenY = i * TILE_SIZE;
-            if (j == STAGE3_CLEAR_COLUMN && IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, screenX, screenY, 40, 40))
+            if (j == STAGE3_CLEAR_COLUMN && IsCastleGateOpen() && IsColliding(g_player.mario.x, g_player.mario.y, g_player.mario.width, g_player.mario.height, screenX, screenY, 40, 40))
             {
                 g_pBGMBuffer->Stop();
                 PlaySoundBuffer(world_clear_Sound);

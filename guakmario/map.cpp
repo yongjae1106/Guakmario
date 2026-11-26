@@ -106,9 +106,10 @@ void CheckMarioHazardCollision()
     {
         if (!fireTraps[i].active) continue;
 
+        const LONG screenX = static_cast<LONG>(fireTraps[i].x - g_game.cameraX);
         RECT rTrap = {
-            fireTraps[i].x - g_game.cameraX, fireTraps[i].y,
-            fireTraps[i].x - g_game.cameraX + fireTraps[i].width,
+            screenX, fireTraps[i].y,
+            screenX + fireTraps[i].width,
             fireTraps[i].y + fireTraps[i].height
         };
 
@@ -246,7 +247,6 @@ void InitMap() //맵 1 구조
     map1[10][17] = 64;
     map1[10][31] = 64;
     map1[10][60] = 64;
-    map1[20][76] = 64;
     map1[10][62] = 64;
     map1[10][64] = 64;
     map1[6][62] = 62;
@@ -658,9 +658,8 @@ void InitMap3()
     */
 
     //18. 쿠파블럭 벽
-    map3[5][138] = 19;
-    map3[6][138] = 19;
-    map3[7][138] = 19;
+    for (int row = CASTLE_GATE_TOP_ROW; row < CASTLE_GATE_BOTTOM_ROW; ++row)
+        map3[row][CASTLE_GATE_COLUMN] = TILE_KOOPA_BLOCK;
 
     for (int y = 0; y < MAP_HEIGHT; y++)
     {
@@ -674,5 +673,23 @@ void InitMap3()
         map3[y][162] = 15;
         map3[y][163] = 15;
     }
-    map3[8][147] = 999;
+    map3[8][CASTLE_PRINCESS_COLUMN] = TILE_INVISIBLE;
+}
+
+bool IsCastleGateOpen()
+{
+    if (currentMap != map3) return false;
+
+    for (int row = CASTLE_GATE_TOP_ROW; row < CASTLE_GATE_BOTTOM_ROW; ++row)
+        if (map3[row][CASTLE_GATE_COLUMN] != TILE_EMPTY) return false;
+    return true;
+}
+
+void OpenCastleGate()
+{
+    if (currentMap != map3) return;
+
+    for (int row = CASTLE_GATE_TOP_ROW; row < CASTLE_GATE_BOTTOM_ROW; ++row)
+        if (map3[row][CASTLE_GATE_COLUMN] == TILE_KOOPA_BLOCK)
+            map3[row][CASTLE_GATE_COLUMN] = TILE_EMPTY;
 }

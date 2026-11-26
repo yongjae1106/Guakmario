@@ -3,6 +3,7 @@
 
 bool isSolidTile(int tile);
 bool IsColliding(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh);
+bool IsPlayerAtStageGoal(int playerId);
 void CheckFlagCollision();
 void CheckClearCollision();
 void CheckCoinCollision();
