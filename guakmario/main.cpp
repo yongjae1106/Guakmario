@@ -526,6 +526,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case(ID_STAGE_1): CheatMoveStage(1); break;
             case(ID_STAGE_2): CheatMoveStage(2); break;
             case(ID_STAGE_3): CheatMoveStage(3); break;
+            case(ID_BOWSER_WARP): CheatWarpToBowser(); break;
+            case(ID_BOWSER_HP1): CheatSetBowserHpOne(); break;
             }
         break;
         }

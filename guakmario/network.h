@@ -73,6 +73,7 @@ enum GameEventType : uint8_t {
     EVT_LOBBY_STATUS   = 10, // 로비 접속 현황 (호스트 → 전체), param = 접속 비트 (bit0 = P1 호스트, bit1 = P2, bit2 = P3)
     EVT_STAGE_READY    = 11, // 새 스테이지 로드 확인 (클라이언트 → 호스트), param = 스테이지 번호
     EVT_CASTLE_GATE_OPENED   = 13, // 쿠파 처치 및 통로 개방 확정 (호스트 → 전체), param = 스테이지 번호
+    EVT_CHEAT_BOWSER_WARP    = 14, // 치트: 쿠파 앞으로 이동 (호스트 → 전체), param = 스테이지 번호
 };
 
 // 접속 확인 페이로드 (PKT_CONNECT_ACK, 호스트 → 클라이언트)

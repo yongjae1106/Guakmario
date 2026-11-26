@@ -45,6 +45,9 @@ void TickTimer();
 void LoadStage();
 void LoadCheatStage(int stage);
 void CheatMoveStage(int stage);  // 메뉴 치트 스테이지 이동 (멀티는 호스트만)
+void WarpLocalPlayerToBowser();
+void CheatWarpToBowser();        // 메뉴 치트: 3스테이지 쿠파 앞으로 전원 이동 (멀티는 호스트만)
+void CheatSetBowserHpOne();      // 메뉴 치트: 쿠파 체력 1 (멀티는 호스트만)
 void ResetMonsters();
 void ResetItems();
 

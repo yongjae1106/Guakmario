@@ -245,7 +245,7 @@ void WalkAfterMultiplayerClear()
             player.vx = 0;
             return;
         }
-        player.vx = remaining < PLAYER_WALK_SPEED ? remaining : PLAYER_WALK_SPEED;
+        player.vx = remaining < CLEAR_WALK_SPEED ? remaining : CLEAR_WALK_SPEED;
     }
     UpdatePlayer();
     player.isWalking = player.x + static_cast<int>(g_game.cameraX) > previousWorldX;
@@ -291,6 +291,40 @@ void CheatMoveStage(int stage)
         return;
     }
     LoadCheatStage(stage);
+}
+
+// 치트: 쿠파 다리 앞 바닥(110~115열)에 플레이어별로 한 칸씩 띄워 세운다.
+constexpr int CHEAT_BOWSER_WARP_COLUMN = 112;
+constexpr int CHEAT_BOWSER_WARP_FLOOR_ROW = 10;
+
+void WarpLocalPlayerToBowser()
+{
+    Player& player = g_player.mario;
+    StopLocalPlayerActions();
+    const int playerId = IsMultiplayerGame() ? g_localPlayerIdx : 0;
+    const int worldX = (CHEAT_BOWSER_WARP_COLUMN + playerId) * TILE_SIZE;
+    g_game.cameraX = CameraXForPlayer(worldX);
+    player.x = worldX - static_cast<int>(g_game.cameraX);
+    player.y = CHEAT_BOWSER_WARP_FLOOR_ROW * TILE_SIZE - player.height;
+    player.direction = DIR_RIGHT;
+}
+
+// 메뉴 치트: 3스테이지를 새로 불러와 모두 쿠파 앞으로 이동한다. 멀티는 호스트만 사용할 수 있다.
+void CheatWarpToBowser()
+{
+    if (IsMultiplayerGame() && (!g_net.isHost || g_game.gameState == GAME_OVER)) return;
+    CheatMoveStage(CASTLE_STAGE);  // 멀티: EVT_STAGE_LOAD로 클라이언트도 다시 불러온다.
+    WarpLocalPlayerToBowser();
+    if (IsMultiplayerGame()) NetSendGameEvent(EVT_CHEAT_BOWSER_WARP, CASTLE_STAGE);
+}
+
+// 메뉴 치트: 쿠파 체력을 1로 만든다. 쿠파 상태는 호스트가 계산하므로 멀티는 호스트만 사용할 수 있다.
+void CheatSetBowserHpOne()
+{
+    if (IsMultiplayerGame() && !g_net.isHost) return;
+    Bowser& bowser = g_monsters.bowser;
+    if (g_game.stage != CASTLE_STAGE || !bowser.isAlive || bowser.isDead || bowser.hp <= 1) return;
+    bowser.hp = 1;
 }
 
 bool IsMultiplayerGame()
@@ -384,6 +418,10 @@ void HandleMultiplayerGameEvent(int senderPlayerId, const GameEventData& event)
         NetSendGameEvent(EVT_STAGE_READY, event.param);
         break;
     }
+    case EVT_CHEAT_BOWSER_WARP:
+        // 호스트가 먼저 보낸 EVT_STAGE_LOAD로 3스테이지를 다시 불러온 뒤 처리된다.
+        if (g_game.stage == CASTLE_STAGE && g_game.gameState == GAME_RUNNING) WarpLocalPlayerToBowser();
+        break;
     case EVT_LIVES_CHANGED:
         if (g_game.gameState != GAME_OVER) ApplySharedLives(event.param);
         break;

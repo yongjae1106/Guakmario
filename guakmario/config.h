@@ -45,4 +45,5 @@ constexpr int BOWSER_MAX_HP = 100;
 #define DEATH_REVIVE_DELAY_MS   3000    // GAME_OVER 후 부활 딜레이
 #define VICTORY_NEXT_STAGE_MS   5000    // 스테이지 클리어 후 다음 스테이지 전환
 #define CLEAR_WALK_MS           5000    // 최종 클리어 걷기 연출 시간
+#define CLEAR_WALK_SPEED        2       // 최종 클리어 후 피치까지 걷는 속도 (px/frame)
 #define CLEAR_RESET_MS          10000   // 최종 클리어 후 타이틀 복귀

@@ -571,6 +571,7 @@ void NetPollPackets()
             case EVT_CASTLE_GATE_OPENED:
             case EVT_STAGE_CLEAR:
             case EVT_STAGE_LOAD:
+            case EVT_CHEAT_BOWSER_WARP:
             case EVT_LIVES_CHANGED:
             case EVT_GAME_OVER:
             case EVT_PLAYER_REVIVED:
