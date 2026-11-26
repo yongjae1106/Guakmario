@@ -96,6 +96,7 @@ static void Draw_luigi(const MarioRenderData& p);
 static void Draw_toad(const MarioRenderData& p);
 static void Draw_spawn_item();
 static void Draw_map();
+static void Draw_map_background();
 static void Draw_castle_blank();
 static void Draw_mario(const MarioRenderData& mario);
 static void Draw_item();
@@ -379,10 +380,7 @@ static void DrawPlayerTransformation(MarioRenderData mario)
 
 void Draw()
 {
-    RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-    if (g_game.stage == 1 || g_game.stage == 2) FillRect(g_memDC, &rect, sky_brush);
-    else if (g_game.stage == 3) FillRect(g_memDC, &rect, black_brush);
-    Draw_background();
+    Draw_map_background();
     Graphics graphics(g_memDC);
     graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
 
@@ -564,230 +562,271 @@ void Draw()
 
     Draw_castle_blank();
 }
-static void Draw_map()
-{
-    // 0: 구멍 1: 땅 2: 코인 3:굼바 4:파이프 5:계단 6:미스테리박스 7:깃발 8: 깃발꼭짓점 9:성 10: 벽돌 
-    // 90. 버섯머리1 91. 버섯머리2 92. 버섯머리3 11. 버섯줄기 12. 버섯줄기2 13.구름 16: 사용된블럭 60:스타박스 61:꽃박스
-    Graphics graphics(g_memDC);
-    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+// ─────────────────────────────────────────────
+//  맵 레이어 캐시
+//  배경·고정 타일은 맵 전체 크기 비트맵에 한 번만 그려 두고, 매 프레임 카메라 위치만큼 복사한다.
+//  코인·아이템 블록처럼 애니메이션되는 타일만 매 프레임 직접 그린다.
+//  currentMap을 매 프레임 사본과 비교해, 바뀐 칸이 있으면 그 열 주변만 다시 그린다.
+// ─────────────────────────────────────────────
+namespace {
+constexpr int MAP_PIXEL_WIDTH = MAP_WIDTH * TILE_SIZE;
+// 화면(640)이 맵(15칸 = 600)보다 높으므로 레이어는 둘 중 큰 높이로 만든다. 복사 영역이 비트맵을 벗어나면 AlphaBlend가 실패한다.
+constexpr int MAP_PIXEL_HEIGHT = MAP_HEIGHT * TILE_SIZE > SCREEN_HEIGHT ? MAP_HEIGHT * TILE_SIZE : SCREEN_HEIGHT;
+constexpr int TILE_SPRITE_REACH = 4;  // 성처럼 칸 밖으로 넓게 그려지는 타일의 최대 범위 (열)
 
-    // 맵 타일 그리기
+struct MapLayer {
+    HDC dc = nullptr;
+    HBITMAP bitmap = nullptr;
+    void* bits = nullptr;
+};
+
+MapLayer s_backgroundLayer;  // 하늘·배경 (불투명)
+MapLayer s_tileLayer;        // 고정 타일 (premultiplied alpha)
+int s_cachedTiles[MAP_HEIGHT][MAP_WIDTH] = {};
+const void* s_cachedMap = nullptr;
+int s_cachedStage = -1;
+
+bool CreateMapLayer(MapLayer& layer)
+{
+    if (layer.dc && layer.bits) return true;
+    BITMAPINFO info = {};
+    info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    info.bmiHeader.biWidth = MAP_PIXEL_WIDTH;
+    info.bmiHeader.biHeight = -MAP_PIXEL_HEIGHT;  // top-down
+    info.bmiHeader.biPlanes = 1;
+    info.bmiHeader.biBitCount = 32;
+    info.bmiHeader.biCompression = BI_RGB;
+    if (!layer.dc) layer.dc = CreateCompatibleDC(g_memDC);
+    if (!layer.dc) return false;
+    layer.bitmap = CreateDIBSection(layer.dc, &info, DIB_RGB_COLORS, &layer.bits, nullptr, 0);
+    if (!layer.bitmap || !layer.bits) return false;
+    SelectObject(layer.dc, layer.bitmap);
+    return true;
+}
+
+bool IsAnimatedTile(int tile)
+{
+    switch (tile) {
+    case TILE_COIN:
+    case TILE_MYSTERY:
+    case TILE_BOX_STAR:
+    case TILE_BOX_FLOWER:
+    case TILE_BOX_TINO:
+    case TILE_BOX_UPMUSH:
+    case TILE_BOX_COIN:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool IsCachedTile(int tile)
+{
+    return tile != TILE_EMPTY && !IsAnimatedTile(tile);
+}
+
+// 고정 타일 한 칸을 (screenX, screenY)에 그린다. 그릴 이미지가 없는 타일은 무시한다.
+void DrawStaticTile(Graphics& graphics, int tile, int screenX, int screenY)
+{
+    Image* image = nullptr;
+    switch (tile) {
+    case TILE_GROUND:        image = g_images.stage_1_dirt; break;      // 장애물
+    case TILE_BRICK:         image = g_images.stage_1_brick; break;     // 벽돌
+    case TILE_STAIR:         image = g_images.unbreakable_block; break; // 계단
+    case TILE_FLAG:          image = g_images.flag_stick; break;        // 깃발 봉
+    case TILE_FLAG_TOP:      image = g_images.flag_marble; break;       // 깃발 꼭대기
+    case TILE_MUSHROOM_H1:   image = g_images.mushroom_head_1; break;
+    case TILE_MUSHROOM_H2:   image = g_images.mushroom_head_2; break;
+    case TILE_MUSHROOM_H3:   image = g_images.mushroom_head_3; break;
+    case TILE_MUSHROOM_T1:   image = g_images.mushroom_trunk_1; break;
+    case TILE_MUSHROOM_T2:   image = g_images.mushroom_trunk_2; break;
+    case TILE_CLOUD:         image = g_images.cloud_block; break;
+    case TILE_FIRE_SWITCH:   image = g_images.fire_switch_tile; break;
+    case TILE_STONE:         image = g_images.stone_tile; break;        // 스테이지 3 블럭
+    case TILE_USED_BLOCK:    image = g_images.item_block_used; break;   // 사용된 아이템블럭
+    case TILE_LAVA_HEAD:     image = g_images.fire_head; break;         // 불 블럭
+    case TILE_LAVA_BODY:     image = g_images.fire_body; break;
+    case TILE_KOOPA_BLOCK:   image = g_images.koopa_block; break;
+    case TILE_PIPE_RB:       image = g_images.pipe_1; break;            // 파이프 우하
+    case TILE_PIPE_LB:       image = g_images.pipe_2; break;            // 좌하
+    case TILE_PIPE_RT:       image = g_images.pipe_3; break;            // 우상
+    case TILE_PIPE_LT:       image = g_images.pipe_4; break;            // 좌상
+    case TILE_CASTLE:        // 성: 칸 기준 왼쪽 3칸, 위쪽 4칸까지 크게 그린다.
+        graphics.DrawImage(g_images.castle_1, screenX - TILE_SIZE * 3, screenY - TILE_SIZE * 4,
+            (TILE_SIZE + 1) * 5, (TILE_SIZE + 1) * 5);
+        return;
+    case TILE_INVISIBLE:     // 피치: 두 칸 높이
+        graphics.DrawImage(g_images.peach, screenX, screenY, TILE_SIZE + 1, TILE_SIZE * 2);
+        return;
+    default:
+        return;
+    }
+    graphics.DrawImage(image, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
+}
+
+void RenderBackgroundLayer()
+{
+    GdiFlush();
+    RECT rect = { 0, 0, MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT };
+    FillRect(s_backgroundLayer.dc, &rect, g_game.stage == 3 ? black_brush : sky_brush);
+    Graphics graphics(s_backgroundLayer.dc);
+    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    if (g_game.stage == 1)
+        graphics.DrawImage(g_images.stage_1_background, 0, -36, 4600, SCREEN_HEIGHT);
+    else if (g_game.stage == 2)
+        graphics.DrawImage(g_images.stage_2_background, 0, -36, 4600, SCREEN_HEIGHT);
+}
+
+// firstColumn~lastColumn 영역을 비우고, 그 영역에 걸치는 고정 타일을 원래 순서(행 → 열)대로 다시 그린다.
+void RenderTileColumns(int firstColumn, int lastColumn)
+{
+    if (firstColumn < 0) firstColumn = 0;
+    if (lastColumn >= MAP_WIDTH) lastColumn = MAP_WIDTH - 1;
+    if (firstColumn > lastColumn) return;
+
+    GdiFlush();
+    Bitmap layer(MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT, MAP_PIXEL_WIDTH * 4, PixelFormat32bppPARGB,
+        static_cast<BYTE*>(s_tileLayer.bits));
+    Graphics graphics(&layer);
+    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    const Rect area(firstColumn * TILE_SIZE, 0, (lastColumn - firstColumn + 1) * TILE_SIZE, MAP_PIXEL_HEIGHT);
+    graphics.SetClip(area);
+    graphics.SetCompositingMode(CompositingModeSourceCopy);
+    SolidBrush clear(Color(0, 0, 0, 0));
+    graphics.FillRectangle(&clear, area);
+    graphics.SetCompositingMode(CompositingModeSourceOver);
+
+    const int from = firstColumn - TILE_SPRITE_REACH < 0 ? 0 : firstColumn - TILE_SPRITE_REACH;
+    const int to = lastColumn + TILE_SPRITE_REACH >= MAP_WIDTH ? MAP_WIDTH - 1 : lastColumn + TILE_SPRITE_REACH;
+    for (int i = 0; i < MAP_HEIGHT; i++)
+        for (int j = from; j <= to; j++)
+            DrawStaticTile(graphics, currentMap[i][j], j * TILE_SIZE, i * TILE_SIZE);
+}
+
+// 스테이지가 바뀌면 전체를, 타일이 바뀌면 그 열 주변만 다시 그린다.
+bool SyncMapLayers()
+{
+    if (!currentMap || !CreateMapLayer(s_backgroundLayer) || !CreateMapLayer(s_tileLayer)) return false;
+
+    if (s_cachedMap != currentMap || s_cachedStage != g_game.stage)
+    {
+        s_cachedMap = currentMap;
+        s_cachedStage = g_game.stage;
+        memcpy(s_cachedTiles, currentMap, sizeof(s_cachedTiles));
+        RenderBackgroundLayer();
+        RenderTileColumns(0, MAP_WIDTH - 1);
+        return true;
+    }
+
+    bool changedColumns[MAP_WIDTH] = {};
+    int changedCount = 0;
     for (int i = 0; i < MAP_HEIGHT; i++)
     {
         for (int j = 0; j < MAP_WIDTH; j++)
         {
-            int screenX = j * TILE_SIZE - g_game.cameraX;
-            int screenY = i * TILE_SIZE;
-            if (currentMap[i][j] == TILE_GROUND)         // 장애물
+            const int before = s_cachedTiles[i][j];
+            const int after = currentMap[i][j];
+            if (before == after) continue;
+            s_cachedTiles[i][j] = after;
+            // 애니메이션 타일과 빈칸 사이의 변화(코인 획득 등)는 캐시에 영향이 없다.
+            if ((IsCachedTile(before) || IsCachedTile(after)) && !changedColumns[j])
             {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.stage_1_dirt, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
+                changedColumns[j] = true;
+                ++changedCount;
             }
-            else if (currentMap[i][j] == TILE_BRICK)         // 벽돌
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.stage_1_brick, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_COIN)         // 코인
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    if (g_game.frameMotion == 0 || (g_game.frameMotion >= 4 && g_game.frameMotion < 7))
-                    {
-                        graphics.DrawImage(g_images.coin_1, screenX, screenY, TILE_SIZE + 1, TILE_SIZE);
-                    }
-                    else if (g_game.frameMotion == 1 || g_game.frameMotion == 3)
-                    {
-                        graphics.DrawImage(g_images.coin_2, screenX, screenY, TILE_SIZE + 1, TILE_SIZE);
-                    }
-                    else if (g_game.frameMotion == 2)
-                    {
-                        graphics.DrawImage(g_images.coin_3, screenX, screenY, TILE_SIZE + 1, TILE_SIZE);
-                    }
-                }
-            }
-            else if (currentMap[i][j] == TILE_STAIR)    // 계단
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.unbreakable_block, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_MYSTERY || currentMap[i][j] == TILE_BOX_STAR || currentMap[i][j] == TILE_BOX_FLOWER || currentMap[i][j] == TILE_BOX_TINO || currentMap[i][j] == TILE_BOX_UPMUSH || currentMap[i][j] == TILE_BOX_COIN)    // 아이템 블럭
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    if (g_game.frameMotion == 0 || (g_game.frameMotion >= 4 && g_game.frameMotion < 7))
-                    {
-                        graphics.DrawImage(g_images.item_block_1, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                    }
-                    else if (g_game.frameMotion == 1 || g_game.frameMotion == 3)
-                    {
-                        graphics.DrawImage(g_images.item_block_2, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                    }
-                    else if (g_game.frameMotion == 2)
-                    {
-                        graphics.DrawImage(g_images.item_block_3, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                    }
-                }
-            }
-            // 깃발 봉
-            else if (currentMap[i][j] == TILE_FLAG)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.flag_stick, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            // 깃발 꼭대기
-            else if (currentMap[i][j] == TILE_FLAG_TOP)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.flag_marble, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            // 성
-            else if (currentMap[i][j] == TILE_CASTLE)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.castle_1, screenX - TILE_SIZE * 3, screenY - TILE_SIZE * 4, (TILE_SIZE + 1) * 5, (TILE_SIZE + 1) * 5);
-                }
-            }
-            // 버섯머리1
-            else if (currentMap[i][j] == TILE_MUSHROOM_H1)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.mushroom_head_1, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_MUSHROOM_H2)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.mushroom_head_2, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_MUSHROOM_H3)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.mushroom_head_3, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            // 버섯줄기
-            else if (currentMap[i][j] == TILE_MUSHROOM_T1)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.mushroom_trunk_1, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_MUSHROOM_T2)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.mushroom_trunk_2, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_CLOUD)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.cloud_block, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_FIRE_SWITCH)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.fire_switch_tile, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-                }
-            //스테이지 3 블럭
-            else if (currentMap[i][j] == TILE_STONE)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.stone_tile, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            // 사용된 아이템블럭
-            else if (currentMap[i][j] == TILE_USED_BLOCK)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.item_block_used, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-             }
-            //불 블럭
-            else if (currentMap[i][j] == TILE_LAVA_HEAD)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.fire_head, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_LAVA_BODY)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.fire_body, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_KOOPA_BLOCK)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.koopa_block, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-             }
-            // 파이프
-            else if (currentMap[i][j] == TILE_PIPE_RB) // 우하
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.pipe_1, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_PIPE_LB) // 좌하
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.pipe_2, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_PIPE_RT) // 좌상
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.pipe_3, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_PIPE_LT) // 좌상
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.pipe_4, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
-                }
-            }
-            else if (currentMap[i][j] == TILE_INVISIBLE)
-            {
-                if (screenX + TILE_SIZE >= 0 && screenX < SCREEN_WIDTH)
-                {
-                    graphics.DrawImage(g_images.peach, screenX, screenY, TILE_SIZE + 1, TILE_SIZE * 2);
-                }
-           }
-            
         }
     }
+    if (changedCount > 20)
+    {
+        RenderTileColumns(0, MAP_WIDTH - 1);  // 맵 재구성 등 큰 변경
+    }
+    else if (changedCount > 0)
+    {
+        for (int j = 0; j < MAP_WIDTH; j++)
+            if (changedColumns[j]) RenderTileColumns(j, j);
+    }
+    return true;
+}
 
+int CameraPixelX()
+{
+    int cameraX = static_cast<int>(g_game.cameraX);
+    if (cameraX < 0) cameraX = 0;
+    if (cameraX > MAP_PIXEL_WIDTH - SCREEN_WIDTH) cameraX = MAP_PIXEL_WIDTH - SCREEN_WIDTH;
+    return cameraX;
+}
+}
+
+// 하늘·배경: 캐시된 배경 레이어를 복사하고, 캐시를 만들지 못했으면 직접 그린다.
+static void Draw_map_background()
+{
+    if (SyncMapLayers())
+    {
+        GdiFlush();
+        BitBlt(g_memDC, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, s_backgroundLayer.dc, CameraPixelX(), 0, SRCCOPY);
+        return;
+    }
+    RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+    if (g_game.stage == 1 || g_game.stage == 2) FillRect(g_memDC, &rect, sky_brush);
+    else if (g_game.stage == 3) FillRect(g_memDC, &rect, black_brush);
+    Draw_background();
+}
+
+static void Draw_map()
+{
+    // 0: 구멍 1: 땅 2: 코인 3:굼바 4:파이프 5:계단 6:미스테리박스 7:깃발 8: 깃발꼭짓점 9:성 10: 벽돌
+    // 90. 버섯머리1 91. 버섯머리2 92. 버섯머리3 11. 버섯줄기 12. 버섯줄기2 13.구름 16: 사용된블럭 60:스타박스 61:꽃박스
+    if (SyncMapLayers())
+    {
+        GdiFlush();
+        const BLENDFUNCTION blend = { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
+        AlphaBlend(g_memDC, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
+            s_tileLayer.dc, CameraPixelX(), 0, SCREEN_WIDTH, SCREEN_HEIGHT, blend);
+    }
+
+    Graphics graphics(g_memDC);
+    graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+
+    // 캐시를 만들지 못했으면 고정 타일도 여기서 직접 그린다.
+    const bool cached = s_tileLayer.bits != nullptr;
+    const int cameraX = static_cast<int>(g_game.cameraX);
+    int firstColumn = cameraX / TILE_SIZE - TILE_SPRITE_REACH;
+    int lastColumn = (cameraX + SCREEN_WIDTH) / TILE_SIZE + TILE_SPRITE_REACH;
+    if (firstColumn < 0) firstColumn = 0;
+    if (lastColumn >= MAP_WIDTH) lastColumn = MAP_WIDTH - 1;
+    for (int i = 0; i < MAP_HEIGHT; i++)
+    {
+        for (int j = firstColumn; j <= lastColumn; j++)
+        {
+            const int tile = currentMap[i][j];
+            int screenX = j * TILE_SIZE - g_game.cameraX;
+            int screenY = i * TILE_SIZE;
+            if (!IsAnimatedTile(tile))
+            {
+                if (!cached) DrawStaticTile(graphics, tile, screenX, screenY);
+                continue;
+            }
+            if (screenX + TILE_SIZE < 0 || screenX >= SCREEN_WIDTH) continue;
+            if (tile == TILE_COIN)
+            {
+                if (g_game.frameMotion == 0 || (g_game.frameMotion >= 4 && g_game.frameMotion < 7))
+                    graphics.DrawImage(g_images.coin_1, screenX, screenY, TILE_SIZE + 1, TILE_SIZE);
+                else if (g_game.frameMotion == 1 || g_game.frameMotion == 3)
+                    graphics.DrawImage(g_images.coin_2, screenX, screenY, TILE_SIZE + 1, TILE_SIZE);
+                else if (g_game.frameMotion == 2)
+                    graphics.DrawImage(g_images.coin_3, screenX, screenY, TILE_SIZE + 1, TILE_SIZE);
+            }
+            else
+            {
+                if (g_game.frameMotion == 0 || (g_game.frameMotion >= 4 && g_game.frameMotion < 7))
+                    graphics.DrawImage(g_images.item_block_1, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
+                else if (g_game.frameMotion == 1 || g_game.frameMotion == 3)
+                    graphics.DrawImage(g_images.item_block_2, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
+                else if (g_game.frameMotion == 2)
+                    graphics.DrawImage(g_images.item_block_3, screenX, screenY, TILE_SIZE + 1, TILE_SIZE + 1);
+            }
+        }
+    }
 }
 static void Draw_castle_blank()
 {
@@ -1555,6 +1594,8 @@ static void DrawFireTraps()
     for (int i = 0; i < fireTrapCount; i++) 
     {
         if (!fireTraps[i].active) continue;
+        const int trapScreenX = fireTraps[i].x - static_cast<int>(g_game.cameraX) - 20;
+        if (trapScreenX + TILE_SIZE < 0 || trapScreenX >= SCREEN_WIDTH) continue;  // 화면 밖 함정은 그리지 않는다.
 
         for (int j = 0; j < fireTraps[i].tileCount; j++)
         {
